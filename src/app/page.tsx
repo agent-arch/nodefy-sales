@@ -4,10 +4,69 @@ import { useState } from 'react'
 
 // ============================================
 // NODEFY SALES DASHBOARD
-// Focused: LinkedIn, Sales Targets, Content
+// LinkedIn, Outreach, ICP, Strategy
 // ============================================
 
-// LinkedIn post ideas met volledige concepten
+// ICP Personas
+const personas = [
+  {
+    id: 1,
+    name: 'Scale-up Sander',
+    age: 35,
+    role: 'Eigenaar',
+    company: 'Pet products webshop, €600K omzet',
+    goals: ['€1M omzet bereiken', 'Google Ads erbij', 'Internationaal uitbreiden'],
+    pains: ['Vorig bureau te duur (€1.800/mnd)', 'Excel rapporten snapte hij niet', 'Google Ads verbrandt budget'],
+    triggers: ['Bureau contract loopt af', 'Leest over AI in marketing', 'Collega tipt'],
+    objections: ['"Vorige bureau was ook enthousiast in begin"', '"Ik wil echte transparantie"', '"Werkt AI echt?"'],
+    channels: ['Sprout', 'Emerce', 'LinkedIn', 'Podcasts'],
+  },
+  {
+    id: 2,
+    name: 'Pragmatische Priya',
+    age: 42,
+    role: 'Eigenaar + Creatief directeur',
+    company: 'Fashion webshop, €350K omzet',
+    goals: ['Stabiele groei 20-30%/jaar', 'Winstgevend blijven', 'Niet ten koste van alles schalen'],
+    pains: ['Bureaus beloven gouden bergen', 'Freelancers ghosten na 2 mnd', 'Wil gewoon iemand die het DOET'],
+    triggers: ['Freelancer gestopt', 'Seizoenscollectie komt eraan', 'Vriendin raadt bureau aan'],
+    objections: ['"Al eerder teleurgesteld"', '"Waarom AI beter dan mens?"', '"Wil resultaat binnen 2 mnd"'],
+    channels: ['Fashionunited', 'Instagram', 'WhatsApp groepen'],
+  },
+  {
+    id: 3,
+    name: 'Techie Thomas',
+    age: 31,
+    role: 'Eigenaar + Tech lead',
+    company: 'Niche webshop (board games), €200K omzet',
+    goals: ['Marketing automatiseren', 'Data-driven groeien', 'Focus op product'],
+    pains: ['Marketing = andere taal', 'Bureaus snappen tech-stack niet', 'Wil API toegang, geen PDF'],
+    triggers: ['Blogpost over AI marketing', 'LinkedIn post over tech-stack', '"AI-native" positioning'],
+    objections: ['"Welke AI precies?"', '"Kan ik data exporteren?"', '"Geen vendor lock-in"'],
+    channels: ['Reddit', 'Hacker News', 'Product Hunt', 'Tech podcasts'],
+  },
+]
+
+// Pain points
+const painPoints = [
+  { rank: 1, title: 'Ik verspil ad spend maar weet niet waarom', impact: '€12K/jaar verloren bij €1K/mnd waste', solution: 'AI-optimalisatie + transparante ROAS reporting' },
+  { rank: 2, title: 'Ik heb geen tijd voor marketing', impact: 'Omzet schommelt wild, geen voorspelbare groei', solution: 'Full-service management, wij doen alles' },
+  { rank: 3, title: 'Bureaus zijn te duur of leveren niet', impact: 'Wantrouwen hele industry', solution: 'Vaste prijs, geen BS, maandelijks opzegbaar' },
+  { rank: 4, title: 'Ik weet niet of mijn ads werken', impact: 'Beslissingen op onderbuikgevoel', solution: 'Wekelijkse rapportage die je snapt' },
+  { rank: 5, title: 'Ik kan niet schalen zonder kosten explosie', impact: 'Plafond op groei', solution: 'AI schaalt mee, fixed fee blijft' },
+]
+
+// Communities
+const communities = [
+  { name: 'Webshop Ondernemers NL', platform: 'Facebook', size: '~15.000', relevance: 5 },
+  { name: 'Shopify Nederland', platform: 'Facebook', size: '~5.000', relevance: 5 },
+  { name: 'E-commerce NL', platform: 'LinkedIn', size: '~8.000', relevance: 4 },
+  { name: 'WooCommerce Nederland', platform: 'Facebook', size: '~3.000', relevance: 4 },
+  { name: 'DutchEcommerce', platform: 'Slack', size: '~1.000', relevance: 4 },
+  { name: 'Vrouwelijke Ondernemers NL', platform: 'Facebook', size: '~30.000', relevance: 3 },
+]
+
+// LinkedIn posts
 const linkedinPosts = [
   {
     id: 1,
@@ -42,7 +101,7 @@ De tools zijn er. De vraag is: waar besteed jij nog tijd aan dat een machine kan
     id: 2,
     title: 'AI agents zijn overhyped. Behalve als je dit doet...',
     category: 'AI & Automation',
-    hook: 'Contrarian take + praktische tip',
+    hook: 'Contrarian take',
     status: 'ready',
     concept: `AI agents zijn overhyped.
 
@@ -75,7 +134,7 @@ Begin klein. Schaal later.
     id: 3,
     title: '90% van de bedrijven meet hun ads verkeerd',
     category: 'Data & Tracking',
-    hook: 'Observatie + simpele fix',
+    hook: 'Observatie + fix',
     status: 'ready',
     concept: `90% van de bedrijven meet hun ads verkeerd.
 
@@ -109,7 +168,7 @@ Wanneer heb jij voor het laatst je tracking geaudit?
     id: 4,
     title: 'Van 2 naar 9 man in 4 jaar. 3 dingen die ik anders zou doen.',
     category: 'Ondernemerschap',
-    hook: 'Reflectie, geen flex',
+    hook: 'Reflectie',
     status: 'ready',
     concept: `Van 2 naar 9 man in 4 jaar.
 
@@ -142,7 +201,7 @@ Wat zou jij anders doen?
     id: 5,
     title: 'LinkedIn ads voor B2B: onze echte resultaten na €50K spend',
     category: 'Marketing',
-    hook: 'Transparant, geen BS',
+    hook: 'Transparant',
     status: 'ready',
     concept: `LinkedIn ads voor B2B: onze echte resultaten na €50K spend.
 
@@ -172,45 +231,13 @@ LinkedIn werkt als:
 → Je targeting specifiek is
 → Je content niet schreeuwerig is
 
-Wat zijn jullie LinkedIn resultaten?
-
 #linkedinads #b2b #saas #marketing`,
   },
   {
     id: 6,
-    title: 'De AI tool die niemand kent maar wij dagelijks gebruiken',
-    category: 'AI & Automation',
-    hook: 'Tool discovery',
-    status: 'draft',
-    concept: `De AI tool die niemand kent maar wij dagelijks gebruiken.
-
-Het is niet ChatGPT.
-Het is niet Claude.
-Het is niet Midjourney.
-
-Het is: [tool naam]
-
-Wat het doet:
-→ [specifieke functie]
-→ [specifieke functie]
-→ [specifieke functie]
-
-Waarom het werkt:
-Geen hype. Geen fancy UI. Gewoon resultaat.
-
-We besparen er ~[X] uur per week mee.
-
-De beste tools zijn vaak niet de bekendste.
-
-Welke "geheime" tool gebruik jij?
-
-#ai #tools #productivity #marketing`,
-  },
-  {
-    id: 7,
     title: 'Waarom we nee zeggen tegen 50% van de leads',
     category: 'Ondernemerschap',
-    hook: 'Positionering, kwaliteit > kwantiteit',
+    hook: 'Positionering',
     status: 'draft',
     concept: `Waarom we nee zeggen tegen 50% van de leads.
 
@@ -238,10 +265,10 @@ Soms is nee zeggen de beste sales strategie.
 #sales #agency #positioning #business`,
   },
   {
-    id: 8,
+    id: 7,
     title: 'Server-side tracking uitgelegd in 60 seconden',
     category: 'Data & Tracking',
-    hook: 'Educatief, geen jargon',
+    hook: 'Educatief',
     status: 'draft',
     concept: `Server-side tracking uitgelegd in 60 seconden.
 
@@ -264,15 +291,45 @@ ROI: Meestal 20-40% meer gemeten conversies
 Is het voor iedereen? Nee.
 Is het voor serieuze advertisers? Absoluut.
 
-Vragen? Drop ze hieronder.
-
 #tracking #serverside #googleads #metaads`,
+  },
+  {
+    id: 8,
+    title: 'Performance Max is geen magic button',
+    category: 'Marketing',
+    hook: 'Hot take',
+    status: 'draft',
+    concept: `Performance Max is geen magic button.
+
+Google's pitch: "Laat AI alles doen!"
+Realiteit: Garbage in, garbage out.
+
+Wat we zien bij audits:
+❌ Alle producten in 1 asset group
+❌ Geen audience signals
+❌ Stock foto's als assets
+❌ Geen brand exclusions
+❌ "Laten draaien" zonder analyse
+
+Resultaat: Google optimaliseert op wat makkelijk is, niet op wat winstgevend is.
+
+Wat wél werkt:
+→ Segmenteer op marge/categorie
+→ Feed audience data
+→ Custom assets per product type
+→ Exclude branded search
+→ Check placement reports wekelijks
+
+PMax is krachtig.
+Maar alleen als je het stuurt.
+
+#googleads #pmax #ecommerce #marketing`,
   },
   {
     id: 9,
     title: 'Het probleem met full-service agencies',
     category: 'Thought Leadership',
-    hook: 'Industry kritiek, constructief',
+    hook: 'Industry kritiek',
     status: 'idea',
     concept: `Het probleem met "full-service" agencies.
 
@@ -302,86 +359,13 @@ Voor de rest verwijzen we door.
 Klant krijgt experts op elk vlak.
 Wij blijven scherp in ons vak.
 
-Full-service is een business model, geen kwaliteitskeuze.
-
 #agency #marketing #specialist #business`,
   },
   {
     id: 10,
-    title: 'Performance Max is geen magic button',
-    category: 'Marketing',
-    hook: 'Hot take met onderbouwing',
-    status: 'idea',
-    concept: `Performance Max is geen magic button.
-
-Google's pitch: "Laat AI alles doen!"
-Realiteit: Garbage in, garbage out.
-
-Wat we zien bij audits:
-❌ Alle producten in 1 asset group
-❌ Geen audience signals
-❌ Stock foto's als assets
-❌ Geen brand exclusions
-❌ "Laten draaien" zonder analyse
-
-Resultaat: Google optimaliseert op wat makkelijk is, niet op wat winstgevend is.
-
-Wat wél werkt:
-→ Segmenteer op marge/categorie
-→ Feed audience data (remarketing, customer match)
-→ Custom assets per product type
-→ Exclude branded search
-→ Check placement reports wekelijks
-
-PMax is krachtig.
-Maar alleen als je het stuurt.
-
-"Set and forget" is geen strategie.
-
-#googleads #pmax #ecommerce #marketing`,
-  },
-  {
-    id: 11,
-    title: 'Consent Mode v2: wat marketeers écht moeten weten',
-    category: 'Data & Tracking',
-    hook: 'Actueel, praktisch',
-    status: 'idea',
-    concept: `Consent Mode v2: wat marketeers écht moeten weten.
-
-Vanaf maart 2024 verplicht voor Google Ads.
-Maar 80% van de implementaties klopt niet.
-
-Wat is het?
-→ Google's manier om consent-signalen door te geven
-→ Bepaalt welke data je mag verzamelen
-→ Vereist voor remarketing & conversie-tracking
-
-De 4 consent types:
-1. ad_storage (ads cookies)
-2. analytics_storage (GA4)
-3. ad_user_data (user data naar Google)
-4. ad_personalization (personalized ads)
-
-Wat je moet doen:
-✅ CMP updaten (Cookiebot, OneTrust, etc.)
-✅ GTM consent mode configureren
-✅ Default states instellen
-✅ Testen, testen, testen
-
-Doe je dit niet?
-→ Geen remarketing audiences
-→ Slechte conversie-attributie
-→ Google gaat modelleren (= raden)
-
-Check je setup. Vandaag nog.
-
-#consentmode #privacy #googleads #gdpr`,
-  },
-  {
-    id: 12,
     title: 'Hoe we meetings halveerden zonder chaos',
     category: 'Ondernemerschap',
-    hook: 'Operationeel, relatable',
+    hook: 'Operationeel',
     status: 'idea',
     concept: `Hoe we meetings halveerden zonder chaos.
 
@@ -401,55 +385,18 @@ Wat we veranderden:
 
 3. Agenda verplicht
 → Geen agenda = meeting wordt geweigerd
-→ Klinkt streng, is noodzakelijk
 
 4. Meeting-vrije dagen
 → Woensdag = focus day
 → Geen interne meetings
 
-5. Standing permission om te weigeren
-→ "Past niet in mijn planning" is een valid antwoord
-
 Resultaat:
 → Meer deep work
-→ Betere beslissingen (minder haast)
+→ Betere beslissingen
 → Team is gelukkiger
 
-Hoeveel uur zit jij in meetings?
-
-#productivity #agency #management #werk`,
+#productivity #agency #management`,
   },
-]
-
-// Sales targets
-const salesTargets = {
-  current: {
-    dealsPerMonth: '2-3',
-    avgRetainer: '€3-5K',
-    referralOutbound: '90/10',
-    pipelineValue: '~€50K',
-  },
-  target90d: {
-    dealsPerMonth: '4-5',
-    avgRetainer: '€6-8K',
-    referralOutbound: '60/40',
-    pipelineValue: '€150K',
-  },
-  target12m: {
-    dealsPerMonth: '8-10',
-    avgRetainer: '€10-15K',
-    referralOutbound: '40/60',
-    pipelineValue: '€250K',
-  },
-}
-
-// Quick actions
-const quickActions = [
-  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/rubenstrootman/', icon: '🔗' },
-  { label: 'Nieuwe Post', url: 'https://www.linkedin.com/post/new/', icon: '📝' },
-  { label: 'HubSpot', url: 'https://app.hubspot.com/', icon: '💰' },
-  { label: 'Nodefy.nl', url: 'https://nodefy.nl', icon: '🌐' },
-  { label: 'Projects', url: 'https://nodefy-openclawd.vercel.app', icon: '📊' },
 ]
 
 // Outreach templates
@@ -457,6 +404,7 @@ const outreachTemplates = [
   {
     id: 1,
     name: 'Connectie verzoek',
+    type: 'linkedin',
     template: `Hey [naam],
 
 Zag dat je [bedrijf] runt - mooie webshop!
@@ -469,6 +417,7 @@ Ruben`,
   {
     id: 2,
     name: 'Follow-up na connectie',
+    type: 'linkedin',
     template: `Hey [naam],
 
 Thanks voor de connectie!
@@ -484,6 +433,7 @@ Ruben`,
   {
     id: 3,
     name: 'Case study share',
+    type: 'linkedin',
     template: `Hey [naam],
 
 Zag dat je met [platform] werkt - wij hielpen laatst een vergelijkbare webshop van €X naar €Y ROAS.
@@ -494,28 +444,66 @@ Happy om te delen hoe we dat aanpakten - geen strings attached.
 
 Ruben`,
   },
+  {
+    id: 4,
+    name: 'Post engagement follow-up',
+    type: 'linkedin',
+    template: `Hey [naam],
+
+Zag je reactie op mijn post over [onderwerp] - goede toevoeging!
+
+Ben benieuwd: herken je dat probleem bij [bedrijf]? Of hebben jullie dat al opgelost?
+
+Ruben`,
+  },
+  {
+    id: 5,
+    name: 'Referral vraag',
+    type: 'email',
+    template: `Hey [naam],
+
+Hoop dat alles goed gaat met [bedrijf]!
+
+Ik ben op zoek naar webshops die worstelen met hun ads - ken jij toevallig iemand in je netwerk die daar mee zit?
+
+Geen druk, maar als je iemand kent: een intro zou super zijn.
+
+Thanks!
+Ruben`,
+  },
+]
+
+// Sales targets
+const salesTargets = {
+  current: { deals: '2-3', retainer: '€3-5K', ratio: '90/10', pipeline: '~€50K' },
+  target90d: { deals: '4-5', retainer: '€6-8K', ratio: '60/40', pipeline: '€150K' },
+  target12m: { deals: '8-10', retainer: '€10-15K', ratio: '40/60', pipeline: '€250K' },
+}
+
+// Quick actions
+const quickActions = [
+  { label: 'LinkedIn', url: 'https://www.linkedin.com/in/rubenstrootman/', icon: '🔗' },
+  { label: 'Post', url: 'https://www.linkedin.com/post/new/', icon: '📝' },
+  { label: 'HubSpot', url: 'https://app.hubspot.com/', icon: '💰' },
+  { label: 'Projects', url: 'https://nodefy-openclawd.vercel.app', icon: '📊' },
 ]
 
 export default function SalesDashboard() {
+  const [activeTab, setActiveTab] = useState<'posts' | 'outreach' | 'icp' | 'strategy'>('posts')
   const [selectedPost, setSelectedPost] = useState<typeof linkedinPosts[0] | null>(null)
-  const [filter, setFilter] = useState<string>('all')
-  const [copiedId, setCopiedId] = useState<number | null>(null)
-  const [activeTab, setActiveTab] = useState<'posts' | 'outreach' | 'strategy'>('posts')
   const [selectedTemplate, setSelectedTemplate] = useState<typeof outreachTemplates[0] | null>(null)
+  const [selectedPersona, setSelectedPersona] = useState<typeof personas[0] | null>(null)
+  const [filter, setFilter] = useState('all')
+  const [copiedId, setCopiedId] = useState<number | null>(null)
 
-  const filteredPosts = filter === 'all' 
-    ? linkedinPosts 
-    : linkedinPosts.filter(p => p.status === filter)
+  const filteredPosts = filter === 'all' ? linkedinPosts : linkedinPosts.filter(p => p.status === filter)
+  const readyCount = linkedinPosts.filter(p => p.status === 'ready').length
 
   const copyToClipboard = (text: string, id: number) => {
     navigator.clipboard.writeText(text)
     setCopiedId(id)
     setTimeout(() => setCopiedId(null), 2000)
   }
-
-  const categories = [...new Set(linkedinPosts.map(p => p.category))]
-  const readyCount = linkedinPosts.filter(p => p.status === 'ready').length
-  const draftCount = linkedinPosts.filter(p => p.status === 'draft').length
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white">
@@ -524,26 +512,16 @@ export default function SalesDashboard() {
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center font-bold text-lg">
-                N
-              </div>
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center font-bold text-lg">N</div>
               <div>
                 <h1 className="text-xl font-bold">Nodefy Sales</h1>
-                <p className="text-sm text-slate-400">LinkedIn • Outreach • Pipeline</p>
+                <p className="text-sm text-slate-400">LinkedIn • Outreach • ICP • Strategy</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              {quickActions.map((action) => (
-                <a
-                  key={action.label}
-                  href={action.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-colors flex items-center gap-2"
-                  title={action.label}
-                >
-                  <span>{action.icon}</span>
-                  <span className="hidden lg:inline">{action.label}</span>
+              {quickActions.map((a) => (
+                <a key={a.label} href={a.url} target="_blank" rel="noopener noreferrer" className="px-3 py-2 rounded-lg bg-white/5 hover:bg-white/10 text-sm transition-colors" title={a.label}>
+                  <span>{a.icon}</span>
                 </a>
               ))}
             </div>
@@ -552,290 +530,214 @@ export default function SalesDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* KPI Cards */}
-        <section className="mb-6">
-          <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Deals/maand</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-3xl font-bold">{salesTargets.current.dealsPerMonth}</span>
-                <span className="text-sm text-emerald-400">→ {salesTargets.target90d.dealsPerMonth}</span>
-              </div>
-            </div>
-            <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Avg Retainer</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-3xl font-bold">{salesTargets.current.avgRetainer}</span>
-                <span className="text-sm text-emerald-400">→ {salesTargets.target90d.avgRetainer}</span>
-              </div>
-            </div>
-            <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Posts Ready</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-3xl font-bold text-emerald-400">{readyCount}</span>
-                <span className="text-sm text-slate-400">+ {draftCount} drafts</span>
-              </div>
-            </div>
-            <div className="bg-white/5 backdrop-blur rounded-2xl p-5 border border-white/10">
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Pipeline</p>
-              <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-3xl font-bold">{salesTargets.current.pipelineValue}</span>
-                <span className="text-sm text-emerald-400">→ {salesTargets.target90d.pipelineValue}</span>
-              </div>
+        {/* KPIs */}
+        <div className="grid grid-cols-4 gap-4 mb-6">
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+            <p className="text-xs text-slate-400 uppercase">Deals/maand</p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-bold">{salesTargets.current.deals}</span>
+              <span className="text-sm text-emerald-400">→ {salesTargets.target90d.deals}</span>
             </div>
           </div>
-        </section>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+            <p className="text-xs text-slate-400 uppercase">Avg Retainer</p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-bold">{salesTargets.current.retainer}</span>
+              <span className="text-sm text-emerald-400">→ {salesTargets.target90d.retainer}</span>
+            </div>
+          </div>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+            <p className="text-xs text-slate-400 uppercase">Posts Ready</p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-bold text-emerald-400">{readyCount}</span>
+              <span className="text-sm text-slate-400">/ {linkedinPosts.length} total</span>
+            </div>
+          </div>
+          <div className="bg-white/5 rounded-2xl p-5 border border-white/10">
+            <p className="text-xs text-slate-400 uppercase">Pipeline</p>
+            <div className="flex items-baseline gap-2 mt-2">
+              <span className="text-3xl font-bold">{salesTargets.current.pipeline}</span>
+              <span className="text-sm text-emerald-400">→ {salesTargets.target90d.pipeline}</span>
+            </div>
+          </div>
+        </div>
 
-        {/* Tab Navigation */}
+        {/* Tabs */}
         <div className="flex gap-2 mb-6">
           {[
             { id: 'posts', label: '📝 LinkedIn Posts', count: linkedinPosts.length },
-            { id: 'outreach', label: '📨 Outreach Templates', count: outreachTemplates.length },
-            { id: 'strategy', label: '🎯 90-Dagen Plan', count: null },
+            { id: 'outreach', label: '📨 Outreach', count: outreachTemplates.length },
+            { id: 'icp', label: '🎯 ICP', count: personas.length },
+            { id: 'strategy', label: '📊 90-Dagen Plan' },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as typeof activeTab)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white/5 text-slate-400 hover:bg-white/10'
-              }`}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id ? 'bg-blue-500 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'}`}
             >
-              {tab.label}
-              {tab.count && (
-                <span className={`text-xs px-1.5 py-0.5 rounded ${
-                  activeTab === tab.id ? 'bg-blue-600' : 'bg-white/10'
-                }`}>
-                  {tab.count}
-                </span>
-              )}
+              {tab.label} {tab.count && <span className="ml-1 opacity-60">({tab.count})</span>}
             </button>
           ))}
         </div>
 
-        {/* LinkedIn Posts Tab */}
+        {/* POSTS TAB */}
         {activeTab === 'posts' && (
           <div className="grid grid-cols-12 gap-6">
-            {/* Posts List */}
             <div className="col-span-5">
-              <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 overflow-hidden">
-                <div className="p-4 border-b border-white/10">
-                  <div className="flex gap-2">
-                    {['all', 'ready', 'draft', 'idea'].map((f) => (
-                      <button
-                        key={f}
-                        onClick={() => setFilter(f)}
-                        className={`px-3 py-1 rounded-full text-xs transition-colors ${
-                          filter === f
-                            ? 'bg-blue-500 text-white'
-                            : 'bg-white/5 text-slate-400 hover:bg-white/10'
-                        }`}
-                      >
-                        {f === 'all' ? `Alle (${linkedinPosts.length})` : 
-                         f === 'ready' ? `✅ Ready (${readyCount})` : 
-                         f === 'draft' ? `📝 Draft (${draftCount})` : 
-                         `💡 Idea (${linkedinPosts.filter(p => p.status === 'idea').length})`}
-                      </button>
-                    ))}
-                  </div>
+              <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden">
+                <div className="p-4 border-b border-white/10 flex gap-2">
+                  {['all', 'ready', 'draft', 'idea'].map((f) => (
+                    <button key={f} onClick={() => setFilter(f)} className={`px-3 py-1 rounded-full text-xs ${filter === f ? 'bg-blue-500 text-white' : 'bg-white/5 text-slate-400'}`}>
+                      {f === 'all' ? 'All' : f}
+                    </button>
+                  ))}
                 </div>
-                
-                <div className="max-h-[550px] overflow-y-auto">
+                <div className="max-h-[500px] overflow-y-auto">
                   {filteredPosts.map((post) => (
-                    <button
-                      key={post.id}
-                      onClick={() => setSelectedPost(post)}
-                      className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 transition-colors ${
-                        selectedPost?.id === post.id ? 'bg-blue-500/20 border-l-2 border-l-blue-500' : ''
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs flex-shrink-0 ${
-                          post.status === 'ready' ? 'bg-emerald-500/20 text-emerald-400' :
-                          post.status === 'draft' ? 'bg-amber-500/20 text-amber-400' :
-                          'bg-slate-500/20 text-slate-400'
-                        }`}>
-                          {post.id}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm text-white truncate">{post.title}</h3>
-                          <div className="flex items-center gap-2 mt-1">
-                            <span className="text-xs px-2 py-0.5 rounded bg-white/10 text-slate-300">
-                              {post.category}
-                            </span>
-                          </div>
-                        </div>
+                    <button key={post.id} onClick={() => setSelectedPost(post)} className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 ${selectedPost?.id === post.id ? 'bg-blue-500/20' : ''}`}>
+                      <h3 className="font-medium text-sm truncate">{post.title}</h3>
+                      <div className="flex gap-2 mt-1">
+                        <span className="text-xs bg-white/10 px-2 py-0.5 rounded">{post.category}</span>
+                        <span className={`text-xs px-2 py-0.5 rounded ${post.status === 'ready' ? 'bg-emerald-500/20 text-emerald-400' : post.status === 'draft' ? 'bg-amber-500/20 text-amber-400' : 'bg-slate-500/20 text-slate-400'}`}>{post.status}</span>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
             </div>
-
-            {/* Post Preview */}
             <div className="col-span-7">
-              <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 overflow-hidden h-full">
+              <div className="bg-white/5 rounded-2xl border border-white/10 overflow-hidden h-full">
                 {selectedPost ? (
                   <>
-                    <div className="p-4 border-b border-white/10 flex items-center justify-between">
-                      <div>
-                        <h2 className="font-semibold">{selectedPost.title}</h2>
-                        <p className="text-sm text-slate-400">{selectedPost.category} • {selectedPost.hook}</p>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => copyToClipboard(selectedPost.concept, selectedPost.id)}
-                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                            copiedId === selectedPost.id
-                              ? 'bg-emerald-500 text-white'
-                              : 'bg-blue-500 hover:bg-blue-600 text-white'
-                          }`}
-                        >
-                          {copiedId === selectedPost.id ? '✓ Copied!' : '📋 Copy'}
-                        </button>
-                        <a
-                          href="https://www.linkedin.com/post/new/"
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 text-sm font-medium transition-colors"
-                        >
-                          Open LinkedIn →
-                        </a>
-                      </div>
+                    <div className="p-4 border-b border-white/10 flex justify-between items-center">
+                      <h2 className="font-semibold">{selectedPost.title}</h2>
+                      <button onClick={() => copyToClipboard(selectedPost.concept, selectedPost.id)} className={`px-4 py-2 rounded-lg text-sm font-medium ${copiedId === selectedPost.id ? 'bg-emerald-500' : 'bg-blue-500 hover:bg-blue-600'}`}>
+                        {copiedId === selectedPost.id ? '✓ Copied!' : '📋 Copy'}
+                      </button>
                     </div>
                     <div className="p-6">
-                      <div className="bg-black/30 rounded-xl p-6 font-mono text-sm leading-relaxed whitespace-pre-wrap max-h-[450px] overflow-y-auto">
-                        {selectedPost.concept}
-                      </div>
+                      <pre className="bg-black/30 rounded-xl p-6 text-sm whitespace-pre-wrap max-h-[400px] overflow-y-auto">{selectedPost.concept}</pre>
                     </div>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full py-20 text-slate-400">
-                    <span className="text-5xl mb-4">📝</span>
-                    <p className="text-lg">Selecteer een post</p>
-                    <p className="text-sm mt-2">Klik links om de volledige tekst te zien</p>
-                  </div>
+                  <div className="flex items-center justify-center h-full text-slate-400 py-20">📝 Selecteer een post</div>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Outreach Templates Tab */}
+        {/* OUTREACH TAB */}
         {activeTab === 'outreach' && (
           <div className="grid grid-cols-12 gap-6">
             <div className="col-span-4">
-              <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 overflow-hidden">
-                <div className="p-4 border-b border-white/10">
-                  <h2 className="font-semibold">Templates</h2>
-                </div>
-                <div>
-                  {outreachTemplates.map((template) => (
-                    <button
-                      key={template.id}
-                      onClick={() => setSelectedTemplate(template)}
-                      className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 transition-colors ${
-                        selectedTemplate?.id === template.id ? 'bg-blue-500/20 border-l-2 border-l-blue-500' : ''
-                      }`}
-                    >
-                      <h3 className="font-medium">{template.name}</h3>
-                    </button>
-                  ))}
-                </div>
+              <div className="bg-white/5 rounded-2xl border border-white/10">
+                {outreachTemplates.map((t) => (
+                  <button key={t.id} onClick={() => setSelectedTemplate(t)} className={`w-full text-left p-4 border-b border-white/5 hover:bg-white/5 ${selectedTemplate?.id === t.id ? 'bg-blue-500/20' : ''}`}>
+                    <h3 className="font-medium">{t.name}</h3>
+                    <span className="text-xs text-slate-400">{t.type}</span>
+                  </button>
+                ))}
               </div>
             </div>
             <div className="col-span-8">
-              <div className="bg-white/5 backdrop-blur rounded-2xl border border-white/10 p-6 min-h-[400px]">
+              <div className="bg-white/5 rounded-2xl border border-white/10 p-6 min-h-[400px]">
                 {selectedTemplate ? (
                   <>
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex justify-between items-center mb-4">
                       <h2 className="font-semibold text-lg">{selectedTemplate.name}</h2>
-                      <button
-                        onClick={() => copyToClipboard(selectedTemplate.template, selectedTemplate.id)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          copiedId === selectedTemplate.id
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-blue-500 hover:bg-blue-600 text-white'
-                        }`}
-                      >
+                      <button onClick={() => copyToClipboard(selectedTemplate.template, selectedTemplate.id)} className={`px-4 py-2 rounded-lg text-sm ${copiedId === selectedTemplate.id ? 'bg-emerald-500' : 'bg-blue-500'}`}>
                         {copiedId === selectedTemplate.id ? '✓ Copied!' : '📋 Copy'}
                       </button>
                     </div>
-                    <div className="bg-black/30 rounded-xl p-6 font-mono text-sm leading-relaxed whitespace-pre-wrap">
-                      {selectedTemplate.template}
-                    </div>
-                    <p className="text-xs text-slate-500 mt-4">
-                      💡 Vervang [naam], [bedrijf], etc. met echte gegevens
-                    </p>
+                    <pre className="bg-black/30 rounded-xl p-6 text-sm whitespace-pre-wrap">{selectedTemplate.template}</pre>
                   </>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                    <span className="text-5xl mb-4">📨</span>
-                    <p>Selecteer een template</p>
-                  </div>
+                  <div className="flex items-center justify-center h-full text-slate-400">📨 Selecteer template</div>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Strategy Tab */}
-        {activeTab === 'strategy' && (
+        {/* ICP TAB */}
+        {activeTab === 'icp' && (
           <div className="space-y-6">
-            {/* 90-Day Roadmap */}
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-white/5 backdrop-blur rounded-xl p-6 border border-white/10">
-                <h3 className="text-emerald-400 font-semibold text-lg mb-4">Week 1-4: Foundation</h3>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">○</span> LinkedIn 3x/week posten</li>
-                  <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">○</span> 3 case studies met ROI cijfers</li>
-                  <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">○</span> Comment strategy (5-10/dag)</li>
-                  <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">○</span> €10K package testen</li>
-                  <li className="flex items-start gap-2"><span className="text-emerald-400 mt-0.5">○</span> Website case studies pagina</li>
-                </ul>
+            {/* Personas */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">👥 Buyer Personas</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {personas.map((p) => (
+                  <button key={p.id} onClick={() => setSelectedPersona(selectedPersona?.id === p.id ? null : p)} className={`text-left bg-white/5 rounded-xl p-5 border transition-all ${selectedPersona?.id === p.id ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20'}`}>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-lg">
+                        {p.name.charAt(0)}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{p.name}</h3>
+                        <p className="text-xs text-slate-400">{p.age} jaar, {p.role}</p>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-300">{p.company}</p>
+                  </button>
+                ))}
               </div>
-              <div className="bg-white/5 backdrop-blur rounded-xl p-6 border border-white/10">
-                <h3 className="text-amber-400 font-semibold text-lg mb-4">Week 5-8: Outbound</h3>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> 50 connecties per week</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> DM sequence starten</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> Eerste cold outreach</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> Partnership gesprekken</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> Referral programma</li>
-                </ul>
-              </div>
-              <div className="bg-white/5 backdrop-blur rounded-xl p-6 border border-white/10">
-                <h3 className="text-blue-400 font-semibold text-lg mb-4">Week 9-12: Scale</h3>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> Content engine op stoom</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> 5 meetings per week</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> Pipeline naar 3x MRR</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> Playbook documenteren</li>
-                  <li className="flex items-start gap-2"><span className="text-slate-500 mt-0.5">○</span> Sales hire evalueren</li>
-                </ul>
+              
+              {selectedPersona && (
+                <div className="mt-4 bg-white/5 rounded-xl p-6 border border-white/10">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div>
+                      <h4 className="text-sm font-medium text-emerald-400 mb-2">🎯 Goals</h4>
+                      <ul className="space-y-1">{selectedPersona.goals.map((g, i) => <li key={i} className="text-sm">• {g}</li>)}</ul>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-red-400 mb-2">😤 Pains</h4>
+                      <ul className="space-y-1">{selectedPersona.pains.map((p, i) => <li key={i} className="text-sm">• {p}</li>)}</ul>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-amber-400 mb-2">⚡ Triggers</h4>
+                      <ul className="space-y-1">{selectedPersona.triggers.map((t, i) => <li key={i} className="text-sm">• {t}</li>)}</ul>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-blue-400 mb-2">🛑 Objections</h4>
+                      <ul className="space-y-1">{selectedPersona.objections.map((o, i) => <li key={i} className="text-sm text-slate-400">{o}</li>)}</ul>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-white/10">
+                    <h4 className="text-sm font-medium text-slate-400 mb-2">📍 Channels</h4>
+                    <div className="flex gap-2 flex-wrap">{selectedPersona.channels.map((c, i) => <span key={i} className="text-xs bg-white/10 px-2 py-1 rounded">{c}</span>)}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Pain Points */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">😤 Top Pain Points</h2>
+              <div className="space-y-3">
+                {painPoints.map((p) => (
+                  <div key={p.rank} className="bg-white/5 rounded-xl p-4 border border-white/10 flex items-start gap-4">
+                    <span className="w-8 h-8 rounded-full bg-red-500/20 text-red-400 flex items-center justify-center font-bold flex-shrink-0">#{p.rank}</span>
+                    <div className="flex-1">
+                      <h3 className="font-medium">{p.title}</h3>
+                      <p className="text-sm text-slate-400 mt-1">Impact: {p.impact}</p>
+                      <p className="text-sm text-emerald-400 mt-1">→ {p.solution}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            {/* Key Insights */}
-            <div className="bg-white/5 backdrop-blur rounded-xl p-6 border border-white/10">
-              <h3 className="font-semibold text-lg mb-4">🔑 5 Key Findings uit Research</h3>
-              <div className="grid grid-cols-1 gap-4">
-                {[
-                  { num: 1, title: 'Specialisatie is verplicht', insight: '84% van succesvolle agencies is specialist', action: '"AI-Powered Marketing Agency" is je claim' },
-                  { num: 2, title: 'Sales is de #1 bottleneck', insight: 'Agencies met outbound groeien 3-5x sneller', action: 'LinkedIn outbound + content engine' },
-                  { num: 3, title: 'AI is de multiplier', insight: '95% van marketers gebruikt nu AI tools', action: 'Client-facing AI transformatie verkopen' },
-                  { num: 4, title: 'Pricing power = waarde', insight: 'Slechts 2% doet pure value-based pricing', action: 'Verkoop "5x meer leads" niet "10 uur"' },
-                  { num: 5, title: 'Schalen vereist systemen', insight: 'Founder moet uit productie vóór 25 FTE', action: 'Documenteer alles. Bouw playbooks.' },
-                ].map((item) => (
-                  <div key={item.num} className="flex items-start gap-4 p-4 bg-white/5 rounded-lg">
-                    <span className="w-8 h-8 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center font-bold flex-shrink-0">
-                      {item.num}
-                    </span>
-                    <div>
-                      <h4 className="font-medium">{item.title}</h4>
-                      <p className="text-sm text-slate-400">{item.insight}</p>
-                      <p className="text-sm text-blue-400 mt-1">→ {item.action}</p>
+            {/* Communities */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">🌐 Communities</h2>
+              <div className="grid grid-cols-3 gap-4">
+                {communities.map((c, i) => (
+                  <div key={i} className="bg-white/5 rounded-xl p-4 border border-white/10">
+                    <h3 className="font-medium">{c.name}</h3>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-xs text-slate-400">{c.platform} • {c.size}</span>
+                      <div className="flex">{[...Array(c.relevance)].map((_, j) => <span key={j} className="text-amber-400">★</span>)}</div>
                     </div>
                   </div>
                 ))}
@@ -843,19 +745,60 @@ export default function SalesDashboard() {
             </div>
           </div>
         )}
-      </div>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10 mt-8">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-          <p className="text-xs text-slate-500">
-            Nodefy Sales Dashboard — Built by AI Agent
-          </p>
-          <p className="text-xs text-slate-500">
-            LinkedIn: 1x per 2 weken
-          </p>
-        </div>
-      </footer>
+        {/* STRATEGY TAB */}
+        {activeTab === 'strategy' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-3 gap-4">
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-emerald-400 font-semibold text-lg mb-4">Week 1-4: Foundation</h3>
+                <ul className="space-y-2 text-sm">
+                  <li>○ LinkedIn 3x/week posten</li>
+                  <li>○ 3 case studies met ROI</li>
+                  <li>○ Comment strategy (5-10/dag)</li>
+                  <li>○ €10K package testen</li>
+                </ul>
+              </div>
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-amber-400 font-semibold text-lg mb-4">Week 5-8: Outbound</h3>
+                <ul className="space-y-2 text-sm">
+                  <li>○ 50 connecties per week</li>
+                  <li>○ DM sequence starten</li>
+                  <li>○ Cold outreach</li>
+                  <li>○ Partnership gesprekken</li>
+                </ul>
+              </div>
+              <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+                <h3 className="text-blue-400 font-semibold text-lg mb-4">Week 9-12: Scale</h3>
+                <ul className="space-y-2 text-sm">
+                  <li>○ Content engine op stoom</li>
+                  <li>○ 5 meetings per week</li>
+                  <li>○ Pipeline naar 3x MRR</li>
+                  <li>○ Playbook documenteren</li>
+                </ul>
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-xl p-6 border border-white/10">
+              <h3 className="font-semibold text-lg mb-4">🔑 5 Key Findings</h3>
+              <div className="grid grid-cols-1 gap-3">
+                {[
+                  { n: 1, t: 'Specialisatie is verplicht', i: '84% succesvolle agencies is specialist', a: '"AI Marketing Agency" is je claim' },
+                  { n: 2, t: 'Sales is #1 bottleneck', i: 'Outbound agencies groeien 3-5x sneller', a: 'LinkedIn outbound + content engine' },
+                  { n: 3, t: 'AI is de multiplier', i: '95% marketeers gebruikt AI tools', a: 'Client-facing AI transformatie' },
+                  { n: 4, t: 'Pricing = waarde', i: 'Slechts 2% doet value-based', a: 'Verkoop resultaat, niet uren' },
+                  { n: 5, t: 'Schalen = systemen', i: 'Founder uit productie <25 FTE', a: 'Documenteer alles' },
+                ].map((f) => (
+                  <div key={f.n} className="flex items-start gap-4 p-3 bg-white/5 rounded-lg">
+                    <span className="w-6 h-6 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-sm font-bold">{f.n}</span>
+                    <div><h4 className="font-medium">{f.t}</h4><p className="text-xs text-slate-400">{f.i} → {f.a}</p></div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </main>
   )
 }
