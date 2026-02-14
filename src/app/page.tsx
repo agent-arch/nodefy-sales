@@ -397,6 +397,84 @@ Resultaat:
 
 #productivity #agency #management`,
   },
+  {
+    id: 11,
+    title: 'Franky Case: Hun "geweldige ROAS" was een leugen',
+    category: 'Case Study',
+    hook: 'Eerlijke consultant angle',
+    status: 'ready',
+    concept: `Vorig jaar januari kregen we een nieuwe klant: een sieraden merk met "geweldige ROAS."
+
+Eerste wat ik deed: de data checken.
+
+Bleek dat die geweldige ROAS... dubbel werd gemeten.
+
+Conversies werden meerdere keren geteld. Hun échte performance was een stuk minder rooskleurig.
+
+Nu kun je twee dingen doen:
+1. Niks zeggen en lekker doorboeren op die "mooie" cijfers
+2. Eerlijk zijn en het fundament fixen
+
+Wij kozen optie 2.
+
+Wat we deden:
+→ Server-side tracking geïmplementeerd (echte data)
+→ Google Shopping feed compleet herbouwd  
+→ Alle kanalen geoptimaliseerd op basis van correcte cijfers
+→ TikTok toegevoegd
+→ Duitsland gelanceerd
+
+13 maanden later:
+→ Webshop omzet flink gestegen
+→ Duitsland draait met hoge ROAS
+→ Elke euro die ze uitgeven is meetbaar én winstgevend
+
+De ironie? 
+
+Door eerlijk te zijn over slechte data, konden we pas écht gaan groeien.
+
+Measuring wrong = optimizing wrong.
+Fix your foundation first.
+
+#ecommerce #tracking #googleads #casestudy`,
+  },
+  {
+    id: 12,
+    title: 'Franky Case: Testimonial van Franca',
+    category: 'Case Study',
+    hook: 'Klant perspectief - voor Franca',
+    status: 'ready',
+    concept: `[POST VANUIT FRANCA - FRANKY AMSTERDAM]
+
+Een jaar geleden dacht ik dat mijn marketing goed liep.
+
+Onze ROAS zag er mooi uit. We groeiden. Alles leek prima.
+
+Tot ons nieuwe bureau één vraag stelde: 
+
+"Mogen we even in je tracking kijken?"
+
+Wat ze vonden was pijnlijk: onze conversies werden dubbel geteld. Die "mooie" cijfers? Waren niet echt.
+
+Eerlijk? Ik schrok. 
+
+Als ondernemer neem je beslissingen op basis van data. En mijn data klopte niet.
+
+Maar in plaats van in paniek te raken, zijn we gaan bouwen:
+→ Nieuwe tracking die wél klopt
+→ Advertenties die wél renderen
+→ Een Duitsland lancering die wél werkt
+
+Nu, 13 maanden later, is onze omzet flink gegroeid. 
+
+En dit keer weet ik: de cijfers zijn echt.
+
+Aan elke ondernemer die dit leest: wanneer heb jij voor het laatst je tracking laten checken?
+
+Je zou weleens verrast kunnen worden.
+
+#ecommerce #ondernemen #fashion #marketing`,
+  },
 ]
 
 // Outreach templates
