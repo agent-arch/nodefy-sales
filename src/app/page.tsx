@@ -3350,18 +3350,49 @@ export default function SalesDashboard() {
           {/* STRATEGY TAB - Operational Cockpit */}
           {/* ============================================ */}
           {activeTab === 'strategy' && (() => {
+            // ---- Computed values from retainer data ----
+            const activeClients = RETAINER_CLIENTS.filter(c => c.status === 'Actief')
+            const currentARR = activeClients.reduce((sum, c) => sum + c.bedrag, 0)
+            const currentMRR = Math.round(currentARR / 12)
+            const avgMRR = Math.round(currentMRR / (activeClients.length || 1))
+            const new2026 = RETAINER_CLIENTS.filter(c => c.startJaar === 2026).length
+            const annualTarget = data.revenueGoals.annualTarget
+            const gap = annualTarget - currentARR
+            const currentMonth = new Date().getMonth() + 1 // 1-indexed
+            const monthsRemaining = Math.max(12 - currentMonth, 1)
+            const neededPerMonth = Math.round(gap / monthsRemaining)
+
+            // Q1 recurring from retainer jan data × 3
+            const q1Recurring = Math.round(activeClients.reduce((sum, c) => sum + c.jan, 0) * 3)
+
+            // Monthly MRR from retainers (jan = actual, rest = bedrag/12)
+            const MONTH_NAMES = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+            const getMonthlyMRR = (monthIdx: number) => {
+              if (monthIdx === 0) return activeClients.reduce((sum, c) => sum + c.jan, 0)
+              return currentMRR
+            }
+
+            // Ensure monthlyForecast exists
+            const forecast = data.monthlyForecast && data.monthlyForecast.length === 12
+              ? data.monthlyForecast
+              : DEFAULT_MONTHLY_FORECAST
+
+            const updateForecast = (month: number, field: 'nieuwDeals' | 'target', value: number) => {
+              const updated = forecast.map(f => f.month === month ? { ...f, [field]: value } : f)
+              updateData('monthlyForecast', updated)
+            }
+
             // Filter tasks
             const filteredTasks = data.masterTasks.filter(t => {
               if (taskFilter !== 'all' && t.category !== taskFilter) return false
               if (taskPriorityFilter !== 'all' && t.priority !== taskPriorityFilter) return false
-              if (taskStatusFilter === 'done' && !t.done) return false
               if (taskStatusFilter === 'open' && t.done) return false
+              if (taskStatusFilter === 'done' && !t.done) return false
               return true
             })
 
             // KPI status helper
             const getKpiStatus = (kpi: KPICard) => {
-              // For churn, lower is better
               if (kpi.name === 'Churn %') {
                 const ratio = kpi.target / kpi.current
                 if (ratio >= 0.9) return 'green'
@@ -3374,22 +3405,16 @@ export default function SalesDashboard() {
               return 'red'
             }
 
-            // Update task
+            // Task helpers
             const updateTask = (id: string, updates: Partial<MasterTask>) => {
               updateData('masterTasks', data.masterTasks.map(t => t.id === id ? { ...t, ...updates } : t))
             }
-
-            // Toggle task done
             const toggleTaskDone = (id: string) => {
               updateData('masterTasks', data.masterTasks.map(t => t.id === id ? { ...t, done: !t.done } : t))
             }
-
-            // Delete task
             const deleteTask = (id: string) => {
               updateData('masterTasks', data.masterTasks.filter(t => t.id !== id))
             }
-
-            // Add task
             const addTask = () => {
               if (!newTask.title.trim()) return
               const task: MasterTask = {
@@ -3404,38 +3429,22 @@ export default function SalesDashboard() {
               setNewTask({ title: '', deadline: '', category: 'Strategy', priority: 'medium' })
               setShowAddTask(false)
             }
-
-            // Update KPI
             const updateKpi = (id: string, field: 'current' | 'target', value: number) => {
               updateData('kpiScoreboard', data.kpiScoreboard.map(k => k.id === id ? { ...k, [field]: value } : k))
             }
-
-            // Update quarterly goal
             const updateQuarterlyGoal = (id: string, updates: Partial<QuarterlyGoal>) => {
               updateData('quarterlyGoals', data.quarterlyGoals.map(g => g.id === id ? { ...g, ...updates } : g))
             }
-
-            // Add quarterly goal
             const addQuarterlyGoal = (quarter: string) => {
-              const goal: QuarterlyGoal = {
-                id: `qg${Date.now()}`,
-                quarter,
-                text: 'Nieuw doel...',
-                status: 'yellow',
-              }
+              const goal: QuarterlyGoal = { id: `qg${Date.now()}`, quarter, text: 'Nieuw doel...', status: 'yellow' }
               updateData('quarterlyGoals', [...data.quarterlyGoals, goal])
             }
-
-            // Delete quarterly goal
             const deleteQuarterlyGoal = (id: string) => {
               updateData('quarterlyGoals', data.quarterlyGoals.filter(g => g.id !== id))
             }
-
-            // Update revenue goals
             const updateRevenueGoal = (field: 'annualTarget', value: number) => {
               updateData('revenueGoals', { ...data.revenueGoals, [field]: value })
             }
-
             const updateQuarterRevenueGoal = (q: string, field: 'target' | 'realized', value: number) => {
               updateData('revenueGoals', {
                 ...data.revenueGoals,
@@ -3443,9 +3452,10 @@ export default function SalesDashboard() {
               })
             }
 
-            // Calculate total realized
             const totalRealized = data.revenueGoals.quarters.reduce((acc, q) => acc + q.realized, 0)
-            const annualProgress = (totalRealized / data.revenueGoals.annualTarget) * 100
+            const annualProgress = (currentARR / annualTarget) * 100
+
+            const fmtEur = (n: number) => `€${Math.round(n).toLocaleString('nl-NL')}`
 
             return (
               <div className="space-y-4">
@@ -3463,61 +3473,66 @@ export default function SalesDashboard() {
                   {/* Annual Target */}
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className={`text-[12px] ${colors.textSecondary}`}>Annual Target</span>
+                      <span className={`text-[12px] ${colors.textSecondary}`}>Jaardoel {new Date().getFullYear()}</span>
                       {editMode ? (
                         <input
                           type="number"
-                          value={data.revenueGoals.annualTarget}
+                          value={annualTarget}
                           onChange={(e) => updateRevenueGoal('annualTarget', parseInt(e.target.value) || 0)}
                           className={`w-32 px-2 py-1 rounded text-right text-[14px] font-mono ${colors.bgInput} ${colors.textPrimary} border ${colors.border} focus:outline-none focus:ring-1 focus:ring-[#0047FF]`}
                         />
                       ) : (
-                        <span className={`text-[16px] font-bold font-mono ${colors.accent}`}>€{data.revenueGoals.annualTarget.toLocaleString()}</span>
+                        <span className={`text-[16px] font-bold font-mono ${colors.accent}`}>{fmtEur(annualTarget)}</span>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className={`flex-1 h-3 rounded-full ${colors.bgInput} overflow-hidden`}>
                         <div 
-                          className={`h-full rounded-full ${annualProgress >= 75 ? 'bg-green-500' : annualProgress >= 50 ? 'bg-amber-500' : 'bg-red-500'}`}
+                          className={`h-full rounded-full ${annualProgress >= 90 ? 'bg-green-500' : annualProgress >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}
                           style={{ width: `${Math.min(annualProgress, 100)}%` }}
                         />
                       </div>
                       <span className={`text-[12px] font-mono ${colors.textSecondary}`}>{annualProgress.toFixed(1)}%</span>
                     </div>
                     <div className="flex justify-between mt-1">
-                      <span className={`text-[11px] ${colors.textTertiary}`}>Realized: €{totalRealized.toLocaleString()}</span>
-                      <span className={`text-[11px] ${colors.textTertiary}`}>Remaining: €{(data.revenueGoals.annualTarget - totalRealized).toLocaleString()}</span>
+                      <span className={`text-[11px] ${colors.textTertiary}`}>Bestaande ARR: {fmtEur(currentARR)}</span>
+                      <span className={`text-[11px] ${colors.textTertiary}`}>Gap: {fmtEur(Math.max(gap, 0))}</span>
                     </div>
                   </div>
 
                   {/* Quarterly Breakdown */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    {data.revenueGoals.quarters.map((q) => {
-                      const progress = q.target > 0 ? (q.realized / q.target) * 100 : 0
+                    {data.revenueGoals.quarters.map((q, qi) => {
+                      // Q1: auto-calculate recurring from retainer jan × 3
+                      const recurring = qi === 0 ? q1Recurring : Math.round(currentMRR * 3)
+                      const realized = q.realized || 0
+                      const displayRealized = realized > 0 ? realized : recurring
+                      const progress = q.target > 0 ? (displayRealized / q.target) * 100 : 0
+                      const statusIcon = progress >= 90 ? '🟢' : progress >= 70 ? '🟡' : '🔴'
                       return (
                         <div key={q.q} className={`p-3 rounded-md ${colors.bgInput}`}>
                           <div className="flex items-center justify-between mb-1">
-                            <span className={`text-[12px] font-medium ${colors.textPrimary}`}>{q.q}</span>
+                            <span className={`text-[12px] font-medium ${colors.textPrimary}`}>{q.q} {statusIcon}</span>
                             <span className={`text-[10px] font-mono ${progress >= 90 ? 'text-green-500' : progress >= 70 ? 'text-amber-500' : 'text-red-500'}`}>
                               {progress.toFixed(0)}%
                             </span>
                           </div>
                           {editMode ? (
                             <div className="space-y-1">
-                              <input
-                                type="number"
-                                value={q.target}
-                                onChange={(e) => updateQuarterRevenueGoal(q.q, 'target', parseInt(e.target.value) || 0)}
-                                placeholder="Target"
-                                className={`w-full px-2 py-1 rounded text-[11px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
-                              />
-                              <input
-                                type="number"
-                                value={q.realized}
-                                onChange={(e) => updateQuarterRevenueGoal(q.q, 'realized', parseInt(e.target.value) || 0)}
-                                placeholder="Realized"
-                                className={`w-full px-2 py-1 rounded text-[11px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
-                              />
+                              <div className="flex items-center gap-1">
+                                <span className={`text-[9px] ${colors.textTertiary} w-12`}>Target</span>
+                                <input type="number" value={q.target}
+                                  onChange={(e) => updateQuarterRevenueGoal(q.q, 'target', parseInt(e.target.value) || 0)}
+                                  className={`w-full px-2 py-1 rounded text-[11px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
+                                />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className={`text-[9px] ${colors.textTertiary} w-12`}>Realized</span>
+                                <input type="number" value={q.realized}
+                                  onChange={(e) => updateQuarterRevenueGoal(q.q, 'realized', parseInt(e.target.value) || 0)}
+                                  className={`w-full px-2 py-1 rounded text-[11px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
+                                />
+                              </div>
                             </div>
                           ) : (
                             <>
@@ -3528,8 +3543,11 @@ export default function SalesDashboard() {
                                 />
                               </div>
                               <div className="flex justify-between">
-                                <span className={`text-[10px] font-mono ${colors.textTertiary}`}>€{(q.realized/1000).toFixed(0)}K</span>
-                                <span className={`text-[10px] font-mono ${colors.textSecondary}`}>€{(q.target/1000).toFixed(0)}K</span>
+                                <span className={`text-[10px] font-mono ${colors.textTertiary}`}>Recurring: {fmtEur(recurring)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className={`text-[10px] font-mono ${colors.textTertiary}`}>{realized > 0 ? `Actual: ${fmtEur(realized)}` : ''}</span>
+                                <span className={`text-[10px] font-mono ${colors.textSecondary}`}>{fmtEur(q.target)}</span>
                               </div>
                             </>
                           )}
@@ -3539,11 +3557,94 @@ export default function SalesDashboard() {
                   </div>
                 </div>
 
-                {/* KPI Scoreboard */}
+                {/* Revenue Gap Calculator */}
                 <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
-                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>KPI Scoreboard</h3>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Revenue Gap Analyse</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+                    {/* Main gap card */}
+                    <div className={`p-4 rounded-md ${colors.bgInput} md:col-span-2`}>
+                      <div className={`text-[13px] ${colors.textPrimary} mb-2`}>
+                        {gap > 0 ? (
+                          <>Je hebt nog <span className="font-bold font-mono text-amber-400">{fmtEur(gap)}</span> nodig om je jaardoel te halen</>
+                        ) : (
+                          <>🎉 <span className="font-bold text-green-400">Jaardoel bereikt!</span> Je zit <span className="font-mono text-green-400">{fmtEur(Math.abs(gap))}</span> boven target</>
+                        )}
+                      </div>
+                      {gap > 0 && (
+                        <div className={`text-[12px] ${colors.textSecondary}`}>
+                          Dat is <span className="font-bold font-mono text-amber-300">{fmtEur(neededPerMonth)}/maand</span> aan nieuwe deals in de komende <span className="font-bold">{monthsRemaining} maanden</span>
+                        </div>
+                      )}
+                      
+                      {/* Progress bar */}
+                      <div className="mt-3">
+                        <div className={`h-4 rounded-full ${colors.bgCard} overflow-hidden flex`}>
+                          <div className="h-full bg-green-600 rounded-l-full" style={{ width: `${Math.min((currentARR / annualTarget) * 100, 100)}%` }} />
+                          {gap > 0 && <div className="h-full bg-amber-600/40" style={{ width: `${Math.min((gap / annualTarget) * 100, 100 - (currentARR / annualTarget) * 100)}%` }} />}
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <span className={`text-[10px] font-mono text-green-400`}>Bestaand: {fmtEur(currentARR)}</span>
+                          <span className={`text-[10px] font-mono ${gap > 0 ? 'text-amber-400' : 'text-green-400'}`}>Target: {fmtEur(annualTarget)}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick stats */}
+                    <div className="space-y-2">
+                      <div className={`p-3 rounded-md ${colors.bgInput}`}>
+                        <div className={`text-[10px] ${colors.textTertiary}`}>Huidige MRR</div>
+                        <div className={`text-[16px] font-bold font-mono ${colors.textPrimary}`}>{fmtEur(currentMRR)}</div>
+                      </div>
+                      <div className={`p-3 rounded-md ${colors.bgInput}`}>
+                        <div className={`text-[10px] ${colors.textTertiary}`}>Gem. retainer/mnd</div>
+                        <div className={`text-[16px] font-bold font-mono ${colors.textPrimary}`}>{fmtEur(avgMRR)}</div>
+                      </div>
+                      <div className={`p-3 rounded-md ${colors.bgInput}`}>
+                        <div className={`text-[10px] ${colors.textTertiary}`}>Deals nodig (à gem.)</div>
+                        <div className={`text-[16px] font-bold font-mono ${gap > 0 ? 'text-amber-400' : 'text-green-400'}`}>
+                          {gap > 0 ? Math.ceil(gap / (avgMRR * 12 || 1)) : '✓'}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Waterfall breakdown */}
+                  <div className="flex items-end gap-1 h-24">
+                    {/* Bestaande ARR bar */}
+                    <div className="flex-1 flex flex-col items-center">
+                      <div className="w-full bg-green-600 rounded-t" style={{ height: `${Math.min((currentARR / annualTarget) * 100, 100)}%` }} />
+                      <span className={`text-[9px] font-mono ${colors.textTertiary} mt-1`}>Bestaand</span>
+                    </div>
+                    {/* Per quarter needed */}
+                    {data.revenueGoals.quarters.map((q, i) => {
+                      const qGap = Math.max(q.target - (i === 0 ? q1Recurring : Math.round(currentMRR * 3)), 0)
+                      return (
+                        <div key={q.q} className="flex-1 flex flex-col items-center">
+                          <div className={`w-full rounded-t ${qGap > 0 ? 'bg-amber-600/60' : 'bg-green-600/40'}`} style={{ height: `${Math.min((q.target / annualTarget) * 100 * 4, 100)}%` }} />
+                          <span className={`text-[9px] font-mono ${colors.textTertiary} mt-1`}>{q.q}</span>
+                        </div>
+                      )
+                    })}
+                    {/* Target line */}
+                    <div className="flex-1 flex flex-col items-center">
+                      <div className="w-full bg-blue-500/40 rounded-t border-t-2 border-blue-400" style={{ height: '100%' }} />
+                      <span className={`text-[9px] font-mono ${colors.textTertiary} mt-1`}>Target</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* KPI Scoreboard (targets editable, current auto-computed) */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>KPI Scoreboard <span className={`text-[10px] ${colors.textTertiary}`}>(live data)</span></h3>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {data.kpiScoreboard.map((kpi) => {
+                    {[
+                      { id: 'k1', name: 'Actieve klanten', current: activeClients.length, target: data.kpiScoreboard.find(k => k.id === 'k1')?.target ?? 45, unit: '' },
+                      { id: 'k2', name: 'MRR (huidig)', current: currentMRR, target: data.kpiScoreboard.find(k => k.id === 'k2')?.target ?? 95000, unit: '€' },
+                      { id: 'k3', name: 'ARR', current: currentARR, target: data.kpiScoreboard.find(k => k.id === 'k3')?.target ?? 1000000, unit: '€' },
+                      { id: 'k4', name: 'Gem. retainer', current: avgMRR, target: data.kpiScoreboard.find(k => k.id === 'k4')?.target ?? 4000, unit: '€' },
+                      { id: 'k5', name: 'Nieuwe deals 2026', current: new2026, target: data.kpiScoreboard.find(k => k.id === 'k5')?.target ?? 15, unit: '' },
+                    ].map((kpi) => {
                       const status = getKpiStatus(kpi)
                       return (
                         <div key={kpi.id} className={`p-3 rounded-md ${colors.bgInput} border-l-2 ${
@@ -3557,33 +3658,102 @@ export default function SalesDashboard() {
                           </div>
                           {editMode && editingKpiId === kpi.id ? (
                             <div className="space-y-1">
-                              <input
-                                type="number"
-                                value={kpi.current}
-                                onChange={(e) => updateKpi(kpi.id, 'current', parseFloat(e.target.value) || 0)}
-                                className={`w-full px-2 py-1 rounded text-[12px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
-                              />
-                              <input
-                                type="number"
-                                value={kpi.target}
-                                onChange={(e) => updateKpi(kpi.id, 'target', parseFloat(e.target.value) || 0)}
-                                className={`w-full px-2 py-1 rounded text-[12px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
-                              />
+                              <div className={`text-[10px] ${colors.textTertiary}`}>Current (auto): {kpi.unit === '€' ? fmtEur(kpi.current) : kpi.current}</div>
+                              <div className="flex items-center gap-1">
+                                <span className={`text-[9px] ${colors.textTertiary}`}>Target:</span>
+                                <input type="number" value={kpi.target}
+                                  onChange={(e) => updateKpi(kpi.id, 'target', parseFloat(e.target.value) || 0)}
+                                  className={`w-full px-2 py-1 rounded text-[12px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
+                                />
+                              </div>
                               <button onClick={() => setEditingKpiId(null)} className="text-[10px] text-green-500">Done</button>
                             </div>
                           ) : (
                             <div onClick={() => editMode && setEditingKpiId(kpi.id)} className={editMode ? 'cursor-pointer' : ''}>
                               <span className={`text-[16px] font-bold font-mono ${colors.textPrimary}`}>
-                                {kpi.unit === '€' ? `€${kpi.current.toLocaleString()}` : kpi.unit === '%' ? `${kpi.current}%` : kpi.current}
+                                {kpi.unit === '€' ? fmtEur(kpi.current) : kpi.current}
                               </span>
                               <div className={`text-[10px] ${colors.textTertiary}`}>
-                                Target: {kpi.unit === '€' ? `€${kpi.target.toLocaleString()}` : kpi.unit === '%' ? `${kpi.target}%` : kpi.target}
+                                Target: {kpi.unit === '€' ? fmtEur(kpi.target) : kpi.target}
                               </div>
                             </div>
                           )}
                         </div>
                       )
                     })}
+                  </div>
+                </div>
+
+                {/* Monthly Revenue Forecast */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Maandelijkse Forecast</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className={colors.textTertiary}>
+                          <th className="text-left py-1 px-2 font-medium">Maand</th>
+                          <th className="text-right py-1 px-2 font-medium">Bestaande MRR</th>
+                          <th className="text-right py-1 px-2 font-medium">Nieuwe deals</th>
+                          <th className="text-right py-1 px-2 font-medium">Totaal</th>
+                          <th className="text-right py-1 px-2 font-medium">Target</th>
+                          <th className="text-right py-1 px-2 font-medium">Gap</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {forecast.map((f, i) => {
+                          const bestaandMRR = getMonthlyMRR(i)
+                          const totaal = bestaandMRR + f.nieuwDeals
+                          const target = f.target
+                          const monthGap = totaal - target
+                          const isPast = i < currentMonth - 1
+                          return (
+                            <tr key={f.month} className={`border-t ${colors.border} ${isPast ? 'opacity-60' : ''}`}>
+                              <td className={`py-1.5 px-2 font-medium ${i === currentMonth - 1 ? 'text-blue-400' : colors.textSecondary}`}>
+                                {MONTH_NAMES[i]} {i === currentMonth - 1 ? '◀' : ''}
+                              </td>
+                              <td className={`py-1.5 px-2 text-right font-mono ${colors.textSecondary}`}>{fmtEur(bestaandMRR)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono">
+                                {editMode ? (
+                                  <input type="number" value={f.nieuwDeals}
+                                    onChange={(e) => updateForecast(f.month, 'nieuwDeals', parseInt(e.target.value) || 0)}
+                                    className={`w-20 px-1 py-0.5 rounded text-right text-[11px] font-mono ${colors.bgInput} ${colors.textPrimary} border ${colors.border}`}
+                                  />
+                                ) : (
+                                  <span className={f.nieuwDeals > 0 ? 'text-green-400' : colors.textTertiary}>{fmtEur(f.nieuwDeals)}</span>
+                                )}
+                              </td>
+                              <td className={`py-1.5 px-2 text-right font-mono font-medium ${colors.textPrimary}`}>{fmtEur(totaal)}</td>
+                              <td className="py-1.5 px-2 text-right font-mono">
+                                {editMode ? (
+                                  <input type="number" value={target}
+                                    onChange={(e) => updateForecast(f.month, 'target', parseInt(e.target.value) || 0)}
+                                    className={`w-20 px-1 py-0.5 rounded text-right text-[11px] font-mono ${colors.bgInput} ${colors.textPrimary} border ${colors.border}`}
+                                  />
+                                ) : (
+                                  <span className={colors.textSecondary}>{fmtEur(target)}</span>
+                                )}
+                              </td>
+                              <td className={`py-1.5 px-2 text-right font-mono font-medium ${monthGap >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                {monthGap >= 0 ? '+' : ''}{fmtEur(monthGap)}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                        {/* Totals row */}
+                        <tr className={`border-t-2 ${colors.border} font-medium`}>
+                          <td className={`py-2 px-2 ${colors.textPrimary}`}>Totaal</td>
+                          <td className={`py-2 px-2 text-right font-mono ${colors.textPrimary}`}>{fmtEur(forecast.reduce((s, _, i) => s + getMonthlyMRR(i), 0))}</td>
+                          <td className={`py-2 px-2 text-right font-mono text-green-400`}>{fmtEur(forecast.reduce((s, f) => s + f.nieuwDeals, 0))}</td>
+                          <td className={`py-2 px-2 text-right font-mono ${colors.textPrimary}`}>{fmtEur(forecast.reduce((s, f, i) => s + getMonthlyMRR(i) + f.nieuwDeals, 0))}</td>
+                          <td className={`py-2 px-2 text-right font-mono ${colors.textSecondary}`}>{fmtEur(forecast.reduce((s, f) => s + f.target, 0))}</td>
+                          <td className={`py-2 px-2 text-right font-mono ${
+                            forecast.reduce((s, f, i) => s + getMonthlyMRR(i) + f.nieuwDeals, 0) - forecast.reduce((s, f) => s + f.target, 0) >= 0 ? 'text-green-400' : 'text-red-400'
+                          }`}>
+                            {(() => { const t = forecast.reduce((s, f, i) => s + getMonthlyMRR(i) + f.nieuwDeals, 0) - forecast.reduce((s, f) => s + f.target, 0); return `${t >= 0 ? '+' : ''}${fmtEur(t)}` })()}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
@@ -3605,8 +3775,7 @@ export default function SalesDashboard() {
                             {goals.map((goal) => (
                               <div key={goal.id} className="flex items-start gap-2 group">
                                 {editMode ? (
-                                  <select
-                                    value={goal.status}
+                                  <select value={goal.status}
                                     onChange={(e) => updateQuarterlyGoal(goal.id, { status: e.target.value as 'green' | 'yellow' | 'red' })}
                                     className={`w-6 h-5 text-[10px] rounded ${colors.bgCard} border ${colors.border}`}
                                   >
@@ -3618,9 +3787,7 @@ export default function SalesDashboard() {
                                   <span className="text-[12px]">{goal.status === 'green' ? '🟢' : goal.status === 'yellow' ? '🟡' : '🔴'}</span>
                                 )}
                                 {editMode && editingGoalId === goal.id ? (
-                                  <input
-                                    type="text"
-                                    value={goal.text}
+                                  <input type="text" value={goal.text}
                                     onChange={(e) => updateQuarterlyGoal(goal.id, { text: e.target.value })}
                                     onBlur={() => setEditingGoalId(null)}
                                     onKeyDown={(e) => e.key === 'Enter' && setEditingGoalId(null)}
@@ -3628,21 +3795,16 @@ export default function SalesDashboard() {
                                     className={`flex-1 px-1 py-0.5 rounded text-[11px] ${colors.bgCard} ${colors.textSecondary} border ${colors.border}`}
                                   />
                                 ) : (
-                                  <span 
-                                    onClick={() => editMode && setEditingGoalId(goal.id)}
+                                  <span onClick={() => editMode && setEditingGoalId(goal.id)}
                                     className={`flex-1 text-[11px] ${colors.textSecondary} ${editMode ? 'cursor-pointer hover:underline' : ''}`}
-                                  >
-                                    {goal.text}
-                                  </span>
+                                  >{goal.text}</span>
                                 )}
                                 {editMode && (
                                   <button onClick={() => deleteQuarterlyGoal(goal.id)} className="text-red-500 text-[10px] opacity-0 group-hover:opacity-100">×</button>
                                 )}
                               </div>
                             ))}
-                            {goals.length === 0 && (
-                              <span className={`text-[11px] ${colors.textTertiary} italic`}>No goals</span>
-                            )}
+                            {goals.length === 0 && <span className={`text-[11px] ${colors.textTertiary} italic`}>No goals</span>}
                           </div>
                         </div>
                       )
@@ -3654,33 +3816,23 @@ export default function SalesDashboard() {
                 <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
                   <div className="flex items-center justify-between mb-3">
                     <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Master Task List</h3>
-                    <button
-                      onClick={() => setShowAddTask(!showAddTask)}
+                    <button onClick={() => setShowAddTask(!showAddTask)}
                       className={`px-2 py-1 rounded text-[11px] font-medium ${colors.accentBg} text-white ${colors.accentHover}`}
-                    >
-                      + Add Task
-                    </button>
+                    >+ Add Task</button>
                   </div>
 
-                  {/* Add Task Form */}
                   {showAddTask && (
                     <div className={`p-3 rounded-md ${colors.bgInput} mb-3 space-y-2`}>
-                      <input
-                        type="text"
-                        placeholder="Task title..."
-                        value={newTask.title}
+                      <input type="text" placeholder="Task title..." value={newTask.title}
                         onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
                         className={`w-full px-3 py-2 rounded text-[13px] ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
                       />
                       <div className="flex gap-2">
-                        <input
-                          type="date"
-                          value={newTask.deadline}
+                        <input type="date" value={newTask.deadline}
                           onChange={(e) => setNewTask({ ...newTask, deadline: e.target.value })}
                           className={`flex-1 px-2 py-1 rounded text-[12px] ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
                         />
-                        <select
-                          value={newTask.category}
+                        <select value={newTask.category}
                           onChange={(e) => setNewTask({ ...newTask, category: e.target.value as MasterTask['category'] })}
                           className={`px-2 py-1 rounded text-[12px] ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
                         >
@@ -3692,8 +3844,7 @@ export default function SalesDashboard() {
                           <option value="Klanten">Klanten</option>
                           <option value="Pipeline">Pipeline</option>
                         </select>
-                        <select
-                          value={newTask.priority}
+                        <select value={newTask.priority}
                           onChange={(e) => setNewTask({ ...newTask, priority: e.target.value as MasterTask['priority'] })}
                           className={`px-2 py-1 rounded text-[12px] ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
                         >
@@ -3706,11 +3857,8 @@ export default function SalesDashboard() {
                     </div>
                   )}
 
-                  {/* Filters */}
                   <div className="flex flex-wrap gap-2 mb-3">
-                    <select
-                      value={taskFilter}
-                      onChange={(e) => setTaskFilter(e.target.value)}
+                    <select value={taskFilter} onChange={(e) => setTaskFilter(e.target.value)}
                       className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} ${colors.textSecondary} border ${colors.border}`}
                     >
                       <option value="all">All Categories</option>
@@ -3720,9 +3868,7 @@ export default function SalesDashboard() {
                       <option value="Strategy">Strategy</option>
                       <option value="Pipeline">Pipeline</option>
                     </select>
-                    <select
-                      value={taskPriorityFilter}
-                      onChange={(e) => setTaskPriorityFilter(e.target.value)}
+                    <select value={taskPriorityFilter} onChange={(e) => setTaskPriorityFilter(e.target.value)}
                       className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} ${colors.textSecondary} border ${colors.border}`}
                     >
                       <option value="all">All Priorities</option>
@@ -3730,9 +3876,7 @@ export default function SalesDashboard() {
                       <option value="medium">Medium</option>
                       <option value="low">Low</option>
                     </select>
-                    <select
-                      value={taskStatusFilter}
-                      onChange={(e) => setTaskStatusFilter(e.target.value)}
+                    <select value={taskStatusFilter} onChange={(e) => setTaskStatusFilter(e.target.value)}
                       className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} ${colors.textSecondary} border ${colors.border}`}
                     >
                       <option value="all">All Status</option>
@@ -3741,29 +3885,22 @@ export default function SalesDashboard() {
                     </select>
                   </div>
 
-                  {/* Task List */}
                   <div className="space-y-1.5">
                     {filteredTasks.sort((a, b) => {
-                      // Sort by done status, then priority, then deadline
                       if (a.done !== b.done) return a.done ? 1 : -1
                       const priorityOrder = { high: 0, medium: 1, low: 2 }
                       if (priorityOrder[a.priority] !== priorityOrder[b.priority]) return priorityOrder[a.priority] - priorityOrder[b.priority]
                       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
                     }).map((task) => (
                       <div key={task.id} className={`flex items-center gap-3 p-2 rounded-md ${colors.bgInput} ${task.done ? 'opacity-50' : ''} group`}>
-                        <button
-                          onClick={() => toggleTaskDone(task.id)}
+                        <button onClick={() => toggleTaskDone(task.id)}
                           className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center ${
                             task.done ? 'bg-green-500 border-green-500 text-white' : `${colors.border} hover:border-green-500`
                           }`}
-                        >
-                          {task.done && '✓'}
-                        </button>
+                        >{task.done && '✓'}</button>
                         <div className="flex-1 min-w-0">
                           {editingTaskId === task.id ? (
-                            <input
-                              type="text"
-                              value={task.title}
+                            <input type="text" value={task.title}
                               onChange={(e) => updateTask(task.id, { title: e.target.value })}
                               onBlur={() => setEditingTaskId(null)}
                               onKeyDown={(e) => e.key === 'Enter' && setEditingTaskId(null)}
@@ -3771,17 +3908,13 @@ export default function SalesDashboard() {
                               className={`w-full px-2 py-1 rounded text-[13px] ${colors.bgCard} ${colors.textPrimary} border ${colors.border}`}
                             />
                           ) : (
-                            <span 
-                              onClick={() => setEditingTaskId(task.id)}
+                            <span onClick={() => setEditingTaskId(task.id)}
                               className={`text-[13px] cursor-pointer ${task.done ? 'line-through' : ''} ${colors.textPrimary}`}
-                            >
-                              {task.title}
-                            </span>
+                            >{task.title}</span>
                           )}
                         </div>
                         <span className={`text-[10px] font-mono ${colors.textTertiary} flex-shrink-0`}>{task.deadline}</span>
-                        <button
-                          onClick={() => setActiveTab(task.category.toLowerCase().replace(' ', '') as TabId)}
+                        <button onClick={() => setActiveTab(task.category.toLowerCase().replace(' ', '') as TabId)}
                           className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${
                             task.category === 'Content' ? 'bg-blue-500/20 text-blue-400' :
                             task.category === 'Agency OS' ? 'bg-purple-500/20 text-purple-400' :
@@ -3789,16 +3922,12 @@ export default function SalesDashboard() {
                             task.category === 'Pipeline' ? 'bg-amber-500/20 text-amber-400' :
                             `${colors.bgActive} ${colors.textSecondary}`
                           } hover:opacity-80`}
-                        >
-                          {task.category}
-                        </button>
+                        >{task.category}</button>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${
                           task.priority === 'high' ? 'bg-red-500/20 text-red-400' :
                           task.priority === 'medium' ? 'bg-amber-500/20 text-amber-400' :
                           'bg-gray-500/20 text-gray-400'
-                        }`}>
-                          {task.priority}
-                        </span>
+                        }`}>{task.priority}</span>
                         <button onClick={() => deleteTask(task.id)} className="text-red-500 text-[12px] opacity-0 group-hover:opacity-100 flex-shrink-0">×</button>
                       </div>
                     ))}
@@ -3815,44 +3944,7 @@ export default function SalesDashboard() {
           {/* RETAINERS TAB */}
           {/* ============================================ */}
           {activeTab === 'retainers' && (() => {
-            // Retainer data hardcoded from retainer-forecast-2026.json
-            const RETAINER_CLIENTS = [
-              { klant: 'Tours & Tickets', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 72000, jan: 6000, startJaar: 2022 },
-              { klant: 'Kisch', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 12000, jan: 1000, startJaar: 2022 },
-              { klant: 'Spirit', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 51000, jan: 4250, startJaar: 2022 },
-              { klant: 'SB+WAA+Fun', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 16800, jan: 1400, startJaar: 2022 },
-              { klant: 'Caron', recurring: true, lead: 'Merijn', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 7650, jan: 2325, startJaar: 2023 },
-              { klant: 'The Branding Club NL', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'HubSpot / Digital marketing', bedrag: 30000, jan: 2500, startJaar: 2023 },
-              { klant: 'Talent Care', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2023 },
-              { klant: 'Restaurants Shaul', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEA', bedrag: 12000, jan: 1000, startJaar: 2024 },
-              { klant: 'Digital Notary', recurring: true, lead: 'Carbon', status: 'Actief', onderdeel: 'SEA', bedrag: 43200, jan: 3600, startJaar: 2024 },
-              { klant: 'Padelpoints', recurring: true, lead: 'Max', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 21600, jan: 1800, startJaar: 2024 },
-              { klant: 'Franky Amsterdam', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 36000, jan: 3000, startJaar: 2024 },
-              { klant: 'The Core', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, jan: 1500, startJaar: 2024 },
-              { klant: 'Ripple Surf Therapy', recurring: true, lead: 'Loes', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 12000, jan: 1000, startJaar: 2025 },
-              { klant: 'FlorisDaken / Mankracht', recurring: true, lead: 'David', status: 'Actief', onderdeel: 'SEA', bedrag: 9600, jan: 800, startJaar: 2025 },
-              { klant: 'Rust Zacht', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'SEA', bedrag: 24000, jan: 2000, startJaar: 2025 },
-              { klant: 'Rotterdam Chemicals', recurring: false, lead: 'RQS', status: 'Start nnb', onderdeel: 'HubSpot', bedrag: 0, jan: 0, startJaar: 2025 },
-              { klant: 'Eginstill', recurring: true, lead: 'Charlotte', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 14400, jan: 1200, startJaar: 2025 },
-              { klant: 'Floryn', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 38640, jan: 3220, startJaar: 2025 },
-              { klant: 'Student Experience', recurring: true, lead: 'Cold', status: 'Actief', onderdeel: 'Dashboarding', bedrag: 10800, jan: 900, startJaar: 2025 },
-              { klant: 'App4Sales', recurring: true, lead: 'Erik', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 1900, jan: 950, startJaar: 2025 },
-              { klant: 'BunBun/Little Bonfire', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, jan: 1500, startJaar: 2025 },
-              { klant: 'Momentum', recurring: true, lead: 'Lidewij', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 33600, jan: 2800, startJaar: 2025 },
-              { klant: 'Stories', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2025 },
-              { klant: 'Stories (HubSpot)', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'HubSpot', bedrag: 9000, jan: 750, startJaar: 2025 },
-              { klant: 'Unity Units', recurring: true, lead: 'Benjamin Tug', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 86400, jan: 8000, startJaar: 2025 },
-              { klant: 'Displine', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 40800, jan: 3400, startJaar: 2025 },
-              { klant: 'Distillery', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, jan: 3200, startJaar: 2025 },
-              { klant: 'Lake Cycling', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 74400, jan: 6200, startJaar: 2025 },
-              { klant: 'Johan Cruyff', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, jan: 2000, startJaar: 2025 },
-              { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, jan: 6600, startJaar: 2026 },
-              { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, jan: 6150, startJaar: 2026 },
-              { klant: 'Kremer Collectie', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, startJaar: 2026 },
-              { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 37800, jan: 0, startJaar: 2026 },
-              { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Start nnb', onderdeel: 'Digital Marketing', bedrag: 29000, jan: 0, startJaar: 2026 },
-              { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Start nnb', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, startJaar: 2026 },
-            ]
+            // Retainer data from top-level RETAINER_CLIENTS constant
 
             const MONTHS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
             const MONTH_TARGET = 994690 / 12
@@ -3900,8 +3992,8 @@ export default function SalesDashboard() {
             const fmtEurK = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : fmtEur(n)
 
             // Monthly calculations: use jan actual data, estimate rest from bedrag/12
-            const getClientMonthly = (c: typeof RETAINER_CLIENTS[0]) => {
-              if (c.status === 'Start nnb' || c.bedrag === 0) return Array(12).fill(0)
+            const getClientMonthly = (c: (typeof RETAINER_CLIENTS)[number]) => {
+              if ((c.status as string) === 'Start nnb' || c.bedrag === 0) return Array(12).fill(0)
               const monthly = c.bedrag / 12
               return [c.jan, ...Array(11).fill(monthly)]
             }
