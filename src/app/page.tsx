@@ -865,8 +865,8 @@ const DEFAULT_CLIENTS: Client[] = [
   { id: 'c31', naam: 'Synvest', jaar: 2026, lead: 'Jasper', dashboard: false, status: 'Actief', vertical: 'Leadgen', services: ['HubSpot'] },
   { id: 'c32', naam: 'Kremer Collectie', jaar: 2026, lead: 'RQS', dashboard: false, status: 'Actief', vertical: '', services: ['SEO'] },
   { id: 'c33', naam: 'Renaissance/CIMA', jaar: 2026, lead: 'Matthijs', dashboard: false, status: 'Actief', vertical: 'Hospitality', services: ['Google Ads', 'Meta Ads', 'Local SEO', 'Geo'] },
-  { id: 'c34', naam: 'Carelli', jaar: 2026, lead: 'RQS', dashboard: false, status: 'Upcoming', vertical: 'E-commerce', services: ['Meta Ads', 'Google Ads'] },
-  { id: 'c35', naam: 'Mr Fris', jaar: 2026, lead: 'RQS', dashboard: false, status: 'Upcoming', vertical: 'E-commerce', services: ['Meta Ads', 'Google Ads', 'TikTok Ads'] },
+  { id: 'c34', naam: 'Carelli', jaar: 2026, lead: 'RQS', dashboard: false, status: 'Actief', vertical: 'E-commerce', services: ['Meta Ads', 'Google Ads'] },
+  { id: 'c35', naam: 'Mr Fris', jaar: 2026, lead: 'RQS', dashboard: false, status: 'Actief', vertical: 'E-commerce', services: ['Meta Ads', 'Google Ads', 'TikTok Ads'] },
 ]
 
 // Live performance data (Last 7 Days from Agile Analytics)
@@ -1004,12 +1004,12 @@ const RETAINER_CLIENTS = [
   { klant: 'Distillery', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, jan: 3200, startJaar: 2025 },
   { klant: 'Lake Cycling', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 74400, jan: 6200, startJaar: 2025 },
   { klant: 'Johan Cruyff', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, jan: 2000, startJaar: 2025 },
-  { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, jan: 6600, startJaar: 2026 },
-  { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, jan: 6150, startJaar: 2026 },
-  { klant: 'Kremer Collectie', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, startJaar: 2026 },
-  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 37800, jan: 0, startJaar: 2026 },
-  { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Start nnb', onderdeel: 'Digital Marketing', bedrag: 29000, jan: 0, startJaar: 2026 },
-  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Start nnb', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, startJaar: 2026 },
+  { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, jan: 6600, feb: 4800, startJaar: 2026, startMonth: 1 },
+  { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, jan: 6150, feb: 6150, startJaar: 2026, startMonth: 1 },
+  { klant: 'Kremer Collectie', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, feb: 2300, startJaar: 2026, startMonth: 1 },
+  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 37800, jan: 0, feb: 4800, startJaar: 2026, startMonth: 2 },
+  { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 29000, jan: 0, feb: 5000, startJaar: 2026, startMonth: 2 },
+  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, feb: 3800, startJaar: 2026, startMonth: 2 },
 ] as const
 
 // Computed retainer KPIs
@@ -3362,15 +3362,23 @@ export default function SalesDashboard() {
             const monthsRemaining = Math.max(12 - currentMonth, 1)
             const neededPerMonth = Math.round(gap / monthsRemaining)
 
-            // Q1 recurring from retainer jan data × 3
-            const q1Recurring = Math.round(activeClients.reduce((sum, c) => sum + c.jan, 0) * 3)
-
-            // Monthly MRR from retainers (jan = actual, rest = bedrag/12)
+            // Monthly MRR from retainers — uses actual jan/feb data + startMonth for accurate per-month revenue
             const MONTH_NAMES = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
             const getMonthlyMRR = (monthIdx: number) => {
-              if (monthIdx === 0) return activeClients.reduce((sum, c) => sum + c.jan, 0)
-              return currentMRR
+              return activeClients.reduce((sum, c) => {
+                const sm = (c as any).startMonth as number | undefined
+                const startIdx = sm ? sm - 1 : 0
+                if (monthIdx < startIdx) return sum // client hasn't started yet
+                const feb = (c as any).feb as number | undefined
+                if (monthIdx === 0) return sum + c.jan
+                if (monthIdx === 1 && feb) return sum + feb
+                // For other months, use feb value (stabilized retainer) or bedrag/12
+                return sum + (feb || c.jan || c.bedrag / 12)
+              }, 0)
             }
+
+            // Q1 recurring from actual monthly data
+            const q1Recurring = Math.round(getMonthlyMRR(0) + getMonthlyMRR(1) + getMonthlyMRR(2))
 
             // Ensure monthlyForecast exists
             const forecast = data.monthlyForecast && data.monthlyForecast.length === 12
@@ -3991,21 +3999,45 @@ export default function SalesDashboard() {
             const fmtEur = (n: number) => n === 0 ? '€0' : `€${n.toLocaleString('nl-NL')}`
             const fmtEurK = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : fmtEur(n)
 
-            // Monthly calculations: use jan actual data, estimate rest from bedrag/12
+            // Monthly calculations: use actual jan/feb data, estimate rest from bedrag / active months
             const getClientMonthly = (c: (typeof RETAINER_CLIENTS)[number]) => {
-              if ((c.status as string) === 'Start nnb' || c.bedrag === 0) return Array(12).fill(0)
-              const monthly = c.bedrag / 12
-              return [c.jan, ...Array(11).fill(monthly)]
+              if (c.bedrag === 0) return Array(12).fill(0)
+              const sm = (c as any).startMonth as number | undefined // 1=jan, 2=feb, etc.
+              const startIdx = sm ? sm - 1 : 0 // 0-indexed month where client starts
+              const feb = (c as any).feb as number | undefined
+              
+              // For clients not yet started (startMonth in future), show 0 before start
+              const result = Array(12).fill(0)
+              
+              if (startIdx === 0) {
+                // Started in jan: use jan actual, feb actual if available, rest estimate
+                const monthlyEstimate = feb || (c.bedrag / 12)
+                result[0] = c.jan
+                for (let i = 1; i < 12; i++) {
+                  result[i] = i === 1 && feb ? feb : monthlyEstimate
+                }
+              } else {
+                // Started later (e.g. feb): 0 before start, then actual/estimated
+                const monthlyEstimate = feb || (c.bedrag / (12 - startIdx))
+                for (let i = startIdx; i < 12; i++) {
+                  result[i] = i === startIdx && feb ? feb : monthlyEstimate
+                }
+              }
+              return result
             }
 
             const monthlyTotals = MONTHS.map((_, mi) => {
               return realClients.reduce((sum, c) => sum + getClientMonthly(c)[mi], 0)
             })
 
-            // Count new clients per month (simplified: new 2026 clients start in jan)
+            // Count new clients per month based on startMonth
             const newClientsPerMonth = MONTHS.map((_, mi) => {
-              if (mi === 0) return realClients.filter(c => c.startJaar === 2026 && c.jan > 0).length
-              return 0
+              return realClients.filter(c => {
+                const sm = (c as any).startMonth as number | undefined
+                if (c.startJaar !== 2026) return false
+                if (sm) return sm - 1 === mi
+                return mi === 0 && c.jan > 0
+              }).length
             })
 
             const statusColor = (s: string) => {
@@ -4022,7 +4054,7 @@ export default function SalesDashboard() {
 
             const activeCount = realClients.filter(c => c.status === 'Actief').length
             const new2026Actief = realClients.filter(c => c.startJaar === 2026 && c.status === 'Actief').length
-            const new2026Nnb = realClients.filter(c => c.startJaar === 2026 && c.status === 'Start nnb').length
+            const new2026Nnb = realClients.filter(c => c.startJaar === 2026 && (c.status as string) === 'Start nnb').length
 
             return (
               <div className="space-y-4">
