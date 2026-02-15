@@ -49,7 +49,7 @@ const DEFAULT_USERS: User[] = [
 
 // All possible tab IDs for permissions
 const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'retainers', 'settings', 'admin']
-const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'retainers'] // tabs that can be assigned permissions
+const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
 const USERS_STORAGE_KEY = 'nodefy-users'
@@ -77,6 +77,7 @@ interface EditableData {
   kpiScoreboard: KPICard[]
   quarterlyGoals: QuarterlyGoal[]
   masterTasks: MasterTask[]
+  monthlyForecast: { month: number; nieuwDeals: number; target: number }[]
 }
 
 // Strategy cockpit types
@@ -972,23 +973,75 @@ const DEFAULT_PIPELINE_DEALS: PipelineDeal[] = [
 // Closed stages — always filter these out of display
 const CLOSED_STAGE_IDS = new Set(['closedwon', 'closedlost', '16170377', '3982505167', '3982505168', '3982505179'])
 
+// Retainer client data (shared between strategy & retainers tabs)
+const RETAINER_CLIENTS = [
+  { klant: 'Tours & Tickets', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 72000, jan: 6000, startJaar: 2022 },
+  { klant: 'Kisch', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 12000, jan: 1000, startJaar: 2022 },
+  { klant: 'Spirit', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 51000, jan: 4250, startJaar: 2022 },
+  { klant: 'SB+WAA+Fun', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 16800, jan: 1400, startJaar: 2022 },
+  { klant: 'Caron', recurring: true, lead: 'Merijn', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 7650, jan: 2325, startJaar: 2023 },
+  { klant: 'The Branding Club NL', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'HubSpot / Digital marketing', bedrag: 30000, jan: 2500, startJaar: 2023 },
+  { klant: 'Talent Care', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2023 },
+  { klant: 'Restaurants Shaul', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEA', bedrag: 12000, jan: 1000, startJaar: 2024 },
+  { klant: 'Digital Notary', recurring: true, lead: 'Carbon', status: 'Actief', onderdeel: 'SEA', bedrag: 43200, jan: 3600, startJaar: 2024 },
+  { klant: 'Padelpoints', recurring: true, lead: 'Max', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 21600, jan: 1800, startJaar: 2024 },
+  { klant: 'Franky Amsterdam', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 36000, jan: 3000, startJaar: 2024 },
+  { klant: 'The Core', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, jan: 1500, startJaar: 2024 },
+  { klant: 'Ripple Surf Therapy', recurring: true, lead: 'Loes', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 12000, jan: 1000, startJaar: 2025 },
+  { klant: 'FlorisDaken / Mankracht', recurring: true, lead: 'David', status: 'Actief', onderdeel: 'SEA', bedrag: 9600, jan: 800, startJaar: 2025 },
+  { klant: 'Rust Zacht', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'SEA', bedrag: 24000, jan: 2000, startJaar: 2025 },
+  { klant: 'Rotterdam Chemicals', recurring: false, lead: 'RQS', status: 'Start nnb', onderdeel: 'HubSpot', bedrag: 0, jan: 0, startJaar: 2025 },
+  { klant: 'Eginstill', recurring: true, lead: 'Charlotte', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 14400, jan: 1200, startJaar: 2025 },
+  { klant: 'Floryn', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 38640, jan: 3220, startJaar: 2025 },
+  { klant: 'Student Experience', recurring: true, lead: 'Cold', status: 'Actief', onderdeel: 'Dashboarding', bedrag: 10800, jan: 900, startJaar: 2025 },
+  { klant: 'App4Sales', recurring: true, lead: 'Erik', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 1900, jan: 950, startJaar: 2025 },
+  { klant: 'BunBun/Little Bonfire', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, jan: 1500, startJaar: 2025 },
+  { klant: 'Momentum', recurring: true, lead: 'Lidewij', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 33600, jan: 2800, startJaar: 2025 },
+  { klant: 'Stories', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2025 },
+  { klant: 'Stories (HubSpot)', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'HubSpot', bedrag: 9000, jan: 750, startJaar: 2025 },
+  { klant: 'Unity Units', recurring: true, lead: 'Benjamin Tug', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 86400, jan: 8000, startJaar: 2025 },
+  { klant: 'Displine', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 40800, jan: 3400, startJaar: 2025 },
+  { klant: 'Distillery', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, jan: 3200, startJaar: 2025 },
+  { klant: 'Lake Cycling', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 74400, jan: 6200, startJaar: 2025 },
+  { klant: 'Johan Cruyff', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, jan: 2000, startJaar: 2025 },
+  { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, jan: 6600, startJaar: 2026 },
+  { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, jan: 6150, startJaar: 2026 },
+  { klant: 'Kremer Collectie', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, startJaar: 2026 },
+  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 37800, jan: 0, startJaar: 2026 },
+  { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Start nnb', onderdeel: 'Digital Marketing', bedrag: 29000, jan: 0, startJaar: 2026 },
+  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Start nnb', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, startJaar: 2026 },
+] as const
+
+// Computed retainer KPIs
+const ACTIVE_RETAINER_CLIENTS = RETAINER_CLIENTS.filter(c => c.status === 'Actief')
+const RETAINER_ARR = ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => sum + c.bedrag, 0)
+const RETAINER_MRR = Math.round(RETAINER_ARR / 12)
+const RETAINER_AVG_MRR = Math.round(RETAINER_MRR / ACTIVE_RETAINER_CLIENTS.length)
+const RETAINER_NEW_2026 = RETAINER_CLIENTS.filter(c => c.startJaar === 2026).length
+
+const DEFAULT_MONTHLY_FORECAST = Array.from({ length: 12 }, (_, i) => ({
+  month: i + 1,
+  nieuwDeals: 0,
+  target: Math.round(1000000 / 12),
+}))
+
 // Default Strategy cockpit data
 const DEFAULT_REVENUE_GOALS: RevenueGoals = {
-  annualTarget: 600000,
+  annualTarget: 1000000,
   quarters: [
-    { q: 'Q1', target: 120000, realized: 95000 },
-    { q: 'Q2', target: 150000, realized: 0 },
-    { q: 'Q3', target: 160000, realized: 0 },
-    { q: 'Q4', target: 170000, realized: 0 },
+    { q: 'Q1', target: 200000, realized: 0 },
+    { q: 'Q2', target: 250000, realized: 0 },
+    { q: 'Q3', target: 275000, realized: 0 },
+    { q: 'Q4', target: 275000, realized: 0 },
   ]
 }
 
 const DEFAULT_KPI_SCOREBOARD: KPICard[] = [
-  { id: 'k1', name: 'Aantal klanten', current: 35, target: 45, unit: '' },
-  { id: 'k2', name: 'MRR', current: 42000, target: 55000, unit: '€' },
-  { id: 'k3', name: 'Gemiddelde dealgrootte', current: 4500, target: 6000, unit: '€' },
-  { id: 'k4', name: 'Churn %', current: 5, target: 3, unit: '%' },
-  { id: 'k5', name: 'Nieuwe deals/maand', current: 3, target: 5, unit: '' },
+  { id: 'k1', name: 'Actieve klanten', current: ACTIVE_RETAINER_CLIENTS.length, target: 45, unit: '' },
+  { id: 'k2', name: 'MRR (huidig)', current: RETAINER_MRR, target: 95000, unit: '€' },
+  { id: 'k3', name: 'ARR', current: RETAINER_ARR, target: 1000000, unit: '€' },
+  { id: 'k4', name: 'Gem. retainer', current: RETAINER_AVG_MRR, target: 4000, unit: '€' },
+  { id: 'k5', name: 'Nieuwe deals 2026', current: RETAINER_NEW_2026, target: 15, unit: '' },
 ]
 
 const DEFAULT_QUARTERLY_GOALS: QuarterlyGoal[] = [
@@ -1156,6 +1209,7 @@ export default function SalesDashboard() {
     kpiScoreboard: DEFAULT_KPI_SCOREBOARD,
     quarterlyGoals: DEFAULT_QUARTERLY_GOALS,
     masterTasks: DEFAULT_MASTER_TASKS,
+    monthlyForecast: DEFAULT_MONTHLY_FORECAST,
   })
 
   // Load from localStorage on mount
@@ -1276,6 +1330,7 @@ export default function SalesDashboard() {
         kpiScoreboard: DEFAULT_KPI_SCOREBOARD,
         quarterlyGoals: DEFAULT_QUARTERLY_GOALS,
         masterTasks: DEFAULT_MASTER_TASKS,
+        monthlyForecast: DEFAULT_MONTHLY_FORECAST,
       }
       setData(defaultData)
       localStorage.removeItem(STORAGE_KEY)
@@ -1312,8 +1367,13 @@ export default function SalesDashboard() {
   // Permission helpers
   const canEdit = currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'custom')
   const canManageUsers = currentUser?.role === 'superadmin'
+  // Tabs that contain sensitive financial data - superadmin only
+  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy']
+  
   const canAccessTab = (tabId: TabId): boolean => {
     if (!currentUser) return false
+    // Retainers & Strategy contain live retainer/revenue data - superadmin ONLY
+    if (SUPERADMIN_ONLY_TABS.includes(tabId) && currentUser.role !== 'superadmin') return false
     if (currentUser.role === 'superadmin') {
       // Ruben can hide tabs for himself via Advanced settings
       if (currentUser.email === 'ruben@nodefy.nl' && tabId !== 'settings' && tabId !== 'admin' && currentUser.permissions[tabId] === false) return false
