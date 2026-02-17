@@ -2434,7 +2434,7 @@ export default function SalesDashboard() {
   // MAIN DASHBOARD
   // ============================================
   return (
-    <main className={`min-h-screen ${colors.bgMain} ${colors.textPrimary} flex transition-colors duration-150 overflow-x-hidden`}>
+    <main className={`min-h-screen ${colors.bgMain} ${colors.textPrimary} flex transition-colors duration-150`}>
       {/* Mobile sidebar toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -2603,7 +2603,7 @@ export default function SalesDashboard() {
       {/* ============================================ */}
       {/* MAIN CONTENT */}
       {/* ============================================ */}
-      <div className="flex-1 min-h-screen lg:ml-0">
+      <div className="flex-1 min-w-0 min-h-screen lg:ml-0">
         <div className="max-w-5xl mx-auto px-3 py-4 sm:px-4 lg:px-6 lg:py-5">
           
           {/* ============================================ */}
