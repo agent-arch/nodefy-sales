@@ -1104,7 +1104,7 @@ const DEFAULT_MASTER_TASKS: MasterTask[] = [
   { id: 'mt6', title: 'KPI targets Q2 bepalen', done: false, deadline: '2026-02-25', category: 'Strategy', priority: 'medium' },
 ]
 
-const STORAGE_KEY = 'nodefy-dashboard-v11'
+const STORAGE_KEY = 'nodefy-dashboard-v12'
 
 // ============================================
 // MEGA PROSPECTS DATA (281 prospects)
