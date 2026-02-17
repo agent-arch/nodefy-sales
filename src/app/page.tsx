@@ -3125,7 +3125,7 @@ export default function SalesDashboard() {
                   <span className={`text-[10px] ${colors.textTertiary} px-1.5 py-0.5 rounded ${colors.bgInput}`}>Last 7 Days</span>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-[13px]">
+                  <table className="w-full text-[13px] min-w-[550px]">
                     <thead>
                       <tr className={`border-b ${colors.border} ${colors.bgInput}`}>
                         <th className={`text-left py-2 px-4 font-medium ${colors.textSecondary}`}>Client</th>
@@ -5451,7 +5451,8 @@ export default function SalesDashboard() {
                       <div className={`px-4 py-2.5 border-b ${colors.border}`}>
                         <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Maandelijks Overzicht 2026</h3>
                       </div>
-                      <table className="w-full text-[12px]">
+                      <div className="overflow-x-auto">
+                      <table className="w-full text-[12px] min-w-[600px]">
                         <thead>
                           <tr className={`border-b ${colors.border}`}>
                             <th className={`text-left px-4 py-2 ${colors.textTertiary} font-medium`}>Maand</th>
@@ -5484,6 +5485,7 @@ export default function SalesDashboard() {
                           })}
                         </tbody>
                       </table>
+                      </div>
                     </div>
 
                     {/* Filters */}
@@ -5504,7 +5506,8 @@ export default function SalesDashboard() {
 
                     {/* Client Retainer Table */}
                     <div className={`${colors.bgCard} rounded-md border ${colors.border} overflow-hidden`}>
-                      <table className="w-full text-[12px]">
+                      <div className="overflow-x-auto">
+                      <table className="w-full text-[12px] min-w-[700px]">
                         <thead>
                           <tr className={`border-b ${colors.border}`}>
                             {[
@@ -5543,6 +5546,7 @@ export default function SalesDashboard() {
                           ))}
                         </tbody>
                       </table>
+                      </div>
                       <div className={`px-4 py-2 border-t ${colors.border} flex justify-between`}>
                         <span className={`text-[11px] ${colors.textTertiary}`}>{sorted.length} klanten</span>
                         <span className={`text-[11px] font-mono ${colors.textPrimary}`}>Totaal: {fmtEur(sorted.reduce((s, c) => s + c.bedrag, 0))}/jaar</span>
