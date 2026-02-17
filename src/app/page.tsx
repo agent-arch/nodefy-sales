@@ -1003,7 +1003,7 @@ const RETAINER_CLIENTS = [
   { klant: 'Kisch', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 12000, jan: 1000, startJaar: 2022 },
   { klant: 'Spirit', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 51000, jan: 4250, startJaar: 2022 },
   { klant: 'SB+WAA+Fun', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 16800, jan: 1400, startJaar: 2022 },
-  { klant: 'Caron', recurring: true, lead: 'Merijn', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 7650, jan: 2325, startJaar: 2023 },
+  { klant: 'Caron', recurring: true, lead: 'Merijn', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 7650, jan: 2325, feb: 2325, mrt: 300, startJaar: 2023 },
   { klant: 'The Branding Club NL', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'HubSpot / Digital marketing', bedrag: 30000, jan: 2500, startJaar: 2023 },
   { klant: 'Talent Care', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2023 },
   { klant: 'Restaurants Shaul', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEA', bedrag: 12000, jan: 1000, startJaar: 2024 },
@@ -1018,7 +1018,7 @@ const RETAINER_CLIENTS = [
   { klant: 'Eginstill', recurring: true, lead: 'Charlotte', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 14400, jan: 1200, startJaar: 2025 },
   { klant: 'Floryn', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 38640, jan: 3220, startJaar: 2025 },
   { klant: 'Student Experience', recurring: true, lead: 'Cold', status: 'Actief', onderdeel: 'Dashboarding', bedrag: 10800, jan: 900, startJaar: 2025 },
-  { klant: 'App4Sales', recurring: true, lead: 'Erik', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 1900, jan: 950, startJaar: 2025 },
+  { klant: 'App4Sales', recurring: false, lead: 'Erik', status: 'Churned', onderdeel: 'Digital marketing', bedrag: 0, jan: 950, feb: 950, startJaar: 2025 },
   { klant: 'BunBun/Little Bonfire', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, jan: 1500, startJaar: 2025 },
   { klant: 'Momentum', recurring: true, lead: 'Lidewij', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 33600, jan: 2800, startJaar: 2025 },
   { klant: 'Stories', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2025 },
@@ -1027,20 +1027,44 @@ const RETAINER_CLIENTS = [
   { klant: 'Displine', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 40800, jan: 3400, startJaar: 2025 },
   { klant: 'Distillery', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, jan: 3200, startJaar: 2025 },
   { klant: 'Lake Cycling', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 74400, jan: 6200, startJaar: 2025 },
-  { klant: 'Johan Cruyff', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, jan: 2000, startJaar: 2025 },
+  { klant: 'Johan Cruyff', recurring: false, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, jan: 2000, feb: 3000, startJaar: 2025 },
   { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, jan: 6600, feb: 4800, startJaar: 2026, startMonth: 1 },
-  { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, jan: 6150, feb: 6150, startJaar: 2026, startMonth: 1 },
-  { klant: 'Kremer Collectie', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, feb: 2300, startJaar: 2026, startMonth: 1 },
-  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59800, jan: 0, feb: 4800, startJaar: 2026, startMonth: 2 },
+  { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30500, jan: 6150, feb: 1800, startJaar: 2026, startMonth: 1 },
+  { klant: 'Kremer Collectie', recurring: false, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, feb: 2300, startJaar: 2026, startMonth: 1 },
+  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59800, jan: 0, feb: 4800, mrt: 5500, startJaar: 2026, startMonth: 2 },
   { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 29000, jan: 0, feb: 5000, startJaar: 2026, startMonth: 2 },
-  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, feb: 3800, startJaar: 2026, startMonth: 2 },
+  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, feb: 5800, mrt: 2800, startJaar: 2026, startMonth: 2 },
 ] as const
 
 // Computed retainer KPIs
 const ACTIVE_RETAINER_CLIENTS = RETAINER_CLIENTS.filter(c => c.status === 'Actief')
 const RETAINER_ARR = ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => sum + c.bedrag, 0)
-const RETAINER_MRR = Math.round(RETAINER_ARR / 12)
-const RETAINER_AVG_MRR = Math.round(RETAINER_MRR / ACTIVE_RETAINER_CLIENTS.length)
+// MRR = current month's actual revenue (feb = month index 1)
+const CURRENT_MONTH_IDX = new Date().getMonth() // 0=jan, 1=feb, etc.
+const RETAINER_MRR = ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => {
+  const sm = (c as any).startMonth as number | undefined
+  const startIdx = sm !== undefined ? sm - 1 : 0
+  if (CURRENT_MONTH_IDX < startIdx) return sum
+  const feb = (c as any).feb as number | undefined
+  const mrt = (c as any).mrt as number | undefined
+  // Non-recurring: only count in explicitly defined months
+  if (!c.recurring) {
+    if (CURRENT_MONTH_IDX === 0 && startIdx === 0) return sum + c.jan
+    if (CURRENT_MONTH_IDX === 1 && feb !== undefined) return sum + feb
+    if (CURRENT_MONTH_IDX === 1 && startIdx === 0 && feb === undefined) return sum + c.jan
+    if (CURRENT_MONTH_IDX === 2 && mrt !== undefined) return sum + mrt
+    return sum
+  }
+  const stableMonthly = mrt !== undefined ? mrt : (feb !== undefined ? feb : (c.jan || Math.round(c.bedrag / 12)))
+  if (CURRENT_MONTH_IDX === 0) return sum + c.jan
+  if (CURRENT_MONTH_IDX === 1) return sum + (feb !== undefined ? feb : stableMonthly)
+  return sum + stableMonthly
+}, 0)
+const RETAINER_AVG_MRR = Math.round(RETAINER_MRR / ACTIVE_RETAINER_CLIENTS.filter(c => {
+  const sm = (c as any).startMonth as number | undefined
+  const startIdx = sm !== undefined ? sm - 1 : 0
+  return CURRENT_MONTH_IDX >= startIdx
+}).length)
 const RETAINER_NEW_2026 = RETAINER_CLIENTS.filter(c => c.startJaar === 2026).length
 
 const HISTORICAL_REVENUE: {month: string; revenue: number}[] = [
@@ -1474,10 +1498,12 @@ export default function SalesDashboard() {
   const [loginEmail, setLoginEmail] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
   const [authError, setAuthError] = useState('')
+  const [loginLoading, setLoginLoading] = useState(false)
   
   // User management state
-  const [users, setUsers] = useState<User[]>(DEFAULT_USERS)
+  const [users, setUsers] = useState<User[]>([])
   const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [usersLoaded, setUsersLoaded] = useState(false)
   const [editingUserId, setEditingUserId] = useState<string | null>(null)
   const [showAddUser, setShowAddUser] = useState(false)
   const [newUser, setNewUser] = useState<{ name: string; email: string; password: string; role: UserRole; permissions: Partial<Record<TabId, boolean>> }>({ name: '', email: '', password: '', role: 'viewer', permissions: {} })
@@ -1492,7 +1518,14 @@ export default function SalesDashboard() {
   const [editMode, setEditMode] = useState(false)
   const [expandedAgencyApp, setExpandedAgencyApp] = useState<string | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  
+  // Debounce timers for API saves
+  const dataSaveTimer = useRef<NodeJS.Timeout | null>(null)
+  const prospectSaveTimer = useRef<NodeJS.Timeout | null>(null)
+  const nextStepsSaveTimer = useRef<NodeJS.Timeout | null>(null)
   
   // Retainers state
   const [retainerFilter, setRetainerFilter] = useState<{ jaar: string; status: string; onderdeel: string }>({ jaar: 'alle', status: 'alle', onderdeel: 'alle' })
@@ -1538,41 +1571,54 @@ export default function SalesDashboard() {
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null)
   const [notesDraft, setNotesDraft] = useState('')
 
-  // Load prospect statuses from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('nodefy-prospect-status')
-      if (saved) setProspectStatuses(JSON.parse(saved))
-    } catch {}
+  // Prospect statuses are loaded from API in main useEffect
+
+  // Save prospect statuses to API with debounce
+  const saveProspectsToApi = useCallback(async (statuses: Record<number, { status: string; notes?: string }>) => {
+    // Always save to localStorage immediately (cache)
+    localStorage.setItem('nodefy-prospect-status', JSON.stringify(statuses))
+    
+    // Debounce API save
+    if (prospectSaveTimer.current) clearTimeout(prospectSaveTimer.current)
+    prospectSaveTimer.current = setTimeout(async () => {
+      try {
+        await fetch('/api/prospects', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(statuses),
+        })
+      } catch (e) {
+        console.error('Failed to save prospect statuses to API:', e)
+      }
+    }, 1000)
   }, [])
 
-  // Save prospect statuses to localStorage
   const updateProspectStatus = useCallback((id: number, status: string, notes?: string) => {
     setProspectStatuses(prev => {
       const next = { ...prev, [id]: { status, notes: notes ?? prev[id]?.notes } }
-      localStorage.setItem('nodefy-prospect-status', JSON.stringify(next))
+      saveProspectsToApi(next)
       return next
     })
-  }, [])
+  }, [saveProspectsToApi])
 
   const updateProspectNotes = useCallback((id: number, notes: string) => {
     setProspectStatuses(prev => {
       const current = prev[id] || { status: 'new' }
       const next = { ...prev, [id]: { ...current, notes: notes || undefined } }
-      localStorage.setItem('nodefy-prospect-status', JSON.stringify(next))
+      saveProspectsToApi(next)
       return next
     })
-  }, [])
+  }, [saveProspectsToApi])
 
   const bulkUpdateStatus = useCallback((ids: Set<number>, status: string) => {
     setProspectStatuses(prev => {
       const next = { ...prev }
       ids.forEach(id => { next[id] = { ...next[id], status, notes: next[id]?.notes } })
-      localStorage.setItem('nodefy-prospect-status', JSON.stringify(next))
+      saveProspectsToApi(next)
       return next
     })
     setSelectedProspects(new Set())
-  }, [])
+  }, [saveProspectsToApi])
   const [nextSteps, setNextSteps] = useState<Record<string, string>>({})
 
   // Strategy tab state
@@ -1610,91 +1656,227 @@ export default function SalesDashboard() {
     monthlyForecast: DEFAULT_MONTHLY_FORECAST,
   })
 
-  // Load from localStorage on mount
+  // Load from API (with localStorage fallback) on mount
   useEffect(() => {
-    // Load users from localStorage (or use defaults)
-    const savedUsers = localStorage.getItem(USERS_STORAGE_KEY)
-    if (savedUsers) {
+    const loadData = async () => {
+      // 1. Seed users if needed (runs once on first deploy)
       try {
-        const parsed = JSON.parse(savedUsers)
-        setUsers(parsed)
+        await fetch('/api/auth/seed', { method: 'POST' })
       } catch (e) {
-        console.error('Failed to parse saved users:', e)
-        setUsers(DEFAULT_USERS)
+        console.error('Seed request failed:', e)
       }
-    } else {
-      setUsers(DEFAULT_USERS)
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS))
-    }
 
-    // Load current user session
-    const savedCurrentUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY)
-    if (savedCurrentUser) {
+      // 2. Load users from API
       try {
-        const parsed = JSON.parse(savedCurrentUser)
-        setCurrentUser(parsed)
-        setIsAuthenticated(true)
+        const usersRes = await fetch('/api/auth/users')
+        if (usersRes.ok) {
+          const result = await usersRes.json()
+          if (result.success && result.users?.length > 0) {
+            setUsers(result.users)
+          } else {
+            setUsers(DEFAULT_USERS)
+          }
+        } else {
+          // Fallback to localStorage
+          const savedUsers = localStorage.getItem(USERS_STORAGE_KEY)
+          if (savedUsers) setUsers(JSON.parse(savedUsers))
+          else setUsers(DEFAULT_USERS)
+        }
       } catch (e) {
-        console.error('Failed to parse current user:', e)
+        console.error('Failed to load users from API:', e)
+        const savedUsers = localStorage.getItem(USERS_STORAGE_KEY)
+        if (savedUsers) setUsers(JSON.parse(savedUsers))
+        else setUsers(DEFAULT_USERS)
       }
-    }
+      setUsersLoaded(true)
 
-    const savedTheme = localStorage.getItem('nodefy-theme') as 'dark' | 'light' | null
-    if (savedTheme) {
-      setTheme(savedTheme)
-    }
+      // 3. Load current user session from localStorage (session state)
+      const savedCurrentUser = localStorage.getItem(CURRENT_USER_STORAGE_KEY)
+      if (savedCurrentUser) {
+        try {
+          const parsed = JSON.parse(savedCurrentUser)
+          // Validate user still exists in API
+          const validateRes = await fetch('/api/auth/users')
+          if (validateRes.ok) {
+            const result = await validateRes.json()
+            const stillExists = result.users?.some((u: User) => u.email === parsed.email)
+            if (stillExists) {
+              setCurrentUser(parsed)
+              setIsAuthenticated(true)
+            } else {
+              localStorage.removeItem(CURRENT_USER_STORAGE_KEY)
+            }
+          } else {
+            // Fallback: trust localStorage if API is down
+            setCurrentUser(parsed)
+            setIsAuthenticated(true)
+          }
+        } catch (e) {
+          console.error('Failed to validate current user:', e)
+        }
+      }
 
-    const saved = localStorage.getItem(STORAGE_KEY)
-    if (saved) {
+      // 4. Load theme from localStorage (UI preference, keep in localStorage)
+      const savedTheme = localStorage.getItem('nodefy-theme') as 'dark' | 'light' | null
+      if (savedTheme) {
+        setTheme(savedTheme)
+      }
+
+      // 5. Load main dashboard data from API (with localStorage fallback)
       try {
-        const parsed = JSON.parse(saved)
-        // Merge with defaults so new fields (like pipelineDeals) always have values
-        setData(prev => {
-          const merged = { ...prev }
-          for (const key of Object.keys(parsed) as (keyof EditableData)[]) {
-            if (parsed[key] !== undefined) {
-              (merged as Record<string, unknown>)[key] = parsed[key]
+        const dataRes = await fetch('/api/data')
+        if (dataRes.ok) {
+          const result = await dataRes.json()
+          if (result.success && result.data) {
+            setData(prev => {
+              const merged = { ...prev }
+              for (const key of Object.keys(result.data) as (keyof EditableData)[]) {
+                if (result.data[key] !== undefined) {
+                  (merged as Record<string, unknown>)[key] = result.data[key]
+                }
+              }
+              merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
+              return merged
+            })
+          } else {
+            // Try localStorage fallback
+            const saved = localStorage.getItem(STORAGE_KEY)
+            if (saved) {
+              const parsed = JSON.parse(saved)
+              setData(prev => {
+                const merged = { ...prev }
+                for (const key of Object.keys(parsed) as (keyof EditableData)[]) {
+                  if (parsed[key] !== undefined) {
+                    (merged as Record<string, unknown>)[key] = parsed[key]
+                  }
+                }
+                merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
+                return merged
+              })
             }
           }
-          // Always use latest default apps
-          merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
-          return merged
-        })
+        }
       } catch (e) {
-        console.error('Failed to parse saved data:', e)
+        console.error('Failed to load data from API:', e)
+        const saved = localStorage.getItem(STORAGE_KEY)
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved)
+            setData(prev => {
+              const merged = { ...prev }
+              for (const key of Object.keys(parsed) as (keyof EditableData)[]) {
+                if (parsed[key] !== undefined) {
+                  (merged as Record<string, unknown>)[key] = parsed[key]
+                }
+              }
+              merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
+              return merged
+            })
+          } catch {}
+        }
       }
-    }
-    
-    // Load next steps from localStorage
-    const savedNextSteps = localStorage.getItem('nodefy-pipeline-nextsteps')
-    if (savedNextSteps) {
+      
+      // 6. Load prospect statuses from API
       try {
-        setNextSteps(JSON.parse(savedNextSteps))
+        const prospectRes = await fetch('/api/prospects')
+        if (prospectRes.ok) {
+          const result = await prospectRes.json()
+          if (result.success && result.data) {
+            setProspectStatuses(result.data)
+          }
+        }
       } catch (e) {
-        console.error('Failed to parse next steps:', e)
+        // Fallback to localStorage
+        const saved = localStorage.getItem('nodefy-prospect-status')
+        if (saved) setProspectStatuses(JSON.parse(saved))
       }
+
+      // 7. Load next steps from API
+      try {
+        const nextStepsRes = await fetch('/api/pipeline-nextsteps')
+        if (nextStepsRes.ok) {
+          const result = await nextStepsRes.json()
+          if (result.success && result.data) {
+            setNextSteps(result.data)
+          }
+        }
+      } catch (e) {
+        // Fallback to localStorage
+        const saved = localStorage.getItem('nodefy-pipeline-nextsteps')
+        if (saved) setNextSteps(JSON.parse(saved))
+      }
+      
+      // After loading cached data, sync pipeline from HubSpot (source of truth)
+      try {
+        setPipelineSyncing(true)
+        const hsRes = await fetch('/api/hubspot-sync')
+        if (hsRes.ok) {
+          const hsResult = await hsRes.json()
+          if (hsResult.deals) {
+            // Update deals in data
+            const currentData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}')
+            currentData.pipelineDeals = hsResult.deals
+            currentData.pipelineLastUpdated = new Date().toISOString()
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(currentData))
+            setData(prev => ({ ...prev, pipelineDeals: hsResult.deals, pipelineLastUpdated: new Date().toISOString() }))
+            
+            // Merge nextSteps: HubSpot wins, then layer local on top
+            const hubSpotNextSteps: Record<string, string> = {}
+            hsResult.deals.forEach((d: any) => {
+              if (d.nextStep && d.nextStep.trim()) hubSpotNextSteps[d.id] = d.nextStep
+            })
+            setNextSteps(prev => {
+              const merged = { ...hubSpotNextSteps }
+              // Only keep local values if HubSpot has nothing for that deal
+              Object.keys(prev).forEach(id => {
+                if (prev[id] && prev[id].trim() && !merged[id]) merged[id] = prev[id]
+              })
+              return merged
+            })
+          }
+        }
+      } catch (e) {
+        console.error('HubSpot sync on load failed:', e)
+      } finally {
+        setPipelineSyncing(false)
+        hasSynced.current = true
+      }
+
+      setIsLoaded(true)
+      setDataLoading(false)
     }
-    
-    setIsLoaded(true)
+
+    loadData()
   }, [])
 
-  // Save users to localStorage when they change
+  // Save data to API with debounce (2 seconds after last change)
+  const saveDataToApi = useCallback(async (dataToSave: EditableData) => {
+    // Always save to localStorage immediately (cache)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave))
+    
+    // Debounce API save
+    if (dataSaveTimer.current) clearTimeout(dataSaveTimer.current)
+    dataSaveTimer.current = setTimeout(async () => {
+      try {
+        await fetch('/api/data', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(dataToSave),
+        })
+      } catch (e) {
+        console.error('Failed to save data to API:', e)
+      }
+    }, 2000)
+  }, [])
+
   useEffect(() => {
     if (isLoaded) {
-      localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+      saveDataToApi(data)
     }
-  }, [users, isLoaded])
+  }, [isLoaded, data, saveDataToApi])
 
-  // Save to localStorage when data changes
-  const saveData = useCallback(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  }, [data])
-
-  useEffect(() => {
-    if (isLoaded) {
-      saveData()
-    }
-  }, [isLoaded, saveData])
+  // Users are managed via API, no need to save to localStorage
+  // (API calls happen in createUser, saveUser, deleteUser)
 
   // Save theme preference
   useEffect(() => {
@@ -1738,24 +1920,47 @@ export default function SalesDashboard() {
   }
 
   // Auth handlers
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const user = users.find(u => u.email.toLowerCase() === loginEmail.toLowerCase())
-    if (!user) {
-      setAuthError('User not found')
-      return
-    }
-    if (user.password !== loginPassword) {
-      setAuthError('Incorrect password')
-      return
-    }
-    // Update last login
-    const updatedUser = { ...user, lastLogin: new Date().toISOString() }
-    setUsers(prev => prev.map(u => u.id === user.id ? updatedUser : u))
-    setCurrentUser(updatedUser)
-    setIsAuthenticated(true)
-    localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedUser))
+    setLoginLoading(true)
     setAuthError('')
+    
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: loginEmail, password: loginPassword }),
+      })
+      
+      const result = await res.json()
+      
+      if (result.success && result.user) {
+        const user = result.user as User
+        setCurrentUser(user)
+        setIsAuthenticated(true)
+        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(user))
+        setAuthError('')
+      } else {
+        setAuthError(result.error || 'Login mislukt')
+      }
+    } catch (e) {
+      // Fallback to local validation if API is down
+      console.error('API login failed, trying local:', e)
+      const user = users.find(u => u.email.toLowerCase() === loginEmail.toLowerCase())
+      if (!user) {
+        setAuthError('Gebruiker niet gevonden')
+      } else if (user.password !== loginPassword) {
+        setAuthError('Onjuist wachtwoord')
+      } else {
+        const updatedUser = { ...user, lastLogin: new Date().toISOString() }
+        setCurrentUser(updatedUser)
+        setIsAuthenticated(true)
+        localStorage.setItem(CURRENT_USER_STORAGE_KEY, JSON.stringify(updatedUser))
+        setAuthError('')
+      }
+    } finally {
+      setLoginLoading(false)
+    }
   }
 
   const handleLogout = () => {
@@ -1796,20 +2001,30 @@ export default function SalesDashboard() {
     return 'settings'
   }
 
-  // User management handlers
-  const saveUser = (user: User) => {
-    setUsers(prev => prev.map(u => u.id === user.id ? user : u))
+  // User management handlers - using API
+  const saveUser = async (user: User) => {
+    try {
+      const res = await fetch('/api/auth/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      })
+      if (res.ok) {
+        setUsers(prev => prev.map(u => u.id === user.id ? user : u))
+      } else {
+        const result = await res.json()
+        alert(result.error || 'Fout bij opslaan gebruiker')
+      }
+    } catch (e) {
+      console.error('Failed to save user:', e)
+      // Fallback: update locally
+      setUsers(prev => prev.map(u => u.id === user.id ? user : u))
+    }
     setEditingUserId(null)
   }
 
-  const createUser = () => {
+  const createUser = async () => {
     if (!newUser.name || !newUser.email || !newUser.password) return
-    
-    // Check if email already exists
-    if (users.some(u => u.email.toLowerCase() === newUser.email!.toLowerCase())) {
-      alert('A user with this email already exists')
-      return
-    }
     
     // Build permissions based on role
     let permissions: Record<TabId, boolean> = {} as Record<TabId, boolean>
@@ -1820,27 +2035,61 @@ export default function SalesDashboard() {
       permissions.settings = true // Everyone gets settings
     }
     
-    const user: User = {
-      id: `u${Date.now()}`,
-      name: newUser.name,
-      email: newUser.email,
-      password: newUser.password,
-      role: newUser.role || 'viewer',
-      permissions,
-      lastLogin: null,
-      createdAt: new Date().toISOString()
+    try {
+      const res = await fetch('/api/auth/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newUser.name,
+          email: newUser.email,
+          password: newUser.password,
+          role: newUser.role || 'viewer',
+          permissions,
+        }),
+      })
+      
+      const result = await res.json()
+      
+      if (result.success && result.user) {
+        setUsers(prev => [...prev, result.user as User])
+        setNewUser({ name: '', email: '', password: '', role: 'viewer', permissions: {} })
+        setShowAddUser(false)
+      } else {
+        alert(result.error || 'Fout bij aanmaken gebruiker')
+      }
+    } catch (e) {
+      console.error('Failed to create user:', e)
+      alert('Fout bij aanmaken gebruiker')
     }
-    setUsers(prev => [...prev, user])
-    setNewUser({ name: '', email: '', password: '', role: 'viewer', permissions: {} })
-    setShowAddUser(false)
   }
 
-  const deleteUser = (id: string) => {
+  const deleteUser = async (id: string) => {
     if (currentUser?.id === id) {
-      alert('You cannot delete yourself')
+      alert('Je kunt jezelf niet verwijderen')
       return
     }
-    setUsers(prev => prev.filter(u => u.id !== id))
+    
+    const userToDelete = users.find(u => u.id === id)
+    if (!userToDelete) return
+    
+    try {
+      const res = await fetch('/api/auth/users', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userToDelete.email }),
+      })
+      
+      if (res.ok) {
+        setUsers(prev => prev.filter(u => u.id !== id))
+      } else {
+        const result = await res.json()
+        alert(result.error || 'Fout bij verwijderen gebruiker')
+      }
+    } catch (e) {
+      console.error('Failed to delete user:', e)
+      // Fallback: delete locally
+      setUsers(prev => prev.filter(u => u.id !== id))
+    }
     setDeleteConfirm(null)
   }
 
@@ -2002,7 +2251,10 @@ export default function SalesDashboard() {
   const updateNextStep = (dealId: string, value: string) => {
     const updated = { ...nextSteps, [dealId]: value }
     setNextSteps(updated)
+    // Save to localStorage immediately (cache)
     localStorage.setItem('nodefy-pipeline-nextsteps', JSON.stringify(updated))
+    
+    // Debounce HubSpot sync
     if (nextStepTimers.current[dealId]) clearTimeout(nextStepTimers.current[dealId]);
     nextStepTimers.current[dealId] = setTimeout(async () => {
       try {
@@ -2013,6 +2265,18 @@ export default function SalesDashboard() {
         });
       } catch (e) { console.error('Failed to sync nextStep:', e); }
     }, 1000);
+    
+    // Also save to KV (debounced)
+    if (nextStepsSaveTimer.current) clearTimeout(nextStepsSaveTimer.current)
+    nextStepsSaveTimer.current = setTimeout(async () => {
+      try {
+        await fetch('/api/pipeline-nextsteps', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updated),
+        })
+      } catch (e) { console.error('Failed to save next steps to KV:', e); }
+    }, 1500)
   }
 
   // ============================================
@@ -2138,9 +2402,18 @@ export default function SalesDashboard() {
             </div>
             <button 
               type="submit" 
-              className={`w-full py-2 ${colors.accentBg} text-white rounded-md text-sm font-medium ${colors.accentHover} transition-colors`}
+              disabled={loginLoading}
+              className={`w-full py-2 ${colors.accentBg} text-white rounded-md text-sm font-medium ${colors.accentHover} transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
             >
-              Sign in
+              {loginLoading ? (
+                <>
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                  </svg>
+                  Inloggen...
+                </>
+              ) : 'Sign in'}
             </button>
           </form>
           
@@ -2161,7 +2434,7 @@ export default function SalesDashboard() {
   // MAIN DASHBOARD
   // ============================================
   return (
-    <main className={`min-h-screen ${colors.bgMain} ${colors.textPrimary} flex transition-colors duration-150`}>
+    <main className={`min-h-screen ${colors.bgMain} ${colors.textPrimary} flex transition-colors duration-150 overflow-x-hidden`}>
       {/* Mobile sidebar toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -3322,8 +3595,14 @@ export default function SalesDashboard() {
                                 <td className={`p-3 text-right font-mono ${deal.value ? colors.accent : colors.textTertiary}`}>
                                   {formatValue(deal.value)}
                                 </td>
-                                <td className={`p-3 text-[12px] ${colors.textSecondary}`}>
-                                  {nextSteps[deal.id] || '-'}
+                                <td className={`p-3`}>
+                                  <input
+                                    type="text"
+                                    value={nextSteps[deal.id] || ''}
+                                    onChange={(e) => updateNextStep(deal.id, e.target.value)}
+                                    placeholder="Volgende stap..."
+                                    className={`w-full text-[12px] ${colors.textSecondary} bg-transparent focus:outline-none focus:ring-1 focus:ring-[#0047FF] rounded px-1 py-0.5`}
+                                  />
                                 </td>
                                 <td className="p-3 text-center">
                                   <a
@@ -3433,7 +3712,7 @@ export default function SalesDashboard() {
                 </div>
 
                 {/* Stats row */}
-                <div className="grid grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
                   {[
                     { label: 'Totaal', value: enrichedProspects.length, color: colors.textPrimary },
                     { label: 'Hot', value: hotCount, color: 'text-red-400' },
@@ -3469,13 +3748,13 @@ export default function SalesDashboard() {
                 )}
 
                 {/* Filter bar */}
-                <div className="flex items-center gap-3 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
                   <input
                     type="text"
                     placeholder="Zoek prospect..."
                     value={prospectsSearch}
                     onChange={e => setProspectsSearch(e.target.value)}
-                    className={`${colors.bgCard} border ${colors.border} rounded px-3 py-1.5 text-[12px] ${colors.textPrimary} flex-1 max-w-xs focus:outline-none focus:border-blue-500`}
+                    className={`${colors.bgCard} border ${colors.border} rounded px-3 py-1.5 text-[12px] ${colors.textPrimary} w-full sm:flex-1 sm:max-w-xs focus:outline-none focus:border-blue-500`}
                   />
                   <select value={prospectsStatusFilter} onChange={e => setProspectsStatusFilter(e.target.value)} className={`${colors.bgCard} border ${colors.border} rounded px-2 py-1.5 text-[12px] ${colors.textPrimary} focus:outline-none`}>
                     <option value="all">Alle statussen</option>
@@ -3513,8 +3792,8 @@ export default function SalesDashboard() {
                 </div>
 
                 {/* Table */}
-                <div className={`${colors.bgCard} border ${colors.border} rounded-lg overflow-hidden`}>
-                  <table className="w-full">
+                <div className={`${colors.bgCard} border ${colors.border} rounded-lg overflow-x-auto`}>
+                  <table className="w-full min-w-[900px]">
                     <thead>
                       <tr className={`border-b ${colors.border}`}>
                         <th className="px-3 py-2 w-8">
@@ -3683,7 +3962,7 @@ export default function SalesDashboard() {
                 {interestingProspects.length > 0 && (
                   <div className={`${colors.bgCard} border ${colors.border} rounded-lg p-4`}>
                     <h3 className={`text-[13px] font-semibold ${colors.textPrimary} mb-3`}>📊 Jouw voorkeuren</h3>
-                    <div className="grid grid-cols-3 gap-4 text-[12px]">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-[12px]">
                       <div>
                         <div className={`${colors.textTertiary} text-[11px] mb-1`}>Favoriete categorie</div>
                         <div className={`${colors.textPrimary} font-medium`}>{favCategory}</div>
@@ -4188,13 +4467,23 @@ export default function SalesDashboard() {
             const getMonthlyMRR = (monthIdx: number) => {
               return activeClients.reduce((sum, c) => {
                 const sm = (c as any).startMonth as number | undefined
-                const startIdx = sm ? sm - 1 : 0
+                const startIdx = sm !== undefined ? sm - 1 : 0
                 if (monthIdx < startIdx) return sum // client hasn't started yet
                 const feb = (c as any).feb as number | undefined
+                const mrt = (c as any).mrt as number | undefined
+                // Non-recurring: only count explicitly defined months
+                if (!c.recurring) {
+                  if (monthIdx === 0 && startIdx === 0) return sum + c.jan
+                  if (monthIdx === 1 && feb !== undefined) return sum + feb
+                  if (monthIdx === 1 && startIdx === 0 && feb === undefined) return sum + c.jan
+                  if (monthIdx === 2 && mrt !== undefined) return sum + mrt
+                  return sum
+                }
                 if (monthIdx === 0) return sum + c.jan
-                if (monthIdx === 1 && feb) return sum + feb
-                // For other months, use feb value (stabilized retainer) or bedrag/12
-                return sum + (feb || c.jan || c.bedrag / 12)
+                if (monthIdx === 1) return sum + (feb !== undefined ? feb : c.jan)
+                // Month 2+ (mrt onwards): use mrt if defined, else feb if defined, else jan, else bedrag/12
+                const stableMonthly = mrt !== undefined ? mrt : (feb !== undefined ? feb : (c.jan || Math.round(c.bedrag / 12)))
+                return sum + stableMonthly
               }, 0)
             }
 
@@ -4651,10 +4940,10 @@ export default function SalesDashboard() {
                                 <span className={`text-[11px] font-medium ${colors.textPrimary}`}>{year}</span>
                                 <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(yearTotal / 1000)}k totaal</span>
                               </div>
-                              <div className="flex gap-0.5 h-8 items-end">
+                              <div className="flex gap-0.5 h-12 items-end">
                                 {yearData.map(r => (
-                                  <div key={r.month} className="flex-1 flex flex-col items-center" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
-                                    <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${(r.revenue / maxRev) * 100}%`, minHeight: '2px' }} />
+                                  <div key={r.month} className="flex-1 h-full flex items-end" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
+                                    <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${Math.max((r.revenue / maxRev) * 100, 3)}%` }} />
                                   </div>
                                 ))}
                               </div>
@@ -4682,7 +4971,7 @@ export default function SalesDashboard() {
                     ]
                     const lastYearRev = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025')).reduce((s, r) => s + r.revenue, 0)
                     return (
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {scenarios.map(s => {
                           const projected = Math.round(lastYearRev * (1 + s.growth))
                           return (
@@ -4916,10 +5205,10 @@ export default function SalesDashboard() {
                             <span className={`text-[11px] font-medium ${colors.textPrimary}`}>{year}</span>
                             <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(yearTotal / 1000)}k totaal</span>
                           </div>
-                          <div className="flex gap-0.5 h-12 items-end">
+                          <div className="flex gap-0.5 h-16 items-end">
                             {yearData.map(r => (
-                              <div key={r.month} className="flex-1 group relative" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
-                                <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${(r.revenue / maxRev) * 100}%`, minHeight: '2px' }} />
+                              <div key={r.month} className="flex-1 h-full flex items-end group relative" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
+                                <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${Math.max((r.revenue / maxRev) * 100, 3)}%` }} />
                               </div>
                             ))}
                           </div>
@@ -4937,7 +5226,7 @@ export default function SalesDashboard() {
                 {/* Scenario Planning */}
                 <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
                   <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Scenario Planning 2026</h3>
-                  <div className="grid grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {scenarios.map(s => {
                       const projected = Math.round(lastYearRev * (1 + s.growth))
                       return (
@@ -5057,24 +5346,34 @@ export default function SalesDashboard() {
             const getClientMonthly = (c: (typeof RETAINER_CLIENTS)[number]) => {
               if (c.bedrag === 0) return Array(12).fill(0)
               const sm = (c as any).startMonth as number | undefined // 1=jan, 2=feb, etc.
-              const startIdx = sm ? sm - 1 : 0 // 0-indexed month where client starts
+              const startIdx = sm !== undefined ? sm - 1 : 0 // 0-indexed month where client starts
               const feb = (c as any).feb as number | undefined
+              const mrt = (c as any).mrt as number | undefined
               
-              // For clients not yet started (startMonth in future), show 0 before start
               const result = Array(12).fill(0)
               
+              // Non-recurring: only fill explicitly defined months
+              if (!c.recurring) {
+                if (startIdx === 0) result[0] = c.jan
+                if (startIdx <= 1 && feb !== undefined) result[1] = feb
+                else if (startIdx === 0 && feb === undefined) result[1] = c.jan
+                if (mrt !== undefined) result[2] = mrt
+                return result
+              }
+              
+              // Determine the "stable" monthly amount (what the client pays from month 3 onwards)
+              const stableMonthly = mrt !== undefined ? mrt : (feb !== undefined ? feb : (c.jan || Math.round(c.bedrag / 12)))
+              
               if (startIdx === 0) {
-                // Started in jan: use jan actual, feb actual if available, rest estimate
-                const monthlyEstimate = feb || (c.bedrag / 12)
                 result[0] = c.jan
-                for (let i = 1; i < 12; i++) {
-                  result[i] = i === 1 && feb ? feb : monthlyEstimate
-                }
+                result[1] = feb !== undefined ? feb : stableMonthly
+                for (let i = 2; i < 12; i++) result[i] = stableMonthly
               } else {
-                // Started later (e.g. feb): 0 before start, then actual/estimated
-                const monthlyEstimate = feb || (c.bedrag / (12 - startIdx))
                 for (let i = startIdx; i < 12; i++) {
-                  result[i] = i === startIdx && feb ? feb : monthlyEstimate
+                  if (i === startIdx && feb !== undefined) result[i] = feb
+                  else if (i === startIdx) result[i] = stableMonthly
+                  else if (i === startIdx + 1 && mrt !== undefined) result[i] = mrt
+                  else result[i] = stableMonthly
                 }
               }
               return result
@@ -5130,7 +5429,7 @@ export default function SalesDashboard() {
                 </div>
 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {[
                     { label: 'Totaal ARR', value: `€${RETAINER_ARR.toLocaleString('nl-NL')}`, sub: 'Annual Recurring Revenue' },
                     { label: 'Gem. MRR', value: `€${RETAINER_MRR.toLocaleString('nl-NL')}`, sub: 'Monthly Recurring Revenue' },
@@ -5863,6 +6162,112 @@ export default function SalesDashboard() {
 
         </div>
       </div>
+
+      {/* ============================================ */}
+      {/* MOBILE BOTTOM TAB BAR (< 768px) */}
+      {/* ============================================ */}
+      <nav className={`fixed bottom-0 left-0 right-0 z-50 lg:hidden ${colors.bgSidebar} border-t ${colors.border} flex items-center justify-around py-2 px-1 safe-area-inset-bottom`}>
+        {(() => {
+          // Mobile tabs: max 5 icons + More drawer
+          const MOBILE_TABS: { id: TabId; label: string; icon: string }[] = [
+            { id: 'overview', label: 'Home', icon: '🏠' },
+            { id: 'pipeline', label: 'Pipeline', icon: '📊' },
+            { id: 'prospects', label: 'Prospects', icon: '🎯' },
+            { id: 'klanten', label: 'Klanten', icon: '👥' },
+            { id: 'reports', label: 'Reports', icon: '📈' },
+          ]
+          const visibleTabs = MOBILE_TABS.filter(t => canAccessTab(t.id))
+          const hasMore = NAV_SECTIONS.flatMap(s => s.items).filter(i => canAccessTab(i.id)).length > 5
+          
+          return (
+            <>
+              {visibleTabs.slice(0, hasMore ? 4 : 5).map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => { setActiveTab(tab.id); setMobileMenuOpen(false) }}
+                  className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-2 py-1 rounded-md transition-colors ${
+                    activeTab === tab.id ? colors.accentBg + ' text-white' : colors.textSecondary
+                  }`}
+                >
+                  <span className="text-lg">{tab.icon}</span>
+                  <span className="text-[10px] mt-0.5">{tab.label}</span>
+                </button>
+              ))}
+              {hasMore && (
+                <button
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className={`flex flex-col items-center justify-center min-w-[44px] min-h-[44px] px-2 py-1 rounded-md transition-colors ${
+                    mobileMenuOpen ? colors.accentBg + ' text-white' : colors.textSecondary
+                  }`}
+                >
+                  <span className="text-lg">⋯</span>
+                  <span className="text-[10px] mt-0.5">Meer</span>
+                </button>
+              )}
+            </>
+          )
+        })()}
+      </nav>
+
+      {/* Mobile "More" drawer */}
+      {mobileMenuOpen && (
+        <>
+          <div 
+            className="fixed inset-0 bg-black/40 z-40 lg:hidden"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          <div className={`fixed bottom-16 left-2 right-2 z-50 lg:hidden ${colors.bgCard} rounded-lg border ${colors.border} p-3 max-h-[60vh] overflow-y-auto safe-area-inset-bottom`}>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {NAV_SECTIONS.flatMap(s => s.items)
+                .filter(i => canAccessTab(i.id))
+                .map(item => {
+                  const icons: Record<TabId, string> = {
+                    overview: '🏠', klanten: '👥', reports: '📈', pipeline: '📊',
+                    prospects: '🎯', masterplan: '🗺️', cases: '💼', agencyos: '🤖',
+                    content: '✍️', strategy: '🎯', forecast: '📈', retainers: '💰',
+                    settings: '⚙️', admin: '👤',
+                  }
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false) }}
+                      className={`flex flex-col items-center justify-center min-h-[56px] p-2 rounded-md transition-colors ${
+                        activeTab === item.id ? colors.accentBg + ' text-white' : `${colors.bgInput} ${colors.textSecondary}`
+                      }`}
+                    >
+                      <span className="text-xl">{icons[item.id] || '📄'}</span>
+                      <span className="text-[10px] mt-1 truncate w-full text-center">{item.label}</span>
+                    </button>
+                  )
+                })}
+              {canManageUsers && SYSTEM_NAV.items.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false) }}
+                  className={`flex flex-col items-center justify-center min-h-[56px] p-2 rounded-md transition-colors ${
+                    activeTab === item.id ? colors.accentBg + ' text-white' : `${colors.bgInput} ${colors.textSecondary}`
+                  }`}
+                >
+                  <span className="text-xl">{item.id === 'settings' ? '⚙️' : '👤'}</span>
+                  <span className="text-[10px] mt-1 truncate w-full text-center">{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* Add padding at bottom on mobile for the tab bar */}
+      <style jsx global>{`
+        @media (max-width: 1023px) {
+          main > div:last-of-type {
+            padding-bottom: 80px;
+          }
+        }
+        .safe-area-inset-bottom {
+          padding-bottom: env(safe-area-inset-bottom, 0);
+        }
+      `}</style>
     </main>
   )
 }

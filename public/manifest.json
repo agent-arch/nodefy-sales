@@ -1,12 +1,16 @@
 {
   "name": "Nodefy Cockpit",
   "short_name": "Cockpit",
-  "description": "Nodefy Command Center",
+  "description": "Nodefy Command Center — Sales, Pipeline, Reports & Strategy",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#18181B",
   "theme_color": "#0047FF",
+  "orientation": "portrait-primary",
   "icons": [
-    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" }
-  ]
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" },
+    { "src": "/nodefy-logo-white.svg", "sizes": "any", "type": "image/svg+xml" }
+  ],
+  "categories": ["business", "productivity"],
+  "lang": "nl"
 }
