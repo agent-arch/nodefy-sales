@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 
 // ============================================
 // NODEFY SALES DASHBOARD v6.0
@@ -8,7 +8,7 @@ import { useState, useEffect, useCallback } from 'react'
 // ============================================
 
 // Types
-type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'retainers' | 'settings' | 'admin'
+type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'settings' | 'admin'
 
 type UserRole = 'superadmin' | 'admin' | 'viewer' | 'custom'
 
@@ -31,7 +31,7 @@ const DEFAULT_USERS: User[] = [
     email: 'ruben@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, retainers: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   },
@@ -41,15 +41,15 @@ const DEFAULT_USERS: User[] = [
     email: 'matthijs@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, retainers: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   }
 ]
 
 // All possible tab IDs for permissions
-const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'retainers', 'settings', 'admin']
-const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
+const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'settings', 'admin']
+const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
 const USERS_STORAGE_KEY = 'nodefy-users'
@@ -176,6 +176,7 @@ interface AgencyApp {
   name: string
   emoji: string
   description: string
+  details?: string
   features: string[]
   integrations: string[]
   notifications: string[]
@@ -272,6 +273,16 @@ interface Pipeline {
   id: string
   name: string
   stages: PipelineStage[]
+}
+
+interface MegaProspect {
+  id: number; name: string; website: string; description: string;
+  category: string; location: string; size: string; why_interesting: string;
+  services: string[]; retainer_potential: number; match_score: number;
+  priority: 'hot' | 'warm' | 'cold';
+  source_agency?: string;
+  status?: 'new' | 'interesting' | 'archived' | 'contacted';
+  notes?: string;
 }
 
 // ============================================
@@ -662,6 +673,19 @@ const DEFAULT_CLIENT_CASES: WebsiteCase[] = [
 
 const DEFAULT_AGENCY_OS_APPS: AgencyApp[] = [
   {
+    id: 'metacampaignbuilder',
+    name: 'Meta Campaign Builder',
+    emoji: '🏗️',
+    description: 'AI-powered campaign creation & structure',
+    details: 'Generates complete Meta campaign structures from brief input. Uses AI to suggest audiences, creatives, and budget allocation based on historical performance data.',
+    features: ['Campaign structure generator', 'Audience suggestion engine', 'Budget optimizer', 'Creative brief to ad copy'],
+    integrations: ['Meta Ads API', 'OpenAI'],
+    notifications: ['Slack'],
+    effort: 'Hoog',
+    impact: 'Hoog',
+    status: 'building'
+  },
+  {
     id: 'alertpilot',
     name: 'AlertPilot',
     emoji: '🚨',
@@ -1007,7 +1031,7 @@ const RETAINER_CLIENTS = [
   { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, jan: 6600, feb: 4800, startJaar: 2026, startMonth: 1 },
   { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, jan: 6150, feb: 6150, startJaar: 2026, startMonth: 1 },
   { klant: 'Kremer Collectie', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, feb: 2300, startJaar: 2026, startMonth: 1 },
-  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 37800, jan: 0, feb: 4800, startJaar: 2026, startMonth: 2 },
+  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59800, jan: 0, feb: 4800, startJaar: 2026, startMonth: 2 },
   { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 29000, jan: 0, feb: 5000, startJaar: 2026, startMonth: 2 },
   { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, feb: 3800, startJaar: 2026, startMonth: 2 },
 ] as const
@@ -1018,6 +1042,25 @@ const RETAINER_ARR = ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => sum + c.bedrag, 
 const RETAINER_MRR = Math.round(RETAINER_ARR / 12)
 const RETAINER_AVG_MRR = Math.round(RETAINER_MRR / ACTIVE_RETAINER_CLIENTS.length)
 const RETAINER_NEW_2026 = RETAINER_CLIENTS.filter(c => c.startJaar === 2026).length
+
+const HISTORICAL_REVENUE: {month: string; revenue: number}[] = [
+  {month: '2022-01', revenue: 15420}, {month: '2022-02', revenue: 18350}, {month: '2022-03', revenue: 22100},
+  {month: '2022-04', revenue: 19800}, {month: '2022-05', revenue: 24500}, {month: '2022-06', revenue: 28900},
+  {month: '2022-07', revenue: 21200}, {month: '2022-08', revenue: 18900}, {month: '2022-09', revenue: 31500},
+  {month: '2022-10', revenue: 35200}, {month: '2022-11', revenue: 38100}, {month: '2022-12', revenue: 29800},
+  {month: '2023-01', revenue: 32100}, {month: '2023-02', revenue: 35800}, {month: '2023-03', revenue: 41200},
+  {month: '2023-04', revenue: 38500}, {month: '2023-05', revenue: 44100}, {month: '2023-06', revenue: 48200},
+  {month: '2023-07', revenue: 39800}, {month: '2023-08', revenue: 36500}, {month: '2023-09', revenue: 52100},
+  {month: '2023-10', revenue: 55800}, {month: '2023-11', revenue: 58200}, {month: '2023-12', revenue: 49500},
+  {month: '2024-01', revenue: 51200}, {month: '2024-02', revenue: 54800}, {month: '2024-03', revenue: 59100},
+  {month: '2024-04', revenue: 56200}, {month: '2024-05', revenue: 62500}, {month: '2024-06', revenue: 67800},
+  {month: '2024-07', revenue: 58200}, {month: '2024-08', revenue: 54100}, {month: '2024-09', revenue: 71200},
+  {month: '2024-10', revenue: 74500}, {month: '2024-11', revenue: 78100}, {month: '2024-12', revenue: 68200},
+  {month: '2025-01', revenue: 65800}, {month: '2025-02', revenue: 68200}, {month: '2025-03', revenue: 72100},
+  {month: '2025-04', revenue: 69500}, {month: '2025-05', revenue: 74200}, {month: '2025-06', revenue: 78900},
+  {month: '2025-07', revenue: 71200}, {month: '2025-08', revenue: 67800}, {month: '2025-09', revenue: 82100},
+  {month: '2025-10', revenue: 85200}, {month: '2025-11', revenue: 79500}, {month: '2025-12', revenue: 68400},
+];
 
 const DEFAULT_MONTHLY_FORECAST = Array.from({ length: 12 }, (_, i) => ({
   month: i + 1,
@@ -1064,6 +1107,293 @@ const DEFAULT_MASTER_TASKS: MasterTask[] = [
 const STORAGE_KEY = 'nodefy-dashboard-v11'
 
 // ============================================
+// MEGA PROSPECTS DATA (281 prospects)
+// ============================================
+const MEGA_PROSPECTS: MegaProspect[] = [
+  { id: 1, name: 'Ace & Tate', website: 'https://www.aceandtate.com', description: 'DTC brillenmerk met eigen winkels en sterke online aanwezigheid.', category: 'E-commerce', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Sterk DTC merk dat zwaar investeert in performance marketing. Kunnen profiteren van betere tracking en AI-optimalisatie.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 2, name: 'Veloretti', website: 'https://www.veloretti.com', description: 'Premium Nederlandse fietsenmaker met DTC model en stijlvolle stadsfietsen.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Vergelijkbaar met Lake Cycling (bestaande klant). Sterke DTC brand die kan groeien met betere performance marketing en tracking.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking", "Automation"], retainer_potential: 4000, match_score: 9, priority: 'hot' },
+  { id: 3, name: 'Filling Pieces', website: 'https://www.fillingpieces.com', description: 'Premium sneakermerk uit Amsterdam met wereldwijde DTC verkoop.', category: 'E-commerce', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'High-end fashion DTC merk dat sterk leunt op social advertising. Nodefy\'s ervaring met Franky Amsterdam is direct relevant.', services: ["Meta Ads", "Google Ads", "TikTok Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 9, priority: 'hot' },
+  { id: 4, name: 'Daily Paper', website: 'https://www.dailypaperclothing.com', description: 'Streetwear modenmerk geïnspireerd door Afrikaanse cultuur.', category: 'E-commerce', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Snelgroeiend fashionmerk met sterke social media presence. TikTok en Meta Ads optimalisatie kan enorme impact hebben.', services: ["Meta Ads", "TikTok Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 5, name: 'Scotch & Soda', website: 'https://www.scotch-soda.com', description: 'Nederlands fashionmerk met internationale retail en sterke e-commerce.', category: 'E-commerce', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Na recente herstructurering zoeken ze efficiëntere marketing. Groot budget, behoefte aan data-driven aanpak.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking", "Automation"], retainer_potential: 8000, match_score: 7, priority: 'warm' },
+  { id: 6, name: 'Suitsupply', website: 'https://suitsupply.com', description: 'Premium herenkleding met 150+ winkels wereldwijd en sterke e-commerce.', category: 'E-commerce', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot internationaal merk met flinke ad spend. Server-side tracking en AI-optimalisatie kunnen grote ROI verbetering opleveren.', services: ["Google Ads", "Meta Ads", "Tracking", "SEO", "Automation"], retainer_potential: 8000, match_score: 7, priority: 'warm' },
+  { id: 7, name: 'BALR.', website: 'https://www.balr.com', description: 'Lifestyle en fashionmerk opgericht door voetballers, premium segment.', category: 'E-commerce', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Sterk merk met grote social following maar kan profiteren van betere ad performance en tracking setup.', services: ["Meta Ads", "Google Ads", "TikTok Ads", "Tracking", "SEO"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 8, name: 'Marie-Stella-Maris', website: 'https://www.marie-stella-maris.com', description: 'Premium lifestyle merk voor verzorgingsproducten en geurkaarsen met sociale missie.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Premium DTC brand met social impact verhaal. Perfect voor Meta Ads storytelling en SEO growth.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 9, name: 'The Sting', website: 'https://www.thesting.com', description: 'Nederlandse modeketen met 80+ winkels en groeiende webshop.', category: 'E-commerce', location: 'Utrecht', size: '500+ werknemers', why_interesting: 'Grote retailer die digitale transformatie doormaakt. Behoefte aan server-side tracking en omnichannel marketing.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "Automation"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 10, name: 'Flax & Kale', website: 'https://www.flaxandkale.com', description: 'Flexitarisch voedingsmerk met webshop voor gezonde producten.', category: 'E-commerce', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Groeiende food DTC brand in trending health/wellness segment. Perfect voor social ads.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 11, name: 'SNOCKS', website: 'https://snocks.com/nl-nl', description: 'DTC sokken en ondergoed merk met sterke online presence in NL.', category: 'E-commerce', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Zeer succesvol DTC merk dat actief expandeert in Nederland. Groot ad budget, kan profiteren van lokale optimalisatie.', services: ["Meta Ads", "Google Ads", "TikTok Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 12, name: 'Suitcase', website: 'https://www.sfrbrands.nl', description: 'Nederlands merk voor premium koffers en reisaccessoires.', category: 'E-commerce', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Niche DTC brand met seizoensgebonden piekverkoop. Performance marketing en tracking essentieel.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 13, name: 'Naïf', website: 'https://www.naifcare.com', description: 'Natuurlijke baby- en huidverzorgingsproducten, sterk DTC merk.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Populair Nederlands verzorgingsmerk met sterke DTC focus. Meta Ads en influencer marketing zijn key drivers.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads", "Tracking"], retainer_potential: 4000, match_score: 9, priority: 'hot' },
+  { id: 14, name: 'Oilily', website: 'https://www.oilily.com', description: 'Iconisch Nederlands kleurrijk mode- en lifestylemerk.', category: 'E-commerce', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Herkenbaar merk met loyale fanbase. Kan groeien met betere performance marketing en retargeting.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking", "Automation"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 15, name: 'Hunkemöller', website: 'https://www.hunkemoller.nl', description: 'Grote lingerie retailer met sterke e-commerce en 900+ winkels.', category: 'E-commerce', location: 'Hilversum', size: '500+ werknemers', why_interesting: 'Groot merk met enorm ad budget. Server-side tracking en AI-optimalisatie kunnen significante ROI verbetering opleveren.', services: ["Meta Ads", "Google Ads", "Tracking", "SEO", "Automation", "AI"], retainer_potential: 10000, match_score: 7, priority: 'warm' },
+  { id: 16, name: 'Gall & Gall', website: 'https://www.gall.nl', description: 'Grootste slijterijketen van Nederland met sterke webshop.', category: 'E-commerce', location: 'Zaandam', size: '500+ werknemers', why_interesting: 'Grote retailer met groeiende e-commerce. Seizoenscampagnes en lokale targeting bieden kansen.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 6, priority: 'cold' },
+  { id: 17, name: 'Omoda', website: 'https://www.omoda.nl', description: 'Grote Nederlandse online schoenenretailer.', category: 'E-commerce', location: 'Zierikzee', size: '200-500 werknemers', why_interesting: 'Marktleider in online schoenenverkoop. Tracking optimalisatie en AI-driven bidding kunnen performance flink verbeteren.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "Automation"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 18, name: 'Vivian', website: 'https://www.vivian.nl', description: 'Online lingerie en badmode retailer.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Niche e-commerce speler met hoge marges. Performance marketing optimalisatie direct impact op revenue.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 19, name: 'Loavies', website: 'https://www.loavies.com', description: 'Fast fashion DTC merk met sterke social media aanwezigheid.', category: 'E-commerce', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Social-first fashionmerk dat zwaar investeert in Meta en TikTok ads. Nodefy\'s tracking en optimalisatie expertise is zeer relevant.', services: ["Meta Ads", "TikTok Ads", "Google Ads", "Tracking", "SEO"], retainer_potential: 5000, match_score: 9, priority: 'hot' },
+  { id: 20, name: 'My Jewellery', website: 'https://www.my-jewellery.com', description: 'Sieraden en fashion DTC merk met sterke online en fysieke aanwezigheid.', category: 'E-commerce', location: 'Den Bosch', size: '100-200 werknemers', why_interesting: 'Zeer succesvol DTC merk dat al flink adverteert. Tracking en AI-optimalisatie kunnen performance naar next level tillen.', services: ["Meta Ads", "Google Ads", "TikTok Ads", "SEO", "Tracking", "Automation"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 21, name: 'Fleurop', website: 'https://www.fleurop.nl', description: 'Marktleider in online bloemen bezorging in Nederland.', category: 'E-commerce', location: 'Leiden', size: '50-100 werknemers', why_interesting: 'Seizoensgebonden piekverkopen (Valentijn, Moederdag) vereisen optimale ad spend. Google Ads en tracking cruciaal.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 22, name: 'Greetz', website: 'https://www.greetz.nl', description: 'Online kaarten en cadeau platform, marktleider in persoonlijke cadeaus.', category: 'E-commerce', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Groot e-commerce platform met seizoenspieken. Performance marketing en tracking optimalisatie direct revenue impact.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "Automation"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 23, name: 'Otrium', website: 'https://www.otrium.nl', description: 'Online outlet platform voor premium fashion merken.', category: 'E-commerce', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Snelgroeiend platform met grote ad budgetten. Data-driven marketing en AI-optimalisatie zijn core needs.', services: ["Meta Ads", "Google Ads", "Tracking", "SEO", "AI", "Automation"], retainer_potential: 6000, match_score: 8, priority: 'hot' },
+  { id: 24, name: 'Vitaminesperpost', website: 'https://www.vitaminesperpost.nl', description: 'Online retailer voor vitamines en supplementen.', category: 'E-commerce', location: 'Utrecht', size: '20-50 werknemers', why_interesting: 'Recurring revenue model met hoge CLV. SEO en Google Ads optimalisatie zijn key growth levers.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking", "Automation"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 25, name: 'Ekster', website: 'https://www.ekster.com', description: 'Smart wallets en accessoires merk, succesvol via crowdfunding.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Innovatief DTC merk met internationale ambitie. Performance marketing en tracking essentieel voor schaling.', services: ["Meta Ads", "Google Ads", "TikTok Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 26, name: 'Concrete Jungle', website: 'https://www.concretejungle.nl', description: 'Urban plant shop met sterke online presence en DTC model.', category: 'E-commerce', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Trendy niche e-commerce in groeiend segment. Social ads en SEO kunnen sterke groei realiseren.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 27, name: 'Flinders', website: 'https://www.flfrrs.com', description: 'Premium design meubelen webshop met hoge orderwaarde.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Hoge gemiddelde orderwaarde maakt elke conversie-optimalisatie zeer waardevol. Tracking en Google Ads cruciaal.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 28, name: 'Sacha Shoes', website: 'https://www.sachashoes.nl', description: 'Nederlandse schoenenketen met sterke online verkoop.', category: 'E-commerce', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Traditionele retailer met groeiende online focus. Behoefte aan moderne tracking en performance marketing.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 29, name: 'Sissy-Boy', website: 'https://www.sissy-boy.com', description: 'Lifestyle merk met kleding, wonen en accessoires.', category: 'E-commerce', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Breed lifestyle merk met multi-category webshop. Cross-selling en performance optimalisatie bieden grote kansen.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking", "Automation"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 30, name: 'WOOOD', website: 'https://www.woood.nl', description: 'Nederlands meubelenmerk met betaalbaar design voor online verkoop.', category: 'E-commerce', location: 'Zaandam', size: '50-100 werknemers', why_interesting: 'Groeiend furniture DTC merk. Hoge orderwaarde maakt performance marketing optimalisatie zeer rendabel.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 31, name: 'NOOSA Amsterdam', website: 'https://www.noosa-amsterdam.com', description: 'Sieraden en accessoires merk met verwisselbare chunks.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Uniek product concept met loyale klantbasis. Meta Ads en retargeting optimalisatie hoog potentieel.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 32, name: 'Shabbies Amsterdam', website: 'https://www.shfrfresamsterdam.com', description: 'Premium leren laarzen en accessoires merk.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Premium Nederlands merk met seizoensgebonden verkoop. Performance marketing voor seizoenspieken is key.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 33, name: 'Fred de la Bretoniere', website: 'https://www.freddelabretoniere.com', description: 'Premium Nederlandse schoenen- en tassenmaker.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Sterk Nederlands merk met groeiende e-commerce. Combinatie van brand en performance marketing kansrijk.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 34, name: 'Bever', website: 'https://www.bfrfr.nl', description: 'Outdoor en reiswinkelketen met sterke webshop.', category: 'E-commerce', location: 'Utrecht', size: '500+ werknemers', why_interesting: 'Grote retailer met seizoensgebonden campagnes. Tracking en omnichannel marketing optimalisatie waardevol.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 6, priority: 'cold' },
+  { id: 35, name: 'YourSurprise', website: 'https://www.yoursurprise.nl', description: 'Gepersonaliseerde cadeaus platform, marktleider in personalisatie.', category: 'E-commerce', location: 'Zierikzee', size: '200-500 werknemers', why_interesting: 'Groot e-commerce platform met seizoenspieken. Data-driven marketing en AI-optimalisatie zijn perfect passend.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "AI", "Automation"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 36, name: 'Rituals', website: 'https://www.rituals.com', description: 'Premium home & body cosmetics merk met wereldwijde aanwezigheid.', category: 'E-commerce', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot internationaal merk met enorme ad spend. Zelfs kleine optimalisatie in tracking/AI levert grote absolute ROI.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "AI"], retainer_potential: 10000, match_score: 6, priority: 'warm' },
+  { id: 37, name: 'Hema', website: 'https://www.hema.nl', description: 'Iconische Nederlandse retailer met groeiende e-commerce.', category: 'E-commerce', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot merk in digitale transformatie. Server-side tracking en marketing automation kunnen grote impact hebben.', services: ["Google Ads", "Meta Ads", "Tracking", "SEO", "Automation"], retainer_potential: 10000, match_score: 6, priority: 'cold' },
+  { id: 38, name: 'Travelbags', website: 'https://www.travelbags.nl', description: 'Specialist in koffers, tassen en reisaccessoires online.', category: 'E-commerce', location: 'Tilburg', size: '50-100 werknemers', why_interesting: 'Niche retailer met sterke seizoenscyclus. Google Ads en SEO zijn primaire acquisitiekanalen.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 39, name: 'Xenos', website: 'https://www.xenos.nl', description: 'Woon- en cadeauwinkelketen met groeiende webshop.', category: 'E-commerce', location: 'Waalwijk', size: '500+ werknemers', why_interesting: 'Grote retailer die steeds meer op e-commerce leunt. Tracking en performance marketing optimalisatie kansrijk.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 40, name: 'Dr. Hauschka NL', website: 'https://www.drhauschka.nl', description: 'Natuurlijke cosmetica merk met sterke Nederlandse marktpositie.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Premium beauty merk met groeiende DTC. Content marketing, SEO en Meta Ads zijn key channels.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 41, name: 'Brabantia', website: 'https://www.brabantia.com', description: 'Nederlands huishoudmerk (prullenbakken, droogmolens) met sterke DTC.', category: 'E-commerce', location: 'Valkenswaard', size: '200-500 werknemers', why_interesting: 'Sterk merk dat DTC groei nastreeft. Google Ads, SEO en tracking optimalisatie direct waardevol.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 42, name: 'Pip Studio', website: 'https://www.pipstudio.com', description: 'Kleurrijk lifestyle merk voor beddengoed, servies en kleding.', category: 'E-commerce', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Uniek Nederlands merk met loyale fanbase. DTC groei via performance marketing en retargeting.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 43, name: 'Kings of Indigo', website: 'https://www.kfrfrgsofrfrfrdfrgfr.com', description: 'Duurzaam denim merk met sterke online verkoop.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Duurzame mode is trending. Meta Ads storytelling en SEO voor duurzaamheidszoekwoorden zeer kansrijk.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 44, name: 'Dopper', website: 'https://www.dopper.com', description: 'Duurzame waterflessen merk met B Corp certificering.', category: 'E-commerce', location: 'Haarlem', size: '50-100 werknemers', why_interesting: 'Sterk purpose-driven merk. DTC groei met Meta Ads en B2B via LinkedIn Ads.', services: ["Meta Ads", "Google Ads", "LinkedIn Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 45, name: 'Flightgift / Experiencegift', website: 'https://www.flightgift.com', description: 'Gift card platform voor vluchten en ervaringen, internationaal actief.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Internationaal e-commerce platform met seizoenspieken. Google Ads en Meta Ads optimalisatie high impact.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "Automation"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 46, name: 'Invictus Games Foundation', website: 'https://www.invictusgamesfoundation.org', description: 'Non-profit voor gewonde veteranen met merchandise webshop.', category: 'E-commerce', location: 'Den Haag', size: '20-50 werknemers', why_interesting: 'Sterk merk met donatie-driven model. Performance marketing voor fundraising en merchandise.', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3000, match_score: 6, priority: 'cold' },
+  { id: 47, name: 'The Little Green Bag', website: 'https://www.thelittlegreenbag.nl', description: 'Online retailer voor tassen, portemonnees en accessoires.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Gevestigde e-commerce speler met goede basis. Tracking en AI-optimalisatie kunnen grote stap voorwaarts zijn.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 48, name: 'Winkelstraat.nl', website: 'https://www.winkelstraat.nl', description: 'Online platform voor premium en designer fashion.', category: 'E-commerce', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Luxury fashion marketplace met hoge orderwaarde. Performance marketing optimalisatie zeer rendabel.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 49, name: 'Piet Hein Eek', website: 'https://www.pietheineek.nl', description: 'Nederlandse designer van meubels en interieurproducten uit sloophout.', category: 'E-commerce', location: 'Eindhoven', size: '50-100 werknemers', why_interesting: 'Premium design merk met hoge orderwaarde. SEO en Google Ads voor design-zoekopdrachten zeer relevant.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 3000, match_score: 6, priority: 'cold' },
+  { id: 50, name: 'Dille & Kamille', website: 'https://www.dfrllefrkamfrlle.nl', description: 'Winkels voor koken, bakken en wonen met sterke webshop.', category: 'E-commerce', location: 'Zeist', size: '200-500 werknemers', why_interesting: 'Geliefde retailer met groeiende e-commerce. Tracking, SEO en performance marketing optimalisatie kansrijk.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 51, name: 'Sana Commerce', website: 'https://www.sana-commerce.com', description: 'B2B e-commerce platform geïntegreerd met ERP systemen.', category: 'B2B', location: 'Rotterdam', size: '200-500 werknemers', why_interesting: 'Groeiend SaaS bedrijf dat leadgeneratie nodig heeft. LinkedIn Ads en Google Ads voor B2B leads.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 52, name: 'Channable', website: 'https://www.channable.com', description: 'Feed management en PPC automatisering tool voor e-commerce.', category: 'B2B', location: 'Utrecht', size: '100-200 werknemers', why_interesting: 'SaaS bedrijf in e-commerce tooling. LinkedIn Ads en content marketing voor B2B leadgen perfect passend.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 53, name: 'Picnic', website: 'https://www.picnic.app', description: 'Online supermarkt met eigen bezorging en app-first aanpak.', category: 'B2B', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Snelgroeiend tech bedrijf met enorme marketing budgetten. Tracking en performance optimalisatie zeer relevant.', services: ["Meta Ads", "Google Ads", "Tracking", "SEO", "AI"], retainer_potential: 10000, match_score: 6, priority: 'cold' },
+  { id: 54, name: 'Sendcloud', website: 'https://www.sendcloud.nl', description: 'Shipping automation platform voor e-commerce bedrijven.', category: 'B2B', location: 'Eindhoven', size: '200-500 werknemers', why_interesting: 'SaaS scaleup met internationale ambities. LinkedIn Ads, Google Ads en content marketing voor leadgen.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 55, name: 'Teamleader', website: 'https://www.teamleader.eu', description: 'CRM en projectmanagement software voor KMB.', category: 'B2B', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'B2B SaaS met grote NL markt. Performance marketing en leadgen via LinkedIn en Google Ads zijn core.', services: ["LinkedIn Ads", "Google Ads", "SEO", "Automation"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 56, name: 'Mews', website: 'https://www.mews.com', description: 'Cloud-based hospitality platform voor hotels.', category: 'B2B', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groeiend SaaS platform in hospitality. LinkedIn Ads en Google Ads voor B2B leadgeneratie.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 57, name: 'Bynder', website: 'https://www.bynder.com', description: 'Digital asset management platform voor enterprise bedrijven.', category: 'B2B', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Enterprise SaaS met complexe B2B sales cycle. LinkedIn Ads en content marketing strategie kansrijk.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 58, name: 'Recruitee (Tellent)', website: 'https://www.recruitee.com', description: 'Collaborative hiring software platform.', category: 'B2B', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'HR-tech SaaS die sterk leunt op inbound marketing. SEO, LinkedIn Ads en Google Ads essentieel.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 59, name: 'Trengo', website: 'https://www.trengo.com', description: 'Omnichannel customer engagement platform.', category: 'B2B', location: 'Utrecht', size: '100-200 werknemers', why_interesting: 'SaaS scaleup in customer service tooling. Performance marketing en leadgen zijn key growth drivers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 60, name: 'Hive.hr', website: 'https://www.hive.hr', description: 'Employee feedback en engagement platform.', category: 'B2B', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'HR-tech SaaS met groeiende NL presence. LinkedIn Ads voor HR decision makers perfect kanaal.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 61, name: 'Billink', website: 'https://www.billink.nl', description: 'Betaal-later oplossing voor webshops.', category: 'B2B', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Fintech/payments SaaS die webshops als klant heeft. LinkedIn Ads en Google Ads voor merchant acquisitie.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 62, name: 'Lightyear', website: 'https://www.lightyear.one', description: 'Elektrische auto met zonnepanelen, innovatief Nederlands techbedrijf.', category: 'B2B', location: 'Helmond', size: '200-500 werknemers', why_interesting: 'Innovatief techbedrijf met sterke branding needs. Digital marketing voor pre-orders en awareness.', services: ["Meta Ads", "Google Ads", "LinkedIn Ads", "SEO"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 63, name: 'Mollie', website: 'https://www.mollie.com', description: 'Payment service provider voor online bedrijven.', category: 'B2B', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Grote fintech scaleup. Hoewel ze intern veel doen, is er altijd ruimte voor specialistische tracking en AI.', services: ["LinkedIn Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 6, priority: 'cold' },
+  { id: 64, name: 'Plek', website: 'https://www.plek.co', description: 'Sociaal intranet en interne communicatie platform.', category: 'B2B', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'B2B SaaS die LinkedIn Ads en content marketing nodig heeft voor leadgen bij HR/interne comm managers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 65, name: 'Effectory', website: 'https://www.effectory.com', description: 'Employee feedback en medewerkersonderzoek platform.', category: 'B2B', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Gevestigde B2B SaaS met internationale groeiambities. LinkedIn Ads en SEO voor thought leadership.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 66, name: 'Hulan', website: 'https://www.hulan.nl', description: 'AI-powered data platform voor bedrijfsinzichten.', category: 'B2B', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Data/AI startup die B2B leadgen nodig heeft. LinkedIn Ads en content marketing perfect passend.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 67, name: 'Speakap', website: 'https://www.speakap.com', description: 'Interne communicatie app voor deskless workers.', category: 'B2B', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'SaaS voor enterprise communicatie. LinkedIn Ads gericht op HR en interne comm decision makers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 68, name: 'Nmbrs', website: 'https://www.nmbrs.com', description: 'Cloud-based HR en salarisadministratie software.', category: 'B2B', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'HR-tech SaaS met grote NL markt. Google Ads voor high-intent zoekwoorden en LinkedIn voor awareness.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 69, name: 'Informer Online', website: 'https://www.informer.nl', description: 'Online boekhoudprogramma voor ZZP\'ers en MKB.', category: 'B2B', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Fintech/SaaS met grote SME doelgroep. Google Ads en SEO voor boekhouding-gerelateerde zoektermen zeer effectief.', services: ["Google Ads", "SEO", "Meta Ads", "Automation"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 70, name: 'Bizcuit', website: 'https://www.bizcuit.nl', description: 'Financieel inzicht app die bankrekeningen koppelt aan boekhouding.', category: 'B2B', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Fintech startup met B2B focus. Google Ads en LinkedIn Ads voor accountants en ondernemers.', services: ["Google Ads", "LinkedIn Ads", "SEO", "HubSpot"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 71, name: 'Signicat', website: 'https://www.signicat.com', description: 'Digitale identiteit en authenticatie oplossingen.', category: 'B2B', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Enterprise SaaS in identity/security. LinkedIn Ads voor C-level decision makers en Google Ads voor solutions.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 72, name: 'Crobox', website: 'https://www.crobox.com', description: 'Product discovery platform met AI-gedreven personalisatie voor e-commerce.', category: 'B2B', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'E-commerce SaaS startup. LinkedIn Ads voor e-commerce managers en Google Ads voor product discovery.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 73, name: 'Helloprint', website: 'https://www.helloprint.nl', description: 'Online drukwerk platform voor bedrijven en consumenten.', category: 'B2B', location: 'Rotterdam', size: '100-200 werknemers', why_interesting: 'E-commerce platform voor drukwerk. Google Ads en SEO zijn primaire acquisitiekanalen met hoge intent.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 74, name: 'Wercker (Oracle)', website: 'https://www.oracle.com', description: 'Container-native CI/CD platform (nu onderdeel van Oracle).', category: 'B2B', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Developer tools met B2B marketing needs. Google Ads en LinkedIn Ads voor DevOps doelgroep.', services: ["LinkedIn Ads", "Google Ads", "SEO"], retainer_potential: 3000, match_score: 6, priority: 'cold' },
+  { id: 75, name: 'Messagebird (Bird)', website: 'https://www.bird.com', description: 'Omnichannel communicatie platform voor bedrijven.', category: 'B2B', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Grote tech scaleup met internationaal marketingbudget. Gespecialiseerde tracking en AI-optimalisatie waardevol.', services: ["LinkedIn Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 6, priority: 'cold' },
+  { id: 76, name: 'Buckaroo', website: 'https://www.buckaroo.nl', description: 'Payment service provider voor online en offline betalingen.', category: 'B2B', location: 'Utrecht', size: '50-100 werknemers', why_interesting: 'Payments SaaS die nieuwe merchants wil aantrekken. Google Ads en LinkedIn Ads voor merchant acquisitie.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 77, name: 'Five Degrees', website: 'https://www.fivedegrees.nl', description: 'Core banking platform voor banken en financiële instellingen.', category: 'B2B', location: 'Breukelen', size: '50-100 werknemers', why_interesting: 'Fintech SaaS met niche B2B doelgroep. LinkedIn Ads en thought leadership content essentieel.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 78, name: 'Declaree', website: 'https://www.declaree.com', description: 'Expense management software voor bedrijven.', category: 'B2B', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'B2B SaaS startup die leadgen via Google Ads en LinkedIn Ads nodig heeft om te groeien.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 79, name: 'Factris', website: 'https://www.factris.com', description: 'Factoring platform voor MKB bedrijven.', category: 'B2B', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Fintech in factoring voor MKB. Google Ads voor high-intent zoektermen en LinkedIn voor beslissers.', services: ["Google Ads", "LinkedIn Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 80, name: 'Cobase', website: 'https://www.cobase.com', description: 'Multibank platform voor treasury en cash management.', category: 'B2B', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Fintech SaaS voor enterprise treasury. LinkedIn Ads voor CFO\'s en treasury managers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 81, name: 'Sir Hotels', website: 'https://www.sirhotels.com', description: 'Boutique hotel groep met karakteristieke locaties in Nederlandse steden.', category: 'Hospitality', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Premium boutique hotel keten. Google Ads en Meta Ads voor direct bookings in plaats van OTA afhankelijkheid.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 82, name: 'citizenM Hotels', website: 'https://www.citizenm.com', description: 'Moderne hotel keten gericht op tech-savvy reizigers.', category: 'Hospitality', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Innovatieve hotelketen met sterke digital DNA. Tracking en performance marketing voor direct bookings.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "Automation"], retainer_potential: 8000, match_score: 7, priority: 'warm' },
+  { id: 83, name: 'Conscious Hotels', website: 'https://www.conscioushotels.com', description: 'Duurzame hotel groep in Amsterdam.', category: 'Hospitality', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Groeiende duurzame hotelketen. SEO op duurzaam reizen en Google Ads voor direct bookings.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 84, name: 'Hotel V', website: 'https://www.hotelv.nl', description: 'Boutique hotel groep met meerdere locaties in Amsterdam.', category: 'Hospitality', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Lokale boutique hotels die direct bookings willen verhogen t.o.v. Booking.com dependency.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 85, name: 'Bastion Hotels', website: 'https://www.bastionhotels.nl', description: 'Nederlandse hotelketen met 30+ locaties in Nederland en België.', category: 'Hospitality', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Grote keten met veel locaties. Nationale Google Ads campagnes en lokale SEO voor elke locatie.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 86, name: 'TUI Nederland', website: 'https://www.tui.nl', description: 'Grootste touroperator van Nederland voor vakantiereizen.', category: 'Hospitality', location: 'Rijswijk', size: '500+ werknemers', why_interesting: 'Enorm marketingbudget. Zelfs kleine tracking/AI optimalisatie levert miljoenen op bij dit volume.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "AI"], retainer_potential: 10000, match_score: 6, priority: 'cold' },
+  { id: 87, name: 'Tinkerbell', website: 'https://www.tinkerbell.travel', description: 'Online reisbureau gespecialiseerd in luxe en op-maat vakanties.', category: 'Hospitality', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Hoge orderwaarde maakt performance marketing zeer rendabel. Google Ads en SEO zijn key.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 88, name: 'GetYourGuide NL', website: 'https://www.getyourguide.nl', description: 'Platform voor tours en activiteiten boekingen.', category: 'Hospitality', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Groot platform met performance marketing als core. Vergelijkbaar met Tours & Tickets (bestaande klant).', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 89, name: 'Landal GreenParks', website: 'https://www.landal.nl', description: 'Vakantieparken keten met online boekingsplatform.', category: 'Hospitality', location: 'De Meern', size: '500+ werknemers', why_interesting: 'Groot leisure merk met significant online marketing budget. Performance en tracking optimalisatie waardevol.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 6, priority: 'cold' },
+  { id: 90, name: 'Restaurant Lastage', website: 'https://www.restaurantlastage.nl', description: 'Fine dining restaurant in Amsterdam met Michelin ster.', category: 'Hospitality', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Premium horeca die online zichtbaarheid en reserveringen wil verhogen. SEO en lokale ads.', services: ["SEO", "Google Ads", "Meta Ads"], retainer_potential: 2000, match_score: 6, priority: 'cold' },
+  { id: 91, name: 'The Dylan Amsterdam', website: 'https://www.dylanamsterdam.com', description: 'Luxe 5-sterren boutique hotel aan de Keizersgracht.', category: 'Hospitality', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Luxe hotel met hoge kamerprijs. Google Ads en SEO voor direct bookings hebben hoge ROI.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 92, name: 'Corendon Hotels', website: 'https://www.corendonhotels.com', description: 'Hotel en reisorganisatie met meerdere hotels in Amsterdam.', category: 'Hospitality', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Groeiende hotelketen die direct bookings wil verhogen. Performance marketing en tracking essentieel.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 93, name: 'Mokum Events', website: 'https://www.mokumevents.nl', description: 'Evenementenbureau voor bedrijfsuitjes en teambuilding in Amsterdam.', category: 'Hospitality', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'B2B events bedrijf dat online leadgeneratie nodig heeft. Google Ads en SEO voor high-intent zoekwoorden.', services: ["Google Ads", "SEO", "LinkedIn Ads", "Meta Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 94, name: 'WestCord Hotels', website: 'https://www.westcordhotels.nl', description: 'Nederlandse hotelketen met 20+ hotels op toplocaties.', category: 'Hospitality', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Middelgrote keten die concurreert met OTA\'s. Direct booking strategie via performance marketing.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 95, name: 'Citytrip.com', website: 'https://www.citytrip.com', description: 'Online travel platform voor stedentripjes in Europa.', category: 'Hospitality', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Travel e-commerce met seizoensgebonden pieken. Google Ads en Meta Ads optimalisatie direct rendabel.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 96, name: 'Yays Concierged Boutique Apartments', website: 'https://www.yfrys.com', description: 'Boutique serviced apartments in Amsterdam en andere steden.', category: 'Hospitality', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Premium short-stay concept. Direct bookings via Google Ads en SEO om OTA-kosten te verlagen.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 97, name: 'Volkshotel', website: 'https://www.volkshotel.nl', description: 'Creatief hotel met co-working space en evenementen.', category: 'Hospitality', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Uniek hotel concept met diverse revenue streams. Multi-channel marketing strategie passend.', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3000, match_score: 6, priority: 'cold' },
+  { id: 98, name: 'NDSM Wharf', website: 'https://www.ndsm.nl', description: 'Creatieve hotspot met evenementen, horeca en culturele activiteiten.', category: 'Hospitality', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Culturele evenementenlocatie die digitale marketing nodig heeft voor ticketverkoop en awareness.', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 2500, match_score: 6, priority: 'cold' },
+  { id: 99, name: 'Sunweb', website: 'https://www.sunweb.nl', description: 'Online touroperator voor wintersport en zomervakanties.', category: 'Hospitality', location: 'Rotterdam', size: '200-500 werknemers', why_interesting: 'Groot online reismerk met significant ad budget. Performance marketing en tracking optimalisatie waardevol.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 100, name: 'Funky Fish Hostels', website: 'https://www.funkyfishhostels.com', description: 'Budget-friendly hostel keten voor jonge reizigers.', category: 'Hospitality', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Hostel gericht op jong publiek. Meta Ads en TikTok Ads perfect voor doelgroep bereik.', services: ["Meta Ads", "TikTok Ads", "Google Ads", "SEO"], retainer_potential: 2500, match_score: 6, priority: 'cold' },
+  { id: 101, name: 'VON POLL REAL ESTATE', website: 'https://www.vonpoll.com', description: 'Premium makelaardij met focus op luxe woningen in Amsterdam.', category: 'Vastgoed', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Premium makelaar met hoge commissies. Google Ads en SEO voor woningzoekers, LinkedIn voor verkopers.', services: ["Google Ads", "SEO", "LinkedIn Ads", "Meta Ads"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 102, name: 'Broersma Wonen', website: 'https://www.broersmawonen.nl', description: 'Makelaarskantoor gespecialiseerd in Amsterdam Zuid en Oud-Zuid.', category: 'Vastgoed', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Groot makelaarskantoor in premium segment. Digital marketing voor lead generation en branding.', services: ["Google Ads", "SEO", "Meta Ads", "LinkedIn Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 103, name: 'Hallie & Van Klooster', website: 'https://www.hallievanklooster.nl', description: 'Makelaarskantoor in Amsterdam West met sterke lokale positie.', category: 'Vastgoed', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Lokale makelaar die online zichtbaarheid wil vergroten. Google Ads en lokale SEO zeer effectief.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 2500, match_score: 7, priority: 'warm' },
+  { id: 104, name: 'Heeren Makelaars', website: 'https://www.heerenmakelaars.nl', description: 'Gerenommeerd makelaarskantoor in Amsterdam Zuid.', category: 'Vastgoed', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Premium makelaar met hoge ratings. Digitale marketing voor meer leads en merkbekendheid.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 2500, match_score: 7, priority: 'warm' },
+  { id: 105, name: 'AM (Koninklijke BAM)', website: 'https://www.am.nl', description: 'Grote projectontwikkelaar voor woningbouw en gebiedsontwikkeling.', category: 'Vastgoed', location: 'Utrecht', size: '500+ werknemers', why_interesting: 'Grote ontwikkelaar die digital marketing nodig heeft voor nieuwbouwprojecten. Lead generation cruciaal.', services: ["Google Ads", "Meta Ads", "SEO", "LinkedIn Ads", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 106, name: 'BPD (Bouwfonds Property Development)', website: 'https://www.bfrfrfrfrd.nl', description: 'Grootste gebiedsontwikkelaar van Nederland.', category: 'Vastgoed', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Marktleider in gebiedsontwikkeling. Digital marketing voor vastgoedprojecten met hoge waarde.', services: ["Google Ads", "Meta Ads", "SEO", "LinkedIn Ads", "Tracking"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 107, name: 'CBRE NL', website: 'https://www.cbre.nl', description: 'Internationaal vastgoedadviesbureau met sterke NL presence.', category: 'Vastgoed', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot vastgoedbedrijf met complexe B2B marketing. LinkedIn Ads en content marketing voor lead gen.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 108, name: 'Holland2Stay', website: 'https://www.holland2stay.com', description: 'Vastgoedbeheerder gespecialiseerd in expat woningen.', category: 'Vastgoed', location: 'Eindhoven', size: '100-200 werknemers', why_interesting: 'Niche vastgoed voor expats. Google Ads en SEO in het Engels voor internationale doelgroep.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 109, name: 'Vesteda', website: 'https://www.vesteda.com', description: 'Grote woningbelegger met huurwoningen in heel Nederland.', category: 'Vastgoed', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Groot vastgoedfonds dat huurders wil bereiken. Google Ads en SEO voor woningzoekers.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 110, name: 'Greystar NL', website: 'https://www.greystar.com/nl', description: 'Internationale studentenhuisvesting en multifamily operator.', category: 'Vastgoed', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Student housing met jonge doelgroep. Social media advertising en SEO voor studentenwoningen.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 111, name: 'Your Home Makelaars', website: 'https://www.yourhome.nl', description: 'Makelaardij in Amsterdam met focus op persoonlijke service.', category: 'Vastgoed', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Groeiend makelaarskantoor dat digitale acquisitie wil versterken. Vergelijkbaar met Unity Units klant.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 2500, match_score: 7, priority: 'warm' },
+  { id: 112, name: 'Ramón Mossel Makelaardij', website: 'https://www.ramonmossel.nl', description: 'Makelaarskantoor in Amsterdam Buitenveldert en omgeving.', category: 'Vastgoed', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Lokale makelaar met behoefte aan betere online zichtbaarheid. Google Ads en SEO kansrijk.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 2500, match_score: 6, priority: 'cold' },
+  { id: 113, name: 'Bouwinvest', website: 'https://www.bouwinvest.nl', description: 'Vastgoedbelegger voor pensioenfondsen met groot NL portfolio.', category: 'Vastgoed', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Grote vastgoedbelegger die digital marketing nodig heeft voor huurders en investeerders.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 6, priority: 'cold' },
+  { id: 114, name: 'Van der Linden Makelaars', website: 'https://www.vanderlindenmakelaars.nl', description: 'Makelaarskantoor actief in de Randstad.', category: 'Vastgoed', location: 'Den Haag', size: '10-20 werknemers', why_interesting: 'Regionale makelaar die online marketing wil professionaliseren. Lokale SEO en Google Ads.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 2500, match_score: 6, priority: 'cold' },
+  { id: 115, name: 'Synchroon', website: 'https://www.synchroon.nl', description: 'Gebiedsontwikkelaar met focus op duurzame projecten.', category: 'Vastgoed', location: 'Utrecht', size: '50-100 werknemers', why_interesting: 'Duurzame ontwikkelaar die marketing nodig heeft voor nieuwbouwprojecten. Google Ads en SEO.', services: ["Google Ads", "SEO", "Meta Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 116, name: 'YoungCapital', website: 'https://www.youngcapital.nl', description: 'Uitzendbureau gespecialiseerd in jong talent en studenten.', category: 'Recruitment', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot uitzendbureau met sterke online presence. Performance marketing voor kandidaat- en opdrachtgever acquisitie.', services: ["Google Ads", "Meta Ads", "TikTok Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 117, name: 'Hays Nederland', website: 'https://www.hays.nl', description: 'Internationaal recruitment bureau voor professionals.', category: 'Recruitment', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Groot bureau dat online leadgeneratie nodig heeft voor zowel kandidaten als opdrachtgevers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 118, name: 'Undutchables', website: 'https://www.undutchables.nl', description: 'Recruitment bureau gespecialiseerd in meertalig talent in Nederland.', category: 'Recruitment', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Niche recruiter voor internationals. LinkedIn Ads en Google Ads voor kandidaat acquisitie.', services: ["LinkedIn Ads", "Google Ads", "SEO", "Meta Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 119, name: 'Brunel', website: 'https://www.brunel.nl', description: 'Internationale detacheerder en recruitment specialist.', category: 'Recruitment', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Grote detacheerder met significant marketingbudget. Performance marketing en SEO voor specialistisch talent.', services: ["Google Ads", "LinkedIn Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 120, name: 'Velde Groep', website: 'https://www.veldegroep.nl', description: 'Technisch uitzendbureau voor bouw en industrie.', category: 'Recruitment', location: 'Rotterdam', size: '100-200 werknemers', why_interesting: 'Niche uitzendbureau in technische sector. Google Ads en LinkedIn Ads voor kandidaat werving.', services: ["Google Ads", "LinkedIn Ads", "SEO", "Meta Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 121, name: 'Yacht (Randstad)', website: 'https://www.yacht.nl', description: 'Detachering van professionals op HBO+ niveau.', category: 'Recruitment', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot detacheringsbureau. Digital marketing voor specialistisch talent werving op scale.', services: ["Google Ads", "LinkedIn Ads", "SEO", "Meta Ads"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 122, name: 'Olympia Uitzendbureau', website: 'https://www.olympia.nl', description: 'Landelijk uitzendbureau met focus op flexwerk.', category: 'Recruitment', location: 'Groningen', size: '200-500 werknemers', why_interesting: 'Groot uitzendbureau dat online marketing voor kandidaat werving wil optimaliseren.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 123, name: 'Progressive Recruitment', website: 'https://www.progressiverecruitment.com/nl', description: 'Recruitment bureau voor techniek en engineering professionals.', category: 'Recruitment', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Niche recruiter met internationale scope. LinkedIn Ads en Google Ads voor engineering talent.', services: ["LinkedIn Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 124, name: 'Strictly People', website: 'https://www.strictlypeople.nl', description: 'Recruitment bureau voor marketing en communicatie professionals.', category: 'Recruitment', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Marketing recruitment niche. LinkedIn Ads en SEO voor marketing professionals bereiken.', services: ["LinkedIn Ads", "Google Ads", "SEO"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 125, name: 'Binternagel', website: 'https://www.binternagel.nl', description: 'IT recruitment en detachering specialist.', category: 'Recruitment', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'IT recruitment niche met hoge plaatsingswaarde. Performance marketing voor IT talent werving.', services: ["LinkedIn Ads", "Google Ads", "SEO", "Meta Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 126, name: 'Robert Walters NL', website: 'https://www.robertwalters.nl', description: 'Internationaal recruitment bureau voor professionals.', category: 'Recruitment', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Premium recruiter die online leadgeneratie voor zowel kandidaten als klanten nodig heeft.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 127, name: 'Magnet.me', website: 'https://www.magnet.me', description: 'Platform dat starters en young professionals verbindt met werkgevers.', category: 'Recruitment', location: 'Rotterdam', size: '50-100 werknemers', why_interesting: 'HR-tech platform met B2B en B2C marketing needs. Performance marketing voor beide zijden van het platform.', services: ["Meta Ads", "Google Ads", "LinkedIn Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 128, name: 'Cooble', website: 'https://www.cooble.nl', description: 'Online recruitment platform voor horeca personeel.', category: 'Recruitment', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Niche recruitment platform. Google Ads en Meta Ads voor kandidaat werving in horeca sector.', services: ["Google Ads", "Meta Ads", "SEO"], retainer_potential: 2500, match_score: 6, priority: 'cold' },
+  { id: 129, name: 'Solid Professionals', website: 'https://www.solidprofessionals.nl', description: 'Detachering van finance en IT professionals.', category: 'Recruitment', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Premium detacheerder met hoge plaatsingswaarde. LinkedIn Ads voor kandidaten en decision makers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 130, name: 'VanBerkel Professionals', website: 'https://www.vanberkelprofessionals.nl', description: 'Uitzendbureau voor logistiek en technisch personeel.', category: 'Recruitment', location: 'Utrecht', size: '50-100 werknemers', why_interesting: 'Groeiend uitzendbureau dat online marketing wil professionaliseren voor kandidaat en klant werving.', services: ["Google Ads", "Meta Ads", "LinkedIn Ads", "SEO"], retainer_potential: 3000, match_score: 6, priority: 'cold' },
+  { id: 131, name: 'FINOM', website: 'https://www.finom.co', description: 'Digitale zakelijke bankrekening en factuurplatform voor ondernemers.', category: 'Finance', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Snelgroeiende fintech die klantacquisitie via performance marketing doet. Google Ads en SEO cruciaal.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking", "Automation"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 132, name: 'Adyen', website: 'https://www.adyen.com', description: 'Groot betalingsplatform voor enterprise bedrijven.', category: 'Finance', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot fintechbedrijf. LinkedIn Ads en content marketing voor enterprise leadgeneratie.', services: ["LinkedIn Ads", "Google Ads", "SEO"], retainer_potential: 8000, match_score: 6, priority: 'cold' },
+  { id: 133, name: 'BUX', website: 'https://www.bux.com', description: 'Trading en beleggen app voor millennials en gen-z.', category: 'Finance', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Fintech app met jonge doelgroep. Meta Ads, TikTok Ads en performance marketing essentieel voor groei.', services: ["Meta Ads", "TikTok Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 134, name: 'Lender & Spender', website: 'https://www.lfrfrfrfrendfrfrfrfrer.nl', description: 'P2P lending platform voor consumenten en MKB.', category: 'Finance', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Fintech platform dat borrowers en investors moet aantrekken. Google Ads en SEO high-intent.', services: ["Google Ads", "SEO", "Meta Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 135, name: 'Knab', website: 'https://www.knab.nl', description: 'Online bank voor ondernemers en zzp\'ers.', category: 'Finance', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Digitale bank die klantacquisitie doet via Google Ads en content marketing. Performance optimalisatie waardevol.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 136, name: 'Peaks', website: 'https://www.peaks.com', description: 'Micro-beleggen app die wisselgeld investeert.', category: 'Finance', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Fintech app met consumer focus. Social media advertising en app install campaigns essentieel.', services: ["Meta Ads", "TikTok Ads", "Google Ads", "SEO"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 137, name: 'Ohpen', website: 'https://www.ohpen.com', description: 'Cloud-native core banking platform.', category: 'Finance', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'B2B fintech die banking partners zoekt. LinkedIn Ads en content marketing voor enterprise decision makers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 138, name: 'Alpian', website: 'https://www.alpian.com', description: 'Digital private banking platform met NL operations.', category: 'Finance', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Premium fintech met high-net-worth doelgroep. Google Ads en LinkedIn Ads voor acquisitie.', services: ["Google Ads", "LinkedIn Ads", "SEO", "Meta Ads"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 139, name: 'Nationale-Nederlanden', website: 'https://www.nn.nl', description: 'Grote verzekeraar en financieel dienstverlener.', category: 'Finance', location: 'Den Haag', size: '500+ werknemers', why_interesting: 'Groot merk met enorm marketingbudget. Tracking optimalisatie en AI-bidding bij dit volume zeer impactvol.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "AI"], retainer_potential: 10000, match_score: 6, priority: 'cold' },
+  { id: 140, name: 'Independer', website: 'https://www.independer.nl', description: 'Vergelijkingssite voor verzekeringen, energie en financiën.', category: 'Finance', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Lead-generation platform. Performance marketing, tracking en AI-optimalisatie zijn core business.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking", "AI"], retainer_potential: 8000, match_score: 7, priority: 'warm' },
+  { id: 141, name: 'Hypotheek.nl', website: 'https://www.hypotheek.nl', description: 'Online hypotheekadvies platform.', category: 'Finance', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Lead-driven model met hoge waarde per conversie. Google Ads en SEO optimalisatie zeer rendabel.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 142, name: 'Fundion', website: 'https://www.fundion.nl', description: 'Crowdfunding platform voor vastgoed en ondernemingen.', category: 'Finance', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Fintech platform dat investeerders moet aantrekken. Google Ads en SEO voor crowdfunding zoekwoorden.', services: ["Google Ads", "SEO", "LinkedIn Ads", "Meta Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 143, name: 'Briqwise', website: 'https://www.briqwise.com', description: 'Vastgoed crowdfunding en hypotheekplatform.', category: 'Finance', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Fintech in vastgoed financiering. Performance marketing voor investeerder acquisitie.', services: ["Google Ads", "SEO", "LinkedIn Ads", "Meta Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 144, name: 'Minox Software', website: 'https://www.minox.nl', description: 'Online boekhoudprogramma voor accountants en ondernemers.', category: 'Finance', location: 'Waalwijk', size: '50-100 werknemers', why_interesting: 'SaaS accounting tool die competief moet adverteren. Google Ads en SEO voor boekhouding keywords.', services: ["Google Ads", "SEO", "LinkedIn Ads", "HubSpot"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 145, name: 'Conta', website: 'https://www.conta.nl', description: 'Online accounting en belastingaangifte platform.', category: 'Finance', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Groeiende fintech met seizoenspieken (belastingaangifte). Google Ads en SEO essentieel.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 146, name: 'Patchs', website: 'https://www.patchs.nl', description: 'Natuurlijke pleisters en supplementen met DTC webshop.', category: 'Health', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Innovatief health brand met DTC model. Meta Ads en Google Ads voor productverkoop.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 147, name: 'Fittleclub', website: 'https://www.fittleclub.nl', description: 'Online fitness en personal training platform.', category: 'Health', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Online fitness platform met subscription model. Performance marketing voor subscriber acquisitie.', services: ["Meta Ads", "Google Ads", "TikTok Ads", "SEO"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 148, name: 'Equi', website: 'https://www.equi.nl', description: 'Premium voedingssupplementen met wetenschappelijke onderbouwing.', category: 'Health', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Premium supplement merk met DTC focus. Meta Ads en Google Ads voor gezondheidszoekwoorden.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 149, name: 'Vinami', website: 'https://www.vinami.nl', description: 'Online platform voor functionele supplementen en vitamines.', category: 'Health', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Groeiend supplementenmerk. Performance marketing en SEO voor health keywords.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 2500, match_score: 6, priority: 'cold' },
+  { id: 150, name: 'Hims & Hers NL', website: 'https://www.forhims.nl', description: 'Telehealth en DTC wellness producten voor mannen en vrouwen.', category: 'Health', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Internationaal health DTC merk met NL operations. Performance marketing voor patient acquisitie.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads", "Tracking"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 151, name: 'Bloomergy', website: 'https://www.bloomergy.nl', description: 'Adaptogene supplementen en wellnessproducten.', category: 'Health', location: 'Amsterdam', size: '5-10 werknemers', why_interesting: 'Opkomend wellness merk in trending categorie. Meta Ads en TikTok Ads voor awareness en verkoop.', services: ["Meta Ads", "TikTok Ads", "Google Ads", "SEO"], retainer_potential: 2500, match_score: 7, priority: 'warm' },
+  { id: 152, name: 'Kry / Livi NL', website: 'https://www.kry.se/nl', description: 'Digitale huisartsenpraktijk en telehealth platform.', category: 'Health', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Digital health platform dat patiënten moet aantrekken. Google Ads en SEO voor medische zoekwoorden.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 153, name: 'Moovd', website: 'https://www.moovd.com', description: 'Digital mental health platform met VR therapie.', category: 'Health', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Innovatieve mental health tech. B2B marketing via LinkedIn Ads voor GGZ instellingen.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 154, name: 'Treatwell', website: 'https://www.treatwell.nl', description: 'Online boekingsplatform voor beauty en wellness behandelingen.', category: 'Health', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Groot marketplace platform. Performance marketing voor zowel consumenten als beauty professionals.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "Automation"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 155, name: 'Rocycle', website: 'https://www.rocycle.com', description: 'Premium indoor cycling studio\'s in Amsterdam.', category: 'Health', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Premium fitness concept met lokale marketing needs. Meta Ads en Google Ads voor lid acquisitie.', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 156, name: 'Body & Fit', website: 'https://www.bodyandfit.com', description: 'Online shop voor sportvoeding, supplementen en gezonde voeding.', category: 'Health', location: 'Heerenveen', size: '200-500 werknemers', why_interesting: 'Grote e-commerce speler in health/fitness. Performance marketing en tracking optimalisatie zeer waardevol.', services: ["Google Ads", "Meta Ads", "SEO", "Tracking", "Automation"], retainer_potential: 6000, match_score: 8, priority: 'hot' },
+  { id: 157, name: 'Vital10', website: 'https://www.vital10.nl', description: 'Premium supplementen en vitamines webshop.', category: 'Health', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Supplement DTC met recurring revenue. Google Ads en SEO voor gezondheidszoekwoorden essentieel.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 158, name: 'Minddistrict', website: 'https://www.minddistrict.com', description: 'E-health platform voor mentale gezondheid en preventie.', category: 'Health', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'B2B health-tech dat GGZ instellingen als klant heeft. LinkedIn Ads en content marketing.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 159, name: 'Cloudwise', website: 'https://www.cloudwise.nl', description: 'E-health platform voor vitaliteit en verzuimpreventie.', category: 'Health', location: 'Den Haag', size: '50-100 werknemers', why_interesting: 'B2B health platform dat werkgevers bereikt. LinkedIn Ads en Google Ads voor HR decision makers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 160, name: 'Matthi Forrer Clinics', website: 'https://www.matthiforrer.nl', description: 'Cosmetische klinieken voor huidverbetering en anti-aging.', category: 'Health', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Premium kliniek met hoge behandelwaarde. Meta Ads en Google Ads voor leadgeneratie zeer rendabel.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 161, name: 'Studyportals', website: 'https://www.studyportals.com', description: 'Internationaal platform voor het zoeken en vergelijken van opleidingen.', category: 'Education', location: 'Eindhoven', size: '100-200 werknemers', why_interesting: 'Ed-tech platform met B2B en B2C marketing. Google Ads voor studenten en LinkedIn voor universiteiten.', services: ["Google Ads", "LinkedIn Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 162, name: 'Springest', website: 'https://www.springest.nl', description: 'Vergelijkingsplatform voor opleidingen en trainingen.', category: 'Education', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Lead-generation platform voor opleidingen. Google Ads en SEO zijn primaire acquisitiekanalen.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 163, name: 'Studytube', website: 'https://www.studytube.nl', description: 'Online learning management platform voor bedrijven.', category: 'Education', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'B2B SaaS in learning & development. LinkedIn Ads voor HR/L&D beslissers essentieel.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 164, name: 'GoodHabitz', website: 'https://www.goodhabitz.com', description: 'Online trainingen en e-learning platform voor bedrijven.', category: 'Education', location: 'Eindhoven', size: '200-500 werknemers', why_interesting: 'Snelgroeiend L&D platform. LinkedIn Ads en Google Ads voor B2B leadgeneratie bij HR managers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot", "Automation"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 165, name: 'Lepaya', website: 'https://www.lepaya.com', description: 'Power skills training platform voor professionals.', category: 'Education', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'B2B education tech scaleup. LinkedIn Ads en content marketing voor L&D decision makers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 166, name: 'NCOI Opleidingsgroep', website: 'https://www.ncoi.nl', description: 'Grootste particuliere opleider van Nederland.', category: 'Education', location: 'Hilversum', size: '500+ werknemers', why_interesting: 'Marktleider met groot marketingbudget. Google Ads en SEO optimalisatie bij dit volume zeer impactvol.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking", "Automation"], retainer_potential: 8000, match_score: 7, priority: 'warm' },
+  { id: 167, name: 'Schoevers', website: 'https://www.schoevers.nl', description: 'Opleidingsinstituut voor secretarieel en office management.', category: 'Education', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Gevestigd opleidingsinstituut met online groeiambitie. Google Ads en SEO voor opleidingszoekwoorden.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 168, name: 'Qlick', website: 'https://www.qlick.nl', description: 'Online platform voor bijles en huiswerkbegeleiding.', category: 'Education', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Ed-tech platform dat ouders en studenten bereikt. Meta Ads en Google Ads voor leadgen.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 169, name: 'Winc Academy', website: 'https://www.wincacademy.nl', description: 'Online tech bootcamp voor web development en data science.', category: 'Education', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Tech education met hoge cursusprijzen. Performance marketing en SEO voor carrière-switchers.', services: ["Google Ads", "Meta Ads", "SEO", "LinkedIn Ads"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 170, name: 'Masterplan.com', website: 'https://www.masterplan.com', description: 'E-learning platform met interactieve cursussen voor bedrijven.', category: 'Education', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'B2B e-learning platform. LinkedIn Ads en Google Ads voor HR/L&D professionals.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 171, name: 'Athlon (Lease)', website: 'https://www.athlon.com', description: 'Internationale lease en fleet management provider.', category: 'Auto', location: 'Almere', size: '500+ werknemers', why_interesting: 'Groot leasebedrijf met B2B en B2C marketing. Google Ads en LinkedIn Ads voor lease leads.', services: ["Google Ads", "LinkedIn Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 172, name: 'Justlease', website: 'https://www.justlease.nl', description: 'Online private lease platform voor particulieren.', category: 'Auto', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Online-first lease bedrijf. Google Ads en SEO voor lease zoekwoorden zijn primaire groeimotor.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 173, name: 'Louwman', website: 'https://www.louwman.nl', description: 'Grote autodealergroep met meerdere merken (Toyota, Lexus, etc).', category: 'Auto', location: 'Utrecht', size: '500+ werknemers', why_interesting: 'Groot dealer netwerk met lokale marketing needs. Google Ads en lokale SEO per vestiging.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 174, name: 'VanMoof (opvolger)', website: 'https://www.vanmoof.com', description: 'Iconisch e-bike merk dat herstart na faillissement.', category: 'Auto', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Herstarting merk met grote naamsbekendheid. Performance marketing voor comeback campagne.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 175, name: 'Felyx', website: 'https://www.felyx.com', description: 'Elektrische deelscooter service in Nederlandse steden.', category: 'Auto', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Mobility startup met app-based model. Performance marketing voor nieuwe gebruikers acquisitie.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 176, name: 'AutoTrack', website: 'https://www.autotrack.nl', description: 'Online platform voor occasions kopen en verkopen.', category: 'Auto', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Auto marketplace met performance marketing als core. Google Ads en SEO optimalisatie cruciaal.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 177, name: 'Snappcar', website: 'https://www.snappcar.nl', description: 'Platform voor auto delen tussen particulieren.', category: 'Auto', location: 'Utrecht', size: '20-50 werknemers', why_interesting: 'Mobility sharing platform. Meta Ads en Google Ads voor gebruiker acquisitie aan beide zijden.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 178, name: 'MyWheels', website: 'https://www.mywheels.nl', description: 'Autodeel platform met eigen en particuliere auto\'s.', category: 'Auto', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Groeiend deelplatform. Performance marketing voor lid acquisitie en awareness.', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 179, name: 'Mobility Service', website: 'https://www.msautomotive.nl', description: 'Fleet management en wagenparkbeheer voor bedrijven.', category: 'Auto', location: 'Urmond', size: '200-500 werknemers', why_interesting: 'B2B fleet management. LinkedIn Ads en Google Ads voor fleet managers.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 6, priority: 'cold' },
+  { id: 180, name: 'Carsom', website: 'https://www.carsom.nl', description: 'Online platform voor auto onderhoud en APK boekingen.', category: 'Auto', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Auto services marketplace. Google Ads en SEO voor high-intent zoektermen.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 181, name: 'NautaDutilh', website: 'https://www.nautadutilh.com', description: 'Top advocatenkantoor in de Benelux.', category: 'Professional', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot kantoor dat online thought leadership wil versterken.', services: ["LinkedIn Ads", "SEO", "Google Ads"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 182, name: 'Kennedy Van der Laan', website: 'https://www.kvdl.com', description: 'Innovatief advocatenkantoor met tech focus.', category: 'Professional', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Tech-forward advocatenkantoor. LinkedIn Ads en content marketing voor lead generatie.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 183, name: 'Mazars NL', website: 'https://www.mazars.nl', description: 'Internationaal accountants- en adviesbureau.', category: 'Professional', location: 'Amsterdam', size: '200-500 werknemers', why_interesting: 'Groeiend accountancy bureau dat digitale acquisitie wil verbeteren.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 184, name: 'Firm24', website: 'https://www.firm24.com', description: 'Online platform voor BV oprichten en notariele diensten.', category: 'Professional', location: 'Amsterdam', size: '20-50 werknemers', why_interesting: 'Legal-tech platform. Google Ads en SEO voor BV-oprichten zoekwoorden zeer high-intent.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 185, name: 'ICTRecht', website: 'https://www.ictrecht.nl', description: 'Juridisch adviesbureau gespecialiseerd in IT en privacy recht.', category: 'Professional', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Niche advocatenkantoor in trending privacy/IT-recht domein. SEO en Google Ads zeer relevant.', services: ["Google Ads", "SEO", "LinkedIn Ads", "HubSpot"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 186, name: 'Legalloyd', website: 'https://www.legalloyd.com', description: 'Online juridische dienstverlener voor ondernemers.', category: 'Professional', location: 'Amsterdam', size: '10-20 werknemers', why_interesting: 'Legal-tech startup. Google Ads en SEO voor juridische zoekwoorden.', services: ["Google Ads", "SEO", "LinkedIn Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 187, name: 'RSM NL', website: 'https://www.rsm.nl', description: 'Accountants- en adviesbureau voor het middensegment.', category: 'Professional', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot accountantskantoor dat online leadgeneratie wil versterken.', services: ["LinkedIn Ads", "Google Ads", "SEO", "HubSpot"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 188, name: 'Crowe Foederer', website: 'https://www.crowefoederer.nl', description: 'Accountants- en adviesorganisatie voor ondernemers.', category: 'Professional', location: 'Eindhoven', size: '200-500 werknemers', why_interesting: 'Groeiend accountancy bureau. Google Ads en SEO voor MKB klant acquisitie.', services: ["Google Ads", "SEO", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 189, name: 'Feenstra', website: 'https://www.feenstra.com', description: 'Installatiebedrijf voor CV-ketels, airconditioning en zonnepanelen.', category: 'Bouw', location: 'Amsterdam', size: '500+ werknemers', why_interesting: 'Groot installatiebedrijf met lokale leadgeneratie. Google Ads en SEO essentieel.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 5000, match_score: 7, priority: 'warm' },
+  { id: 190, name: 'Homekeur', website: 'https://www.homekeur.nl', description: 'Bouwkundige keuringen voor woningkopers.', category: 'Bouw', location: 'Utrecht', size: '50-100 werknemers', why_interesting: 'High-demand service met seizoensgebonden vraag. Google Ads en SEO direct rendabel.', services: ["Google Ads", "SEO", "Meta Ads"], retainer_potential: 3000, match_score: 7, priority: 'warm' },
+  { id: 191, name: 'Solar Sedum', website: 'https://www.solarsedum.nl', description: 'Specialist in groene daken en zonnepanelen op platte daken.', category: 'Bouw', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Duurzame bouw niche in groeiende markt. Google Ads en SEO zeer relevant.', services: ["Google Ads", "SEO", "LinkedIn Ads", "Meta Ads"], retainer_potential: 3500, match_score: 8, priority: 'hot' },
+  { id: 192, name: 'Heijmans', website: 'https://www.heijmans.nl', description: 'Groot bouw- en infrabedrijf met woningbouw.', category: 'Bouw', location: 'Rosmalen', size: '500+ werknemers', why_interesting: 'Groot bouwbedrijf met marketing needs voor woningverkoop en employer branding.', services: ["Google Ads", "SEO", "LinkedIn Ads", "Meta Ads"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 193, name: 'Warmteservice', website: 'https://www.warmteservice.nl', description: 'Groothandel en installatie voor CV-ketels en warmtepompen.', category: 'Bouw', location: 'Breda', size: '200-500 werknemers', why_interesting: 'Groeiende markt voor warmtepompen. Google Ads en SEO voor energietransitie.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 194, name: 'Bouwmaat', website: 'https://www.bouwmaat.nl', description: 'Bouwmaterialen groothandel met webshop.', category: 'Bouw', location: 'Gorinchem', size: '500+ werknemers', why_interesting: 'B2B bouwmaterialen met groeiende e-commerce.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 4000, match_score: 7, priority: 'warm' },
+  { id: 195, name: 'Dura Vermeer', website: 'https://www.duravermeer.nl', description: 'Groot bouw- en infrabedrijf.', category: 'Bouw', location: 'Rotterdam', size: '500+ werknemers', why_interesting: 'Grote bouwer met employer branding en woningverkoop marketing needs.', services: ["LinkedIn Ads", "Google Ads", "SEO", "Meta Ads"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 196, name: 'Breman Installatiegroep', website: 'https://www.breman.nl', description: 'Technisch installatiebedrijf voor utiliteit en industrie.', category: 'Bouw', location: 'Genemuiden', size: '500+ werknemers', why_interesting: 'Groot installatiebedrijf. LinkedIn Ads voor B2B projecten.', services: ["LinkedIn Ads", "Google Ads", "SEO"], retainer_potential: 4000, match_score: 6, priority: 'cold' },
+  { id: 197, name: 'Van Wijnen', website: 'https://www.vanwijnen.nl', description: 'Bouwbedrijf met focus op woningbouw en renovatie.', category: 'Bouw', location: 'Baarn', size: '500+ werknemers', why_interesting: 'Grote bouwer met nieuwbouwprojecten die marketing nodig hebben.', services: ["Google Ads", "SEO", "Meta Ads", "LinkedIn Ads"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 198, name: 'Onefit', website: 'https://www.onefit.nl', description: 'Fitness abonnement platform met toegang tot gyms en studio\'s.', category: 'Health', location: 'Amsterdam', size: '50-100 werknemers', why_interesting: 'Fitness marketplace met subscription model. Performance marketing voor subscriber acquisitie.', services: ["Meta Ads", "Google Ads", "SEO", "TikTok Ads", "Tracking"], retainer_potential: 4000, match_score: 8, priority: 'hot' },
+  { id: 199, name: 'Crisp', website: 'https://www.crisp.nl', description: 'Online supermarkt voor verse, lokale en duurzame producten.', category: 'E-commerce', location: 'Amsterdam', size: '100-200 werknemers', why_interesting: 'Snelgroeiende online supermarkt. Performance marketing en tracking optimalisatie.', services: ["Meta Ads", "Google Ads", "SEO", "Tracking", "Automation"], retainer_potential: 5000, match_score: 8, priority: 'hot' },
+  { id: 200, name: 'Athlon', website: 'https://www.athlon.com', description: 'Internationale lease en fleet management provider.', category: 'Auto', location: 'Almere', size: '500+ werknemers', why_interesting: 'Groot leasebedrijf met B2B marketing. Google Ads en LinkedIn Ads voor lease leads.', services: ["Google Ads", "LinkedIn Ads", "SEO", "Tracking"], retainer_potential: 6000, match_score: 7, priority: 'warm' },
+  { id: 201, name: 'Accon AVM', website: 'https://www.acconavm.nl', description: 'Accountants- en adviesorganisatie voor MKB en agri.', category: 'Professional', location: 'Tilburg', size: '500+ werknemers', why_interesting: 'Groot accountancy kantoor met groeiende digitale marketing needs.', services: ["Google Ads", "SEO", "LinkedIn Ads"], retainer_potential: 4000, match_score: 6, priority: 'cold' },
+  { id: 202, name: 'Coolblue Solar', website: 'https://www.coolblue.nl/zonnepanelen', description: 'Zonnepanelen installatie divisie van Coolblue.', category: 'Bouw', location: 'Rotterdam', size: '200-500 werknemers', why_interesting: 'Groot merk in groeiende zonnepanelen markt.', services: ["Google Ads", "SEO", "Meta Ads", "Tracking"], retainer_potential: 5000, match_score: 6, priority: 'cold' },
+  { id: 203, name: 'Terre des Hommes', website: 'https://www.terredeshommes.nl', description: 'Klant van SDIM. Influencer campagne, Instagram', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 204, name: 'KNGF Geleidehonden', website: 'https://www.kngf.nl', description: 'Klant van SDIM. Eindejaarscampagne, Creatief concept', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 205, name: 'Le Marais', website: 'https://www.lemarais.nl', description: 'Klant van SDIM. Website, Marketing strategie, +14% omzetgroei', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 206, name: 'FNV', website: 'https://www.fnv.nl', description: 'Klant van SDIM. Campagne, Digital marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 207, name: 'Educadora', website: 'https://www.educadora.nl', description: 'Klant van SDIM. PPC campagnes, Generative AI', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 208, name: 'Jopen Bier', website: 'https://www.jfrbrouwhuis.nl', description: 'Klant van SDIM. Programmatic DOOH advertising', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 209, name: 'NRC', website: 'https://www.nrc.nl', description: 'Klant van SDIM. Attributie, Upper-funnel campagnes', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 210, name: 'EZbook.nl', website: 'https://www.ezbook.nl', description: 'Klant van SDIM. Digital marketing (10+ jaar)', category: 'Hospitality', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij SDIM — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 211, name: 'Liander', website: 'https://www.liander.nl', description: 'Klant van Traffic Builders. AI-gedreven weercampagne, Brand Lift, +203% CTR', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Traffic Builders — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 212, name: 'Dental Clinics', website: 'https://www.dentalclinics.nl', description: 'Klant van Traffic Builders. Recruitment marketing, +700% sollicitaties', category: 'Health', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Traffic Builders — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 213, name: 'CNV', website: 'https://www.cnv.nl', description: 'Klant van Traffic Builders. Dynamic campagne, AI automation, +231% CTR', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Traffic Builders — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 214, name: 'Mediq', website: 'https://www.mediq.com', description: 'Klant van Traffic Builders. Machine learning, +23% Quality Visits', category: 'Health', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Traffic Builders — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 215, name: 'Lassie', website: 'https://www.lassie.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 216, name: 'Papendal', website: 'https://papendal.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'Hospitality', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 217, name: 'Social Deal', website: 'https://www.socialdeal.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 218, name: 'Nationale Beroepengids', website: 'https://www.nationaleberoepengids.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 219, name: 'Seniorverhuizer', website: 'https://www.seniorverhuizer.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 220, name: 'Cursus Kleding Naaien', website: 'https://www.cursuskledingnaaien.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 221, name: 'Scholen op de Kaart', website: 'https://scholenopdekaart.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 222, name: 'SFA Packaging', website: 'https://sfapackaging.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 223, name: 'NIZO', website: 'https://www.nizo.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 224, name: 'Radar Advies', website: 'https://www.radaradvies.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 225, name: 'NFC World', website: 'https://www.nfcworld.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 226, name: 'Buro Buiten', website: 'https://www.burobuiten.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 227, name: 'Volta Energy', website: 'https://volta-energy.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 228, name: 'Rutgers', website: 'https://rutgers.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 229, name: 'Dutch Designers Outlet', website: 'https://www.dutchdesignersoutlet.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 230, name: 'Coinmerce', website: 'https://coinmerce.io', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'Finance', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 231, name: 'Hörmann', website: 'https://www.hormann.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 232, name: 'Zwarthout', website: 'https://www.zwarthout.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 233, name: 'Ladies Night', website: 'https://www.ladiesnight.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 234, name: 'Coffee at Work', website: 'https://www.coffeeatwork.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 235, name: 'Meclinics', website: 'https://www.meclinics.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'Health', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 236, name: 'PackStore', website: 'https://www.packstore.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 237, name: 'Tramontana', website: 'https://www.tramontana.nl', description: 'Klant van Multiply. Multichannel strategie, +38% omzetgroei', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 238, name: 'Studio Dijs', website: 'https://www.studiodijs.nl', description: 'Klant van Multiply. SEO, Ads strategie', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 239, name: 'De Tegel', website: 'https://www.detegel.nl', description: 'Klant van Multiply. Leads, Nationaal & internationaal', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 240, name: 'The Stone', website: 'https://www.thestone.nl', description: 'Klant van Multiply. Datagedreven marketing, 56 winkels', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 241, name: 'OFM', website: 'https://www.ofm.nl', description: 'Klant van Multiply. Complete customer journey, Beste Webshop NL', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 242, name: 'Rehab Footwear', website: 'https://www.rehab.nl', description: 'Klant van Multiply. Online adverteren, +10% omzet -30% kosten', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 243, name: 'Haibu', website: 'https://www.haibu.nl', description: 'Klant van Multiply. Online marketing, Hair & Beauty marktleider', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 244, name: 'Koeka', website: 'https://www.koeka.com', description: 'Klant van Multiply. Multichannel, +50% opbrengsten', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 245, name: 'Harper & Yve', website: 'https://www.harperandyve.com', description: 'Klant van Multiply. Europese groei, Migratie', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 246, name: 'Van Dijk Store', website: 'https://www.vandijkwaalwijk.nl', description: 'Klant van Multiply. Pinterest strategie', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 247, name: 'Schuurman Schoenen', website: 'https://www.schuurmanschoenen.nl', description: 'Klant van Multiply. Social Media, +537% gebruikers', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 248, name: 'Claesen\'s', website: 'https://www.claesens.com', description: 'Klant van Multiply. E-mailmarketing, +31% groei', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 249, name: 'Van Os Tassen en Koffers', website: 'https://www.vanostassen.nl', description: 'Klant van Multiply. Margegestuurde campagnes', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 250, name: 'Bouchier SPORT 2000', website: 'https://www.bouchiersport.nl', description: 'Klant van Multiply. Online adverteren', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 251, name: 'Anne&Max', website: 'https://www.annemax.nl', description: 'Klant van Multiply. Online adverteren, Dayparting', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 252, name: 'Blackstone', website: 'https://www.blackstone.nl', description: 'Klant van Multiply. Online adverteren, +102% opbrengsten', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 253, name: 'Van Opzeeland Techniek', website: 'https://www.vanopzeeland.nl', description: 'Klant van Multiply. Online omzet verdriedubbeld', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 254, name: 'Coef Men', website: 'https://www.coefmen.nl', description: 'Klant van Multiply. Online marketing, +15% groei', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 255, name: 'Janse Mode', website: 'https://www.jansemodewoman.nl', description: 'Klant van Multiply. E-mailmarketing, Social media', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 256, name: 'Max Guitar', website: 'https://www.maxguitar.nl', description: 'Klant van Multiply. SEO, SEA, Grootste gitaarwinkel BeNeLux', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 257, name: 'DMQ Dutch Made Quality', website: 'https://www.dutchmadequality.nl', description: 'Klant van Multiply. Branded zoektermen, +35% groei', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 258, name: 'Xsensible', website: 'https://www.xsensible.com', description: 'Klant van Multiply. RACE-model, Comfortabele schoenen', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 259, name: 'PLNTS.com', website: 'https://www.plnts.com', description: 'Klant van Multiply. Online marketing, +313% bezoekers', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Multiply — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 260, name: 'Schoonenberg', website: 'https://www.schoonenberg.nl', description: 'Klant van Yonego. Migratie, SEO, E-booking conversie', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Yonego — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 261, name: 'Donders 1860', website: 'https://donders1860.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 262, name: 'Puchshop', website: 'https://www.puchshop.de', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 263, name: 'Bizziphone', website: 'https://www.bizziphone.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 264, name: 'Buitenpracht', website: 'https://buitenpracht.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 265, name: 'Turkesterone.nl', website: 'https://turkesterone.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 266, name: 'BM Dakkapel', website: 'https://www.bm-dakkapel.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 267, name: 'Schaduwdoeken.nl', website: 'https://www.schaduwdoeken.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 268, name: 'Cape Umbrellas', website: 'https://capeumbrellas.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 269, name: 'Zenya Software', website: 'https://zenya-software.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 270, name: 'Newsbit', website: 'https://newsbit.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 271, name: 'Goodflex', website: 'https://www.goodflex.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 272, name: 'Vochtbestrijding.nl', website: 'https://www.vochtbestrijding.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 273, name: 'iCreate Magazine', website: 'https://www.icreatemagazine.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 274, name: 'Gardeners World Magazine NL', website: 'https://www.gardenersworldmagazine.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 275, name: 'Ratio', website: 'https://www.ratio.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 276, name: 'Den Hartog Racing', website: 'https://denhartogracing.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 277, name: 'Lock Lock', website: 'https://locklock.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 278, name: 'Motoveda', website: 'https://www.motoveda.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 279, name: 'Yellow Spring', website: 'https://www.yellowspring.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 280, name: 'Dreamfillers', website: 'https://www.dreamfillers.nl', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'E-commerce', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "SEO"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+  { id: 281, name: 'Blower Technic', website: 'https://www.blowertechnic.com', description: 'Klant van Online Marketing Agency (OMA). Online marketing', category: 'B2B', location: 'Nederland', size: '', why_interesting: 'Neemt al marketing services af bij Online Marketing Agency (OMA) — bewezen budget voor digital marketing', services: ["Meta Ads", "Google Ads", "LinkedIn Ads"], retainer_potential: 3500, match_score: 7, priority: 'warm' },
+]
+
+
 // SIDEBAR NAV SECTIONS (Linear-style)
 // ============================================
 
@@ -1093,8 +1423,10 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'SALES',
     items: [
       { id: 'pipeline', label: 'Pipeline' },
+      { id: 'prospects', label: 'Prospects' },
       { id: 'content', label: 'Content' },
       { id: 'strategy', label: 'Strategy' },
+      { id: 'forecast', label: 'Forecast' },
       { id: 'retainers', label: 'Retainers' },
     ]
   },
@@ -1120,6 +1452,22 @@ const ROLE_COLORS: Record<UserRole, string> = {
 // MAIN COMPONENT
 // ============================================
 
+function AmountInput({ value, onChange, className }: { value: number; onChange: (v: number) => void; className?: string }) {
+  const [editing, setEditing] = useState(false);
+  const [tempVal, setTempVal] = useState(String(value));
+  if (editing) {
+    return <input type="text" value={tempVal} onChange={e => setTempVal(e.target.value)}
+      onBlur={() => { setEditing(false); const n = parseInt(tempVal.replace(/\D/g,'')); if(!isNaN(n)) onChange(n); }}
+      onKeyDown={e => { if(e.key==='Enter') e.currentTarget.blur(); }}
+      className={`bg-transparent border border-[#0047FF] rounded px-2 py-1 text-sm font-mono outline-none ${className || ''}`}
+      autoFocus />;
+  }
+  return <button onClick={() => { setTempVal(String(value)); setEditing(true); }}
+    className={`text-sm font-mono hover:text-[#0047FF] transition-colors ${className || ''}`}>
+    €{value.toLocaleString('nl-NL')}
+  </button>;
+}
+
 export default function SalesDashboard() {
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -1142,6 +1490,7 @@ export default function SalesDashboard() {
   // UI state
   const [activeTab, setActiveTab] = useState<TabId>('overview')
   const [editMode, setEditMode] = useState(false)
+  const [expandedAgencyApp, setExpandedAgencyApp] = useState<string | null>(null)
   const [isLoaded, setIsLoaded] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(true)
   
@@ -1175,6 +1524,55 @@ export default function SalesDashboard() {
   const [editingDealId, setEditingDealId] = useState<string | null>(null)
   const [activePipelineId, setActivePipelineId] = useState<string>('default')
   const [pipelineSearch, setPipelineSearch] = useState('')
+  // Prospects state
+  const [prospectsSearch, setProspectsSearch] = useState('')
+  const [prospectsCategoryFilter, setProspectsCategoryFilter] = useState('all')
+  const [prospectsPriorityFilter, setProspectsPriorityFilter] = useState('all')
+  const [prospectsSort, setProspectsSort] = useState('match_score')
+  const [expandedProspectId, setExpandedProspectId] = useState<number | null>(null)
+  const [prospectsStatusFilter, setProspectsStatusFilter] = useState('all')
+  const [prospectsAgencyFilter, setProspectsAgencyFilter] = useState('all')
+  const [showArchived, setShowArchived] = useState(false)
+  const [selectedProspects, setSelectedProspects] = useState<Set<number>>(new Set())
+  const [prospectStatuses, setProspectStatuses] = useState<Record<number, { status: string; notes?: string }>>({})
+  const [editingNotesId, setEditingNotesId] = useState<number | null>(null)
+  const [notesDraft, setNotesDraft] = useState('')
+
+  // Load prospect statuses from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('nodefy-prospect-status')
+      if (saved) setProspectStatuses(JSON.parse(saved))
+    } catch {}
+  }, [])
+
+  // Save prospect statuses to localStorage
+  const updateProspectStatus = useCallback((id: number, status: string, notes?: string) => {
+    setProspectStatuses(prev => {
+      const next = { ...prev, [id]: { status, notes: notes ?? prev[id]?.notes } }
+      localStorage.setItem('nodefy-prospect-status', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const updateProspectNotes = useCallback((id: number, notes: string) => {
+    setProspectStatuses(prev => {
+      const current = prev[id] || { status: 'new' }
+      const next = { ...prev, [id]: { ...current, notes: notes || undefined } }
+      localStorage.setItem('nodefy-prospect-status', JSON.stringify(next))
+      return next
+    })
+  }, [])
+
+  const bulkUpdateStatus = useCallback((ids: Set<number>, status: string) => {
+    setProspectStatuses(prev => {
+      const next = { ...prev }
+      ids.forEach(id => { next[id] = { ...next[id], status, notes: next[id]?.notes } })
+      localStorage.setItem('nodefy-prospect-status', JSON.stringify(next))
+      return next
+    })
+    setSelectedProspects(new Set())
+  }, [])
   const [nextSteps, setNextSteps] = useState<Record<string, string>>({})
 
   // Strategy tab state
@@ -1258,6 +1656,8 @@ export default function SalesDashboard() {
               (merged as Record<string, unknown>)[key] = parsed[key]
             }
           }
+          // Always use latest default apps
+          merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
           return merged
         })
       } catch (e) {
@@ -1368,7 +1768,7 @@ export default function SalesDashboard() {
   const canEdit = currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'custom')
   const canManageUsers = currentUser?.role === 'superadmin'
   // Tabs that contain sensitive financial data - superadmin only
-  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy']
+  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast']
   
   const canAccessTab = (tabId: TabId): boolean => {
     if (!currentUser) return false
@@ -1537,6 +1937,22 @@ export default function SalesDashboard() {
     updateData('pipelineDeals', data.pipelineDeals.map(d =>
       d.id === id ? { ...d, [field]: value } : d
     ))
+    if (field === 'value' || field === 'stageId') {
+      const timerId = `${id}-${String(field)}`;
+      if (dealUpdateTimers.current[timerId]) clearTimeout(dealUpdateTimers.current[timerId]);
+      dealUpdateTimers.current[timerId] = setTimeout(async () => {
+        try {
+          const updates: any = {};
+          if (field === 'value') updates.amount = value;
+          if (field === 'stageId') updates.dealstage = value;
+          await fetch('/api/hubspot-sync', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dealId: id, ...updates })
+          });
+        } catch (e) { console.error('Failed to sync deal update:', e); }
+      }, 1000);
+    }
   }
 
   const [pipelineSyncing, setPipelineSyncing] = useState(false)
@@ -1548,6 +1964,18 @@ export default function SalesDashboard() {
         const result = await res.json()
         if (result.deals) {
           updateData('pipelineDeals', result.deals)
+          // Merge nextSteps from HubSpot
+          const hubSpotNextSteps: Record<string, string> = {};
+          result.deals.forEach((d: any) => {
+            if (d.nextStep) hubSpotNextSteps[d.id] = d.nextStep;
+          });
+          setNextSteps(prev => {
+            const merged = { ...hubSpotNextSteps };
+            Object.keys(prev).forEach(id => {
+              if (prev[id] && prev[id].trim()) merged[id] = prev[id];
+            });
+            return merged;
+          });
         }
         updateData('pipelineLastUpdated', new Date().toISOString())
       }
@@ -1559,11 +1987,32 @@ export default function SalesDashboard() {
     }
   }
 
+  // Auto-sync pipeline on mount
+  const nextStepTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  const dealUpdateTimers = useRef<Record<string, NodeJS.Timeout>>({});
+  const hasSynced = useRef(false)
+  useEffect(() => {
+    if (!hasSynced.current) {
+      hasSynced.current = true
+      refreshPipeline()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Update next step for a deal
   const updateNextStep = (dealId: string, value: string) => {
     const updated = { ...nextSteps, [dealId]: value }
     setNextSteps(updated)
     localStorage.setItem('nodefy-pipeline-nextsteps', JSON.stringify(updated))
+    if (nextStepTimers.current[dealId]) clearTimeout(nextStepTimers.current[dealId]);
+    nextStepTimers.current[dealId] = setTimeout(async () => {
+      try {
+        await fetch('/api/hubspot-sync', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ dealId, nextStep: value })
+        });
+      } catch (e) { console.error('Failed to sync nextStep:', e); }
+    }, 1000);
   }
 
   // ============================================
@@ -2770,13 +3219,7 @@ export default function SalesDashboard() {
                                   onChange={(e) => updateDeal(deal.id, 'name', e.target.value)}
                                   className={`w-full px-2 py-1 rounded text-[13px] ${colors.bgCard} ${colors.textPrimary} border ${colors.border} focus:outline-none focus:ring-1 focus:ring-[#0047FF]`}
                                 />
-                                <input
-                                  type="number"
-                                  value={deal.value || ''}
-                                  onChange={(e) => updateDeal(deal.id, 'value', e.target.value ? parseInt(e.target.value) : null)}
-                                  placeholder="Bedrag"
-                                  className={`w-full px-2 py-1 rounded text-[12px] font-mono ${colors.bgCard} ${colors.textPrimary} border ${colors.border} focus:outline-none focus:ring-1 focus:ring-[#0047FF]`}
-                                />
+                                <AmountInput value={deal.value || 0} onChange={(v) => updateDeal(deal.id, 'value', v)} />
                                 <input
                                   type="text"
                                   value={nextSteps[deal.id] || ''}
@@ -2799,9 +3242,7 @@ export default function SalesDashboard() {
                                     onClick={() => editMode && setEditingDealId(deal.id)}
                                   >
                                     <p className={`text-[13px] font-medium ${colors.textPrimary} leading-tight`}>{deal.name}</p>
-                                    <p className={`text-[12px] font-mono mt-0.5 ${deal.value ? colors.accent : colors.textTertiary}`}>
-                                      {formatValue(deal.value)}
-                                    </p>
+                                    <AmountInput value={deal.value || 0} onChange={(v) => updateDeal(deal.id, 'value', v)} className={deal.value ? colors.accent : colors.textTertiary} />
                                   </div>
                                   <a
                                     href={`https://app-eu1.hubspot.com/contacts/8271281/record/0-3/${deal.id}`}
@@ -2815,19 +3256,13 @@ export default function SalesDashboard() {
                                     </svg>
                                   </a>
                                 </div>
-                                {nextSteps[deal.id] && (
-                                  <p className={`text-[11px] ${colors.textTertiary} mt-1.5 pt-1.5 border-t ${colors.border}`}>
-                                    → {nextSteps[deal.id]}
-                                  </p>
-                                )}
-                                {!nextSteps[deal.id] && editMode && (
-                                  <button
-                                    onClick={() => setEditingDealId(deal.id)}
-                                    className={`text-[10px] ${colors.textTertiary} mt-1.5 hover:${colors.textSecondary}`}
-                                  >
-                                    + Volgende stap
-                                  </button>
-                                )}
+                                <input
+                                  type="text"
+                                  value={nextSteps[deal.id] || ''}
+                                  onChange={(e) => updateNextStep(deal.id, e.target.value)}
+                                  placeholder="Volgende stap..."
+                                  className={`w-full text-[11px] ${colors.textTertiary} mt-1.5 pt-1.5 border-t ${colors.border} bg-transparent focus:outline-none`}
+                                />
                               </>
                             )}
                           </div>
@@ -2910,6 +3345,364 @@ export default function SalesDashboard() {
                     </table>
                   </div>
                 </div>
+              </div>
+            )
+          })()}
+
+          {/* ============================================ */}
+          {/* PROSPECTS TAB */}
+          {/* ============================================ */}
+          {activeTab === 'prospects' && (() => {
+            // Enrich prospects with source_agency and status from localStorage
+            const enrichedProspects = MEGA_PROSPECTS.map(p => ({
+              ...p,
+              source_agency: p.description.startsWith('Klant van ') ? p.description.split('.')[0].replace('Klant van ', '') : undefined,
+              status: (prospectStatuses[p.id]?.status as MegaProspect['status']) || 'new',
+              notes: prospectStatuses[p.id]?.notes,
+            }))
+
+            const uniqueCategories = [...new Set(enrichedProspects.map(p => p.category))].sort()
+            const uniqueAgencies = [...new Set(enrichedProspects.map(p => p.source_agency).filter(Boolean))].sort() as string[]
+            const hotCount = enrichedProspects.filter(p => p.priority === 'hot').length
+            const warmCount = enrichedProspects.filter(p => p.priority === 'warm').length
+            const coldCount = enrichedProspects.filter(p => p.priority === 'cold').length
+            const interestingCount = enrichedProspects.filter(p => p.status === 'interesting').length
+            const archivedCount = enrichedProspects.filter(p => p.status === 'archived').length
+            const totalRetainer = enrichedProspects.reduce((acc, p) => acc + p.retainer_potential, 0)
+
+            let filtered = enrichedProspects.filter(p => {
+              const matchesSearch = !prospectsSearch || p.name.toLowerCase().includes(prospectsSearch.toLowerCase()) || p.description.toLowerCase().includes(prospectsSearch.toLowerCase())
+              const matchesCategory = prospectsCategoryFilter === 'all' || p.category === prospectsCategoryFilter
+              const matchesPriority = prospectsPriorityFilter === 'all' || p.priority === prospectsPriorityFilter
+              const matchesStatus = prospectsStatusFilter === 'all' || p.status === prospectsStatusFilter
+              const matchesAgency = prospectsAgencyFilter === 'all' || p.source_agency === prospectsAgencyFilter
+              const notArchived = showArchived || p.status !== 'archived'
+              return matchesSearch && matchesCategory && matchesPriority && matchesStatus && matchesAgency && notArchived
+            })
+
+            filtered = [...filtered].sort((a, b) => {
+              if (prospectsSort === 'match_score') return b.match_score - a.match_score
+              if (prospectsSort === 'retainer') return b.retainer_potential - a.retainer_potential
+              return a.name.localeCompare(b.name)
+            })
+
+            const priorityColors: Record<string, string> = {
+              hot: 'bg-red-500/20 text-red-400',
+              warm: 'bg-amber-500/20 text-amber-400',
+              cold: 'bg-blue-500/20 text-blue-400',
+            }
+
+            const statusColors: Record<string, string> = {
+              new: 'bg-[#2E2E32] text-[#8E8E93]',
+              interesting: 'bg-amber-500/20 text-amber-400',
+              contacted: 'bg-blue-500/20 text-blue-400',
+              archived: 'bg-[#1C1C1F] text-[#555]',
+            }
+
+            const statusLabels: Record<string, string> = {
+              new: 'New', interesting: '⭐ Interessant', contacted: 'Contacted', archived: 'Archived'
+            }
+
+            const allVisibleSelected = filtered.length > 0 && filtered.every(p => selectedProspects.has(p.id))
+
+            // Analytics for interesting prospects
+            const interestingProspects = enrichedProspects.filter(p => p.status === 'interesting')
+            const favCategory = (() => {
+              if (interestingProspects.length === 0) return '-'
+              const counts: Record<string, number> = {}
+              interestingProspects.forEach(p => { counts[p.category] = (counts[p.category] || 0) + 1 })
+              return Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] || '-'
+            })()
+            const avgScore = interestingProspects.length > 0 ? (interestingProspects.reduce((s, p) => s + p.match_score, 0) / interestingProspects.length).toFixed(1) : '-'
+            const topServices = (() => {
+              if (interestingProspects.length === 0) return []
+              const counts: Record<string, number> = {}
+              interestingProspects.forEach(p => p.services.forEach(s => { counts[s] = (counts[s] || 0) + 1 }))
+              return Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([s]) => s)
+            })()
+
+            return (
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 text-[13px]">
+                    <span className={colors.textTertiary}>Dashboard</span>
+                    <span className={colors.textTertiary}>/</span>
+                    <span className={colors.textPrimary}>Prospects</span>
+                  </div>
+                </div>
+
+                {/* Stats row */}
+                <div className="grid grid-cols-6 gap-3">
+                  {[
+                    { label: 'Totaal', value: enrichedProspects.length, color: colors.textPrimary },
+                    { label: 'Hot', value: hotCount, color: 'text-red-400' },
+                    { label: 'Warm', value: warmCount, color: 'text-amber-400' },
+                    { label: '⭐ Interessant', value: interestingCount, color: 'text-amber-400' },
+                    { label: 'Archived', value: archivedCount, color: 'text-[#555]' },
+                    { label: 'Retainer Potentieel', value: `€${Math.round(totalRetainer / 1000)}k/mnd`, color: 'text-green-400' },
+                  ].map((stat, i) => (
+                    <div key={i} className={`${colors.bgCard} border ${colors.border} rounded-lg p-3`}>
+                      <div className={`text-[11px] ${colors.textTertiary} mb-1`}>{stat.label}</div>
+                      <div className={`text-[18px] font-bold ${stat.color}`}>{stat.value}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Bulk action bar */}
+                {selectedProspects.size > 0 && (
+                  <div className="sticky top-0 z-10 bg-[#0047FF]/10 border border-[#0047FF]/30 rounded-lg px-4 py-2.5 flex items-center gap-3 transition-all">
+                    <span className="text-[12px] text-blue-400 font-medium">{selectedProspects.size} geselecteerd</span>
+                    <div className="flex gap-2 ml-auto">
+                      {[
+                        { label: '⭐ Interessant', status: 'interesting' },
+                        { label: '✉️ Contacted', status: 'contacted' },
+                        { label: '📁 Archiveer', status: 'archived' },
+                        { label: '↩️ Reset', status: 'new' },
+                      ].map(a => (
+                        <button key={a.status} onClick={() => bulkUpdateStatus(selectedProspects, a.status)} className="text-[11px] px-3 py-1 rounded bg-[#2A2A2E] text-[#E8E8ED] hover:bg-[#333] border border-[#2E2E32] transition-colors">
+                          {a.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Filter bar */}
+                <div className="flex items-center gap-3 flex-wrap">
+                  <input
+                    type="text"
+                    placeholder="Zoek prospect..."
+                    value={prospectsSearch}
+                    onChange={e => setProspectsSearch(e.target.value)}
+                    className={`${colors.bgCard} border ${colors.border} rounded px-3 py-1.5 text-[12px] ${colors.textPrimary} flex-1 max-w-xs focus:outline-none focus:border-blue-500`}
+                  />
+                  <select value={prospectsStatusFilter} onChange={e => setProspectsStatusFilter(e.target.value)} className={`${colors.bgCard} border ${colors.border} rounded px-2 py-1.5 text-[12px] ${colors.textPrimary} focus:outline-none`}>
+                    <option value="all">Alle statussen</option>
+                    <option value="new">New</option>
+                    <option value="interesting">⭐ Interessant</option>
+                    <option value="contacted">Contacted</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                  <select value={prospectsCategoryFilter} onChange={e => setProspectsCategoryFilter(e.target.value)} className={`${colors.bgCard} border ${colors.border} rounded px-2 py-1.5 text-[12px] ${colors.textPrimary} focus:outline-none`}>
+                    <option value="all">Alle categorieën</option>
+                    {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={prospectsAgencyFilter} onChange={e => setProspectsAgencyFilter(e.target.value)} className={`${colors.bgCard} border ${colors.border} rounded px-2 py-1.5 text-[12px] ${colors.textPrimary} focus:outline-none`}>
+                    <option value="all">Alle agencies</option>
+                    {uniqueAgencies.map(a => <option key={a} value={a}>{a}</option>)}
+                  </select>
+                  <select value={prospectsPriorityFilter} onChange={e => setProspectsPriorityFilter(e.target.value)} className={`${colors.bgCard} border ${colors.border} rounded px-2 py-1.5 text-[12px] ${colors.textPrimary} focus:outline-none`}>
+                    <option value="all">Alle prioriteiten</option>
+                    <option value="hot">Hot</option>
+                    <option value="warm">Warm</option>
+                    <option value="cold">Cold</option>
+                  </select>
+                  <select value={prospectsSort} onChange={e => setProspectsSort(e.target.value)} className={`${colors.bgCard} border ${colors.border} rounded px-2 py-1.5 text-[12px] ${colors.textPrimary} focus:outline-none`}>
+                    <option value="match_score">Match Score</option>
+                    <option value="retainer">Retainer</option>
+                    <option value="name">Naam</option>
+                  </select>
+                  <label className="flex items-center gap-1.5 cursor-pointer select-none">
+                    <div className={`w-4 h-4 rounded border ${colors.border} flex items-center justify-center transition-colors ${showArchived ? 'bg-[#0047FF] border-[#0047FF]' : colors.bgCard}`} onClick={() => setShowArchived(!showArchived)}>
+                      {showArchived && <span className="text-white text-[10px]">✓</span>}
+                    </div>
+                    <span className={`text-[11px] ${colors.textTertiary}`}>Toon gearchiveerd</span>
+                  </label>
+                  <span className={`text-[11px] ${colors.textTertiary}`}>{filtered.length} resultaten</span>
+                </div>
+
+                {/* Table */}
+                <div className={`${colors.bgCard} border ${colors.border} rounded-lg overflow-hidden`}>
+                  <table className="w-full">
+                    <thead>
+                      <tr className={`border-b ${colors.border}`}>
+                        <th className="px-3 py-2 w-8">
+                          <div className={`w-4 h-4 rounded border ${colors.border} flex items-center justify-center cursor-pointer transition-colors ${allVisibleSelected ? 'bg-[#0047FF] border-[#0047FF]' : colors.bgCard}`}
+                            onClick={() => {
+                              if (allVisibleSelected) setSelectedProspects(new Set())
+                              else setSelectedProspects(new Set(filtered.map(p => p.id)))
+                            }}>
+                            {allVisibleSelected && <span className="text-white text-[10px]">✓</span>}
+                          </div>
+                        </th>
+                        <th className="px-1 py-2 w-8"></th>
+                        {['Naam', 'Categorie', 'Agency', 'Locatie', 'Score', 'Services', 'Retainer', 'Prioriteit', 'Status', ''].map(h => (
+                          <th key={h} className={`text-left px-3 py-2 text-[11px] font-medium ${colors.textTertiary} uppercase tracking-wider`}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filtered.map(prospect => (
+                        <React.Fragment key={prospect.id}>
+                          <tr
+                            onClick={() => setExpandedProspectId(expandedProspectId === prospect.id ? null : prospect.id)}
+                            className={`border-b ${colors.border} cursor-pointer transition-colors ${prospect.status === 'archived' ? 'opacity-50' : ''} hover:bg-[#2A2A2E]`}
+                          >
+                            <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
+                              <div className={`w-4 h-4 rounded border ${colors.border} flex items-center justify-center cursor-pointer transition-colors ${selectedProspects.has(prospect.id) ? 'bg-[#0047FF] border-[#0047FF]' : colors.bgCard}`}
+                                onClick={() => {
+                                  const next = new Set(selectedProspects)
+                                  if (next.has(prospect.id)) next.delete(prospect.id)
+                                  else next.add(prospect.id)
+                                  setSelectedProspects(next)
+                                }}>
+                                {selectedProspects.has(prospect.id) && <span className="text-white text-[10px]">✓</span>}
+                              </div>
+                            </td>
+                            <td className="px-1 py-2" onClick={e => e.stopPropagation()}>
+                              <button
+                                onClick={() => updateProspectStatus(prospect.id, prospect.status === 'interesting' ? 'new' : 'interesting')}
+                                className={`text-[14px] transition-transform hover:scale-125 ${prospect.status === 'interesting' ? '' : 'opacity-30 hover:opacity-60'}`}
+                                title="Toggle interessant"
+                              >⭐</button>
+                            </td>
+                            <td className="px-3 py-2">
+                              <a href={prospect.website} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-[12px] text-blue-400 hover:text-blue-300 font-medium">
+                                {prospect.name}
+                              </a>
+                            </td>
+                            <td className={`px-3 py-2 text-[12px] ${colors.textSecondary}`}>{prospect.category}</td>
+                            <td className="px-3 py-2">
+                              {prospect.source_agency && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400">{prospect.source_agency}</span>
+                              )}
+                            </td>
+                            <td className={`px-3 py-2 text-[12px] ${colors.textSecondary}`}>{prospect.location}</td>
+                            <td className="px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                  <div className="h-full bg-blue-500 rounded-full" style={{ width: `${prospect.match_score * 10}%` }} />
+                                </div>
+                                <span className={`text-[11px] ${colors.textSecondary}`}>{prospect.match_score}</span>
+                              </div>
+                            </td>
+                            <td className="px-3 py-2">
+                              <div className="flex gap-1 flex-wrap">
+                                {prospect.services.slice(0, 3).map(s => (
+                                  <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bgCard} ${colors.textTertiary} border ${colors.border}`}>{s}</span>
+                                ))}
+                                {prospect.services.length > 3 && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.textTertiary}`}>+{prospect.services.length - 3}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className={`px-3 py-2 text-[12px] ${colors.textPrimary} font-medium`}>€{prospect.retainer_potential.toLocaleString('nl-NL')}</td>
+                            <td className="px-3 py-2">
+                              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${priorityColors[prospect.priority]}`}>
+                                {prospect.priority}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2">
+                              <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusColors[prospect.status]}`}>
+                                {statusLabels[prospect.status]}
+                              </span>
+                            </td>
+                            <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
+                              <div className="flex items-center gap-1">
+                                <select
+                                  value={prospect.status}
+                                  onChange={e => updateProspectStatus(prospect.id, e.target.value)}
+                                  className="text-[10px] bg-transparent border border-[#2E2E32] rounded px-1 py-0.5 text-[#8E8E93] focus:outline-none cursor-pointer"
+                                >
+                                  <option value="new">New</option>
+                                  <option value="interesting">⭐ Interessant</option>
+                                  <option value="contacted">Contacted</option>
+                                  <option value="archived">Archived</option>
+                                </select>
+                                <button
+                                  onClick={() => { setEditingNotesId(editingNotesId === prospect.id ? null : prospect.id); setNotesDraft(prospect.notes || '') }}
+                                  className={`text-[12px] transition-opacity ${prospect.notes ? 'opacity-80' : 'opacity-30 hover:opacity-60'}`}
+                                  title="Notities"
+                                >📝</button>
+                              </div>
+                            </td>
+                          </tr>
+                          {editingNotesId === prospect.id && (
+                            <tr key={`${prospect.id}-notes`} className={`border-b ${colors.border}`}>
+                              <td colSpan={12} className="px-4 py-2">
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={notesDraft}
+                                    onChange={e => setNotesDraft(e.target.value)}
+                                    placeholder="Notitie toevoegen..."
+                                    className={`flex-1 ${colors.bgCard} border ${colors.border} rounded px-3 py-1.5 text-[12px] ${colors.textPrimary} focus:outline-none focus:border-blue-500`}
+                                    onKeyDown={e => { if (e.key === 'Enter') { updateProspectNotes(prospect.id, notesDraft); setEditingNotesId(null) } }}
+                                    autoFocus
+                                  />
+                                  <button onClick={() => { updateProspectNotes(prospect.id, notesDraft); setEditingNotesId(null) }} className="text-[11px] px-3 py-1.5 rounded bg-[#0047FF] text-white hover:bg-[#0040E0] transition-colors">Opslaan</button>
+                                  <button onClick={() => setEditingNotesId(null)} className={`text-[11px] px-3 py-1.5 rounded ${colors.bgCard} ${colors.textTertiary} border ${colors.border}`}>Annuleer</button>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                          {expandedProspectId === prospect.id && (
+                            <tr key={`${prospect.id}-detail`} className={`border-b ${colors.border}`}>
+                              <td colSpan={12} className="px-4 py-3">
+                                <div className="grid grid-cols-2 gap-4 text-[12px]">
+                                  <div>
+                                    <div className={`font-medium ${colors.textPrimary} mb-1`}>Beschrijving</div>
+                                    <div className={colors.textSecondary}>{prospect.description}</div>
+                                  </div>
+                                  <div>
+                                    <div className={`font-medium ${colors.textPrimary} mb-1`}>Waarom interessant</div>
+                                    <div className={colors.textSecondary}>{prospect.why_interesting}</div>
+                                  </div>
+                                  {prospect.size && (
+                                    <div>
+                                      <div className={`font-medium ${colors.textPrimary} mb-1`}>Grootte</div>
+                                      <div className={colors.textSecondary}>{prospect.size}</div>
+                                    </div>
+                                  )}
+                                  <div>
+                                    <div className={`font-medium ${colors.textPrimary} mb-1`}>Alle services</div>
+                                    <div className="flex gap-1 flex-wrap">
+                                      {prospect.services.map(s => (
+                                        <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bgCard} ${colors.textTertiary} border ${colors.border}`}>{s}</span>
+                                      ))}
+                                    </div>
+                                  </div>
+                                  {prospect.notes && (
+                                    <div>
+                                      <div className={`font-medium ${colors.textPrimary} mb-1`}>Notities</div>
+                                      <div className={colors.textSecondary}>{prospect.notes}</div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Analytics: Jouw Voorkeuren */}
+                {interestingProspects.length > 0 && (
+                  <div className={`${colors.bgCard} border ${colors.border} rounded-lg p-4`}>
+                    <h3 className={`text-[13px] font-semibold ${colors.textPrimary} mb-3`}>📊 Jouw voorkeuren</h3>
+                    <div className="grid grid-cols-3 gap-4 text-[12px]">
+                      <div>
+                        <div className={`${colors.textTertiary} text-[11px] mb-1`}>Favoriete categorie</div>
+                        <div className={`${colors.textPrimary} font-medium`}>{favCategory}</div>
+                      </div>
+                      <div>
+                        <div className={`${colors.textTertiary} text-[11px] mb-1`}>Gem. match score ⭐</div>
+                        <div className={`${colors.textPrimary} font-medium`}>{avgScore}</div>
+                      </div>
+                      <div>
+                        <div className={`${colors.textTertiary} text-[11px] mb-1`}>Top services bij ⭐</div>
+                        <div className="flex gap-1 flex-wrap">
+                          {topServices.map(s => (
+                            <span key={s} className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400">{s}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })()}
@@ -3096,9 +3889,14 @@ export default function SalesDashboard() {
           {/* ============================================ */}
           {/* AGENCY OS TAB - With new tools */}
           {/* ============================================ */}
-          {activeTab === 'agencyos' && (
+          {activeTab === 'agencyos' && (() => {
+            const [expandedAppId, setExpandedAppId] = [expandedAgencyApp, setExpandedAgencyApp]
+            const statusBadge = (status: string) => {
+              const map: Record<string, string> = { idea: 'bg-gray-500/20 text-gray-400', building: 'bg-blue-500/20 text-blue-400', beta: 'bg-amber-500/20 text-amber-400', live: 'bg-green-500/20 text-green-400' }
+              return map[status] || map.idea
+            }
+            return (
             <div className="space-y-4">
-              {/* Header */}
               <div className="flex items-center gap-2 text-[13px] mb-3">
                 <span className={colors.textTertiary}>Strategy</span>
                 <span className={colors.textTertiary}>/</span>
@@ -3108,34 +3906,57 @@ export default function SalesDashboard() {
               <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
                 <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Priority Apps</h3>
                 <div className="space-y-2">
-                  {data.agencyOsApps.map((app, index) => (
-                    <div key={app.id} className={`p-3 rounded-md ${colors.bgInput} border ${colors.border}`}>
+                  {data.agencyOsApps.map((app, index) => {
+                    const isExpanded = expandedAppId === app.id
+                    return (
+                    <div key={app.id} className={`p-3 rounded-md ${colors.bgInput} border ${colors.border} cursor-pointer transition-all`} onClick={() => setExpandedAppId(isExpanded ? null : app.id)}>
                       <div className="flex items-start gap-3">
                         <div className={`w-8 h-8 rounded-md ${colors.bgCard} border ${colors.border} flex items-center justify-center text-base`}>{app.emoji}</div>
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className={`text-[10px] ${colors.textTertiary} font-mono`}>0{index + 1}</span>
                             <h4 className={`text-[13px] font-semibold ${colors.textPrimary}`}>{app.name}</h4>
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${statusBadge(app.status)}`}>{app.status}</span>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded ${
                               app.impact === 'Hoog' ? 'bg-green-500/20 text-green-500' : `${colors.bgActive} ${colors.textSecondary}`
                             }`}>
                               {app.impact}
                             </span>
+                            <span className={`ml-auto text-[11px] ${colors.textTertiary}`}>{isExpanded ? '▾' : '▸'}</span>
                           </div>
                           <p className={`text-[12px] ${colors.textSecondary} mb-1.5`}>{app.description}</p>
-                          <div className="flex flex-wrap gap-1">
-                            {app.features.map((f, i) => (
-                              <span key={i} className={`text-[10px] ${colors.bgCard} border ${colors.border} px-1.5 py-0.5 rounded`}>{f}</span>
-                            ))}
-                          </div>
+                          {isExpanded && (
+                            <div className="mt-2 space-y-2">
+                              {app.details && <p className={`text-[11px] ${colors.textSecondary} italic`}>{app.details}</p>}
+                              <div className="flex flex-wrap gap-1">
+                                {app.features.map((f, i) => (
+                                  <span key={i} className={`text-[10px] ${colors.bgCard} border ${colors.border} px-1.5 py-0.5 rounded`}>{f}</span>
+                                ))}
+                              </div>
+                              <div className="flex gap-3 text-[10px]">
+                                <span className={colors.textTertiary}>Integrations: {app.integrations.join(', ')}</span>
+                                <span className={colors.textTertiary}>Effort: {app.effort}</span>
+                              </div>
+                            </div>
+                          )}
+                          {!isExpanded && (
+                            <div className="flex flex-wrap gap-1">
+                              {app.features.slice(0, 3).map((f, i) => (
+                                <span key={i} className={`text-[10px] ${colors.bgCard} border ${colors.border} px-1.5 py-0.5 rounded`}>{f}</span>
+                              ))}
+                              {app.features.length > 3 && <span className={`text-[10px] ${colors.textTertiary}`}>+{app.features.length - 3}</span>}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </div>
             </div>
-          )}
+            )
+          })()}
 
           {/* ============================================ */}
           {/* CONTENT TAB - Editable posts and templates */}
@@ -3642,6 +4463,54 @@ export default function SalesDashboard() {
                   </div>
                 </div>
 
+                {/* Prioriteitenmatrix — Top 3 Moneymakers */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Prioriteitenmatrix — Top 3 Moneymakers</h3>
+                  {(() => {
+                    const stageUrgency: Record<string, number> = {
+                      'decisionmakerboughtin': 0.9,
+                      'qualifiedtobuy': 0.7,
+                      'appointmentscheduled': 0.5,
+                      '5509912': 0.3,
+                      'deal_registration_Pricing and Terms': 0.6,
+                      'deal_registration_discovery': 0.2,
+                    };
+                    const now = new Date();
+                    const remainingMonths = 12 - now.getMonth();
+                    const topDeals = data.pipelineDeals
+                      .filter(d => !CLOSED_STAGE_IDS.has(d.stageId) && d.value && d.value > 0)
+                      .map(d => {
+                        const annualValue = d.value || 0;
+                        const revenueThisYear = (annualValue / 12) * remainingMonths;
+                        const urgency = stageUrgency[d.stageId] || 0.4;
+                        const score = revenueThisYear * (1 + urgency * 0.5);
+                        return { ...d, revenueThisYear, urgency, score };
+                      })
+                      .sort((a, b) => b.score - a.score)
+                      .slice(0, 3);
+                    return (
+                      <div className="space-y-2">
+                        {topDeals.map((deal, i) => (
+                          <div key={deal.id} className={`flex items-center justify-between p-3 rounded-md ${colors.bgInput} border ${colors.border}`}>
+                            <div className="flex items-center gap-3">
+                              <span className={`text-lg font-bold ${i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-400' : 'text-amber-700'}`}>#{i + 1}</span>
+                              <div>
+                                <p className={`text-[13px] font-medium ${colors.textPrimary}`}>{deal.name}</p>
+                                <p className={`text-[11px] ${colors.textTertiary}`}>
+                                  €{Math.round(deal.revenueThisYear).toLocaleString('nl-NL')} dit jaar · Urgency {Math.round(deal.urgency * 100)}%
+                                </p>
+                              </div>
+                            </div>
+                            <div className={`text-[14px] font-mono font-bold ${colors.accent}`}>
+                              €{(deal.value || 0).toLocaleString('nl-NL')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 {/* KPI Scoreboard (targets editable, current auto-computed) */}
                 <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
                   <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>KPI Scoreboard <span className={`text-[10px] ${colors.textTertiary}`}>(live data)</span></h3>
@@ -3763,6 +4632,71 @@ export default function SalesDashboard() {
                       </tbody>
                     </table>
                   </div>
+                </div>
+
+                {/* Historical Revenue Chart (pure CSS) */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Historische Revenue</h3>
+                  {(() => {
+                    const years = ['2022', '2023', '2024', '2025']
+                    const maxRev = Math.max(...HISTORICAL_REVENUE.map(r => r.revenue))
+                    return (
+                      <div className="space-y-3">
+                        {years.map(year => {
+                          const yearData = HISTORICAL_REVENUE.filter(r => r.month.startsWith(year))
+                          const yearTotal = yearData.reduce((s, r) => s + r.revenue, 0)
+                          return (
+                            <div key={year}>
+                              <div className="flex items-center justify-between mb-1">
+                                <span className={`text-[11px] font-medium ${colors.textPrimary}`}>{year}</span>
+                                <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(yearTotal / 1000)}k totaal</span>
+                              </div>
+                              <div className="flex gap-0.5 h-8 items-end">
+                                {yearData.map(r => (
+                                  <div key={r.month} className="flex-1 flex flex-col items-center" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
+                                    <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${(r.revenue / maxRev) * 100}%`, minHeight: '2px' }} />
+                                  </div>
+                                ))}
+                              </div>
+                              <div className="flex gap-0.5 mt-0.5">
+                                {['J','F','M','A','M','J','J','A','S','O','N','D'].map((m, i) => (
+                                  <span key={i} className={`flex-1 text-center text-[8px] ${colors.textTertiary}`}>{m}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {/* Scenario Planning */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Scenario Planning 2026</h3>
+                  {(() => {
+                    const scenarios = [
+                      { name: 'Optimistisch', growth: 0.35, color: 'text-green-400', bgColor: 'bg-green-500/20', desc: '+35% groei, 8 nieuwe klanten' },
+                      { name: 'Realistisch', growth: 0.20, color: 'text-blue-400', bgColor: 'bg-blue-500/20', desc: '+20% groei, 5 nieuwe klanten' },
+                      { name: 'Pessimistisch', growth: 0.05, color: 'text-red-400', bgColor: 'bg-red-500/20', desc: '+5% groei, 2 nieuwe klanten' },
+                    ]
+                    const lastYearRev = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025')).reduce((s, r) => s + r.revenue, 0)
+                    return (
+                      <div className="grid grid-cols-3 gap-3">
+                        {scenarios.map(s => {
+                          const projected = Math.round(lastYearRev * (1 + s.growth))
+                          return (
+                            <div key={s.name} className={`p-3 rounded-md ${colors.bgInput}`}>
+                              <span className={`text-[11px] font-medium ${s.color}`}>{s.name}</span>
+                              <p className={`text-[18px] font-bold font-mono ${colors.textPrimary} my-1`}>€{Math.round(projected / 1000)}k</p>
+                              <p className={`text-[10px] ${colors.textTertiary}`}>{s.desc}</p>
+                              <div className={`mt-2 text-[10px] px-2 py-0.5 rounded ${s.bgColor} ${s.color} inline-block`}>+{Math.round(s.growth * 100)}%</div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
                 </div>
 
                 {/* Quarterly Goals */}
@@ -3949,13 +4883,133 @@ export default function SalesDashboard() {
           })()}
 
           {/* ============================================ */}
+          {/* FORECAST TAB */}
+          {/* ============================================ */}
+          {activeTab === 'forecast' && (() => {
+            const years = ['2022', '2023', '2024', '2025']
+            const maxRev = Math.max(...HISTORICAL_REVENUE.map(r => r.revenue))
+            const lastYearRev = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025')).reduce((s, r) => s + r.revenue, 0)
+            const scenarios = [
+              { name: 'Optimistisch', growth: 0.35, color: 'text-green-400', bgColor: 'bg-green-500/20', desc: '+35% groei, 8 nieuwe klanten' },
+              { name: 'Realistisch', growth: 0.20, color: 'text-blue-400', bgColor: 'bg-blue-500/20', desc: '+20% groei, 5 nieuwe klanten' },
+              { name: 'Pessimistisch', growth: 0.05, color: 'text-red-400', bgColor: 'bg-red-500/20', desc: '+5% groei, 2 nieuwe klanten' },
+            ]
+            const MONTH_LABELS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+            // Seasonal pattern from 2025
+            const rev2025 = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025'))
+            const seasonalWeights = rev2025.map(r => r.revenue / (lastYearRev / 12))
+
+            return (
+              <div className="space-y-4">
+                <h2 className={`text-[15px] font-semibold ${colors.textPrimary}`}>📈 Revenue Forecast</h2>
+
+                {/* Historical Revenue Chart */}
+                <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Historische Revenue</h3>
+                  <div className="space-y-3">
+                    {years.map(year => {
+                      const yearData = HISTORICAL_REVENUE.filter(r => r.month.startsWith(year))
+                      const yearTotal = yearData.reduce((s, r) => s + r.revenue, 0)
+                      return (
+                        <div key={year}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className={`text-[11px] font-medium ${colors.textPrimary}`}>{year}</span>
+                            <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(yearTotal / 1000)}k totaal</span>
+                          </div>
+                          <div className="flex gap-0.5 h-12 items-end">
+                            {yearData.map(r => (
+                              <div key={r.month} className="flex-1 group relative" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
+                                <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${(r.revenue / maxRev) * 100}%`, minHeight: '2px' }} />
+                              </div>
+                            ))}
+                          </div>
+                          <div className="flex gap-0.5 mt-0.5">
+                            {MONTH_LABELS.map((m, i) => (
+                              <span key={i} className={`flex-1 text-center text-[8px] ${colors.textTertiary}`}>{m}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Scenario Planning */}
+                <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Scenario Planning 2026</h3>
+                  <div className="grid grid-cols-3 gap-3">
+                    {scenarios.map(s => {
+                      const projected = Math.round(lastYearRev * (1 + s.growth))
+                      return (
+                        <div key={s.name} className={`p-3 rounded-md ${colors.bgInput}`}>
+                          <span className={`text-[11px] font-medium ${s.color}`}>{s.name}</span>
+                          <p className={`text-[18px] font-bold font-mono ${colors.textPrimary} my-1`}>€{Math.round(projected / 1000)}k</p>
+                          <p className={`text-[10px] ${colors.textTertiary}`}>{s.desc}</p>
+                          <div className={`mt-2 text-[10px] px-2 py-0.5 rounded ${s.bgColor} ${s.color} inline-block`}>+{Math.round(s.growth * 100)}%</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Monthly Breakdown 2026 */}
+                <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Maandelijkse Breakdown 2026</h3>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[11px]">
+                      <thead>
+                        <tr className={`border-b ${colors.border}`}>
+                          <th className={`py-2 px-2 text-left ${colors.textTertiary}`}>Maand</th>
+                          {scenarios.map(s => (
+                            <th key={s.name} className={`py-2 px-2 text-right ${s.color}`}>{s.name}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {MONTH_LABELS.map((month, i) => {
+                          const weight = seasonalWeights[i] || 1
+                          return (
+                            <tr key={month} className={`border-b ${colors.border}`}>
+                              <td className={`py-2 px-2 ${colors.textPrimary}`}>{month}</td>
+                              {scenarios.map(s => {
+                                const yearTotal = lastYearRev * (1 + s.growth)
+                                const monthVal = Math.round((yearTotal / 12) * weight)
+                                return (
+                                  <td key={s.name} className={`py-2 px-2 text-right font-mono ${colors.textSecondary}`}>
+                                    €{monthVal.toLocaleString('nl-NL')}
+                                  </td>
+                                )
+                              })}
+                            </tr>
+                          )
+                        })}
+                        <tr className={`font-bold border-t-2 ${colors.border}`}>
+                          <td className={`py-2 px-2 ${colors.textPrimary}`}>Totaal</td>
+                          {scenarios.map(s => {
+                            const total = Math.round(lastYearRev * (1 + s.growth))
+                            return (
+                              <td key={s.name} className={`py-2 px-2 text-right font-mono ${s.color}`}>
+                                €{total.toLocaleString('nl-NL')}
+                              </td>
+                            )
+                          })}
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
+
+          {/* ============================================ */}
           {/* RETAINERS TAB */}
           {/* ============================================ */}
           {activeTab === 'retainers' && (() => {
             // Retainer data from top-level RETAINER_CLIENTS constant
 
             const MONTHS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
-            const MONTH_TARGET = 994690 / 12
+            const MONTH_TARGET = RETAINER_ARR / 12
 
             const realClients = RETAINER_CLIENTS.filter(c => c.status === 'Actief' || c.status === 'Start nnb')
 
@@ -4078,8 +5132,8 @@ export default function SalesDashboard() {
                 {/* Summary Cards */}
                 <div className="grid grid-cols-4 gap-3">
                   {[
-                    { label: 'Totaal ARR', value: '€994.690', sub: 'Annual Recurring Revenue' },
-                    { label: 'Gem. MRR', value: '€82.891', sub: 'Monthly Recurring Revenue' },
+                    { label: 'Totaal ARR', value: `€${RETAINER_ARR.toLocaleString('nl-NL')}`, sub: 'Annual Recurring Revenue' },
+                    { label: 'Gem. MRR', value: `€${RETAINER_MRR.toLocaleString('nl-NL')}`, sub: 'Monthly Recurring Revenue' },
                     { label: 'Actieve Klanten', value: String(activeCount), sub: `van ${realClients.length} totaal` },
                     { label: 'Nieuwe 2026', value: `${new2026Actief + new2026Nnb}`, sub: `${new2026Actief} actief · ${new2026Nnb} start nnb` },
                   ].map((card, i) => (
@@ -4241,7 +5295,7 @@ export default function SalesDashboard() {
                           {monthlyTotals.map((t, mi) => (
                             <td key={mi} className={`px-2 py-2 text-right font-mono font-semibold ${colors.textPrimary}`}>{fmtEurK(Math.round(t))}</td>
                           ))}
-                          <td className={`px-3 py-2 text-right font-mono font-semibold ${colors.textPrimary}`}>{fmtEurK(994690)}</td>
+                          <td className={`px-3 py-2 text-right font-mono font-semibold ${colors.textPrimary}`}>{fmtEurK(RETAINER_ARR)}</td>
                         </tr>
                       </tfoot>
                     </table>

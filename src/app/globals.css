@@ -4,6 +4,8 @@
   --nodefy-green: #00C853;
   --background: #F9FAFB;
   --foreground: #111827;
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-top: env(safe-area-inset-top, 0px);
 }
 
 body {
@@ -56,4 +58,28 @@ body {
 ::selection {
   background: rgba(0, 200, 83, 0.2);
   color: inherit;
+}
+
+/* Mobile touch improvements */
+@media (max-width: 767px) {
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  input, select, textarea {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+  }
+  
+  /* Prevent horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* PWA standalone mode */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
 }
