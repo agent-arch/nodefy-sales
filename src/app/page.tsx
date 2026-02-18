@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 // ============================================
 
 // Types
-type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'settings' | 'admin'
+type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'salesoverview' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'settings' | 'admin'
 
 type UserRole = 'superadmin' | 'admin' | 'viewer' | 'custom'
 
@@ -31,7 +31,7 @@ const DEFAULT_USERS: User[] = [
     email: 'ruben@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   },
@@ -41,14 +41,14 @@ const DEFAULT_USERS: User[] = [
     email: 'matthijs@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   }
 ]
 
 // All possible tab IDs for permissions
-const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'nightshift', 'settings', 'admin']
+const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'salesoverview', 'strategy', 'forecast', 'retainers', 'nightshift', 'settings', 'admin']
 const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
@@ -1447,6 +1447,7 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'SALES',
     items: [
+      { id: 'salesoverview', label: 'Sales Overview' },
       { id: 'pipeline', label: 'Pipeline' },
       { id: 'prospects', label: 'Prospects' },
       { id: 'content', label: 'Content' },
@@ -1987,7 +1988,7 @@ export default function SalesDashboard() {
   const canEdit = currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'custom')
   const canManageUsers = currentUser?.role === 'superadmin'
   // Tabs that contain sensitive financial data - superadmin only
-  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast', 'nightshift']
+  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast', 'nightshift', 'salesoverview']
   
   const canAccessTab = (tabId: TabId): boolean => {
     if (!currentUser) return false
@@ -2706,24 +2707,7 @@ export default function SalesDashboard() {
           {/* OVERVIEW TAB */}
           {/* ============================================ */}
           {activeTab === 'overview' && (() => {
-            const rev2025 = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025'))
-            const revenueChartData = rev2025.map(r => ({ label: r.month.slice(5), value: r.revenue }))
-            const totalRev2025 = rev2025.reduce((s, r) => s + r.revenue, 0)
             const activeClientCount = data.clients.filter(c => c.status === 'Actief').length
-            const arrTarget = 1500000
-            const clientsTarget = 50
-            const pipelineConversionRate = pipelineValue > 0 ? Math.min((pipelineValue / arrTarget) * 100, 100) : 0
-            const yearlyRevenue: Record<string, number> = {}
-            const yearColors = [CHART_COLORS.secondary, CHART_COLORS.tertiary, CHART_COLORS.primary, CHART_COLORS.quaternary, CHART_COLORS.success]
-            HISTORICAL_REVENUE.forEach(r => {
-              const yr = r.month.slice(0, 4)
-              yearlyRevenue[yr] = (yearlyRevenue[yr] || 0) + r.revenue
-            })
-            const years = Object.keys(yearlyRevenue).sort()
-            const maxYearRev = Math.max(...Object.values(yearlyRevenue))
-            // Sparkline data for KPI cards
-            const mrrSparkline = rev2025.map(r => r.revenue)
-            const arrSparkline = rev2025.map((_, i) => rev2025.slice(0, i + 1).reduce((s, r) => s + r.revenue, 0) / (i + 1) * 12)
 
             return (
             <div className="space-y-4">
@@ -2731,91 +2715,30 @@ export default function SalesDashboard() {
               <div className="flex items-center gap-2 text-[13px] mb-4">
                 <span className={colors.textTertiary}>Dashboard</span>
                 <span className={colors.textTertiary}>/</span>
-                <span className={colors.textPrimary}>Overview</span>
+                <span className={colors.textPrimary}>Klanten Overview</span>
               </div>
 
-              {/* Revenue Trend Chart */}
-              <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Revenue Trend</h3>
-                    <p className={`text-[11px] ${colors.textTertiary}`}>2025 Monthly Revenue</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{totalRev2025.toLocaleString('nl-NL')}</p>
-                    <p className="text-[10px] text-[#F97316]">YTD Total</p>
-                  </div>
-                </div>
-                <RevenueAreaChart data={revenueChartData} color={CHART_COLORS.primary} height={140} />
-                <div className="flex justify-between mt-2">
-                  {revenueChartData.map((d, i) => (
-                    <span key={i} className={`text-[9px] ${colors.textTertiary}`}>{d.label}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* KPI Cards Row with sparklines */}
+              {/* Client Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>ARR</p>
-                    <MiniBarChart values={arrSparkline.slice(-6)} color={CHART_COLORS.primary} />
-                  </div>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_ARR.toLocaleString('nl-NL')}</p>
-                  <p className="text-[10px] text-[#F97316] mt-0.5">Target: €{arrTarget.toLocaleString('nl-NL')}</p>
-                </div>
-                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>MRR</p>
-                    <MiniBarChart values={mrrSparkline.slice(-6)} color={CHART_COLORS.secondary} />
-                  </div>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_MRR.toLocaleString('nl-NL')}</p>
-                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Monthly Recurring</p>
-                </div>
-                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Active Clients</p>
-                    <span className="text-[#22C55E]">▲</span>
-                  </div>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Actieve Klanten</p>
                   <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{activeClientCount}</p>
-                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{data.clients.filter(c => c.dashboard).length} with dashboard</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{data.clients.filter(c => c.dashboard).length} met dashboard</p>
                 </div>
                 <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Pipeline Value</p>
-                    <MiniBarChart values={[40, 55, 70, 65, 80, pipelineValue > 0 ? 100 : 30]} color={CHART_COLORS.tertiary} />
-                  </div>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{pipelineValue.toLocaleString('nl-NL')}</p>
-                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Open deals</p>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Gezond</p>
+                  <p className={`text-lg font-semibold font-mono`} style={{ color: CHART_COLORS.success }}>{CLIENT_PERFORMANCE.filter(c => c.health === 'good').length}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>van {CLIENT_PERFORMANCE.length} gemonitord</p>
                 </div>
-              </div>
-
-              {/* Circular Progress Indicators + Revenue by Year */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {/* Target Progress Rings */}
-                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
-                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Target Progress</h3>
-                  <div className="flex items-center justify-around">
-                    <CircularProgress value={RETAINER_ARR} max={arrTarget} color={CHART_COLORS.primary} label="ARR" sublabel={`€${(arrTarget/1000).toFixed(0)}K target`} />
-                    <CircularProgress value={activeClientCount} max={clientsTarget} color={CHART_COLORS.secondary} label="Clients" sublabel={`${clientsTarget} target`} />
-                    <CircularProgress value={pipelineConversionRate} max={100} color={CHART_COLORS.tertiary} label="Pipeline" sublabel="conversion" />
-                  </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Aandacht Nodig</p>
+                  <p className={`text-lg font-semibold font-mono`} style={{ color: CHART_COLORS.primary }}>{CLIENT_PERFORMANCE.filter(c => c.health === 'warning').length}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>warning status</p>
                 </div>
-
-                {/* Revenue by Year Bar Chart */}
-                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
-                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Revenue by Year</h3>
-                  <div className="space-y-2">
-                    {years.map((yr, i) => (
-                      <div key={yr} className="flex items-center gap-3">
-                        <span className={`text-[11px] font-mono w-10 ${colors.textSecondary}`}>{yr}</span>
-                        <div className="flex-1 h-6 rounded-sm overflow-hidden" style={{ backgroundColor: isDark ? '#18181B' : '#F9F9FB' }}>
-                          <div className="h-full rounded-sm transition-all duration-500" style={{ width: `${(yearlyRevenue[yr] / maxYearRev) * 100}%`, backgroundColor: yearColors[i % yearColors.length] }} />
-                        </div>
-                        <span className={`text-[11px] font-mono w-16 text-right ${colors.textSecondary}`}>€{(yearlyRevenue[yr] / 1000).toFixed(0)}K</span>
-                      </div>
-                    ))}
-                  </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Kritiek</p>
+                  <p className={`text-lg font-semibold font-mono`} style={{ color: CHART_COLORS.quaternary }}>{CLIENT_PERFORMANCE.filter(c => c.health === 'critical').length}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>directe actie vereist</p>
                 </div>
               </div>
 
@@ -4588,6 +4511,121 @@ export default function SalesDashboard() {
               </div>
             </div>
           )}
+
+          {/* ============================================ */}
+          {/* SALES OVERVIEW TAB */}
+          {/* ============================================ */}
+          {activeTab === 'salesoverview' && (() => {
+            const rev2025 = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025'))
+            const revenueChartData = rev2025.map(r => ({ label: r.month.slice(5), value: r.revenue }))
+            const totalRev2025 = rev2025.reduce((s, r) => s + r.revenue, 0)
+            const activeClientCount = data.clients.filter(c => c.status === 'Actief').length
+            const arrTarget = 1500000
+            const clientsTarget = 50
+            const pipelineConversionRate = pipelineValue > 0 ? Math.min((pipelineValue / arrTarget) * 100, 100) : 0
+            const yearlyRevenue: Record<string, number> = {}
+            const yearColors = [CHART_COLORS.secondary, CHART_COLORS.tertiary, CHART_COLORS.primary, CHART_COLORS.quaternary, CHART_COLORS.success]
+            HISTORICAL_REVENUE.forEach(r => {
+              const yr = r.month.slice(0, 4)
+              yearlyRevenue[yr] = (yearlyRevenue[yr] || 0) + r.revenue
+            })
+            const years = Object.keys(yearlyRevenue).sort()
+            const maxYearRev = Math.max(...Object.values(yearlyRevenue))
+            const mrrSparkline = rev2025.map(r => r.revenue)
+            const arrSparkline = rev2025.map((_, i) => rev2025.slice(0, i + 1).reduce((s, r) => s + r.revenue, 0) / (i + 1) * 12)
+
+            return (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2 text-[13px] mb-4">
+                <span className={colors.textTertiary}>Sales</span>
+                <span className={colors.textTertiary}>/</span>
+                <span className={colors.textPrimary}>Sales Overview</span>
+              </div>
+
+              {/* Revenue Trend Chart */}
+              <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Revenue Trend</h3>
+                    <p className={`text-[11px] ${colors.textTertiary}`}>2025 Monthly Revenue</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{totalRev2025.toLocaleString('nl-NL')}</p>
+                    <p className="text-[10px] text-[#F97316]">YTD Total</p>
+                  </div>
+                </div>
+                <RevenueAreaChart data={revenueChartData} color={CHART_COLORS.primary} height={140} />
+                <div className="flex justify-between mt-2">
+                  {revenueChartData.map((d, i) => (
+                    <span key={i} className={`text-[9px] ${colors.textTertiary}`}>{d.label}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* KPI Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>ARR</p>
+                    <MiniBarChart values={arrSparkline.slice(-6)} color={CHART_COLORS.primary} />
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_ARR.toLocaleString('nl-NL')}</p>
+                  <p className="text-[10px] text-[#F97316] mt-0.5">Target: €{arrTarget.toLocaleString('nl-NL')}</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>MRR</p>
+                    <MiniBarChart values={mrrSparkline.slice(-6)} color={CHART_COLORS.secondary} />
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_MRR.toLocaleString('nl-NL')}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Monthly Recurring</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Active Clients</p>
+                    <span className="text-[#22C55E]">▲</span>
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{activeClientCount}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{data.clients.filter(c => c.dashboard).length} with dashboard</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Pipeline Value</p>
+                    <MiniBarChart values={[40, 55, 70, 65, 80, pipelineValue > 0 ? 100 : 30]} color={CHART_COLORS.tertiary} />
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{pipelineValue.toLocaleString('nl-NL')}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Open deals</p>
+                </div>
+              </div>
+
+              {/* Progress Rings + Revenue by Year */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Target Progress</h3>
+                  <div className="flex items-center justify-around">
+                    <CircularProgress value={RETAINER_ARR} max={arrTarget} color={CHART_COLORS.primary} label="ARR" sublabel={`€${(arrTarget/1000).toFixed(0)}K target`} />
+                    <CircularProgress value={activeClientCount} max={clientsTarget} color={CHART_COLORS.secondary} label="Clients" sublabel={`${clientsTarget} target`} />
+                    <CircularProgress value={pipelineConversionRate} max={100} color={CHART_COLORS.tertiary} label="Pipeline" sublabel="conversion" />
+                  </div>
+                </div>
+                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Revenue by Year</h3>
+                  <div className="space-y-2">
+                    {years.map((yr, i) => (
+                      <div key={yr} className="flex items-center gap-3">
+                        <span className={`text-[11px] font-mono w-10 ${colors.textSecondary}`}>{yr}</span>
+                        <div className="flex-1 h-6 rounded-sm overflow-hidden" style={{ backgroundColor: isDark ? '#18181B' : '#F9F9FB' }}>
+                          <div className="h-full rounded-sm transition-all duration-500" style={{ width: `${(yearlyRevenue[yr] / maxYearRev) * 100}%`, backgroundColor: yearColors[i % yearColors.length] }} />
+                        </div>
+                        <span className={`text-[11px] font-mono w-16 text-right ${colors.textSecondary}`}>€{(yearlyRevenue[yr] / 1000).toFixed(0)}K</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            )
+          })()}
 
           {/* ============================================ */}
           {/* STRATEGY TAB - Operational Cockpit */}
@@ -6514,7 +6552,7 @@ export default function SalesDashboard() {
                   const icons: Record<TabId, string> = {
                     overview: '🏠', klanten: '👥', reports: '📈', pipeline: '📊',
                     prospects: '🎯', masterplan: '🗺️', cases: '💼', agencyos: '🤖',
-                    content: '✍️', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙',
+                    content: '✍️', salesoverview: '💹', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙',
                     settings: '⚙️', admin: '👤',
                   }
                   return (
