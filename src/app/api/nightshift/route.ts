@@ -1,43 +1,37 @@
+import { redis } from '@/lib/redis'
 import { NextResponse } from 'next/server'
-import { kv } from '@vercel/kv'
 
-// GET: read nightshift data from KV
+const KV_KEY = 'dashboard:nightshift'
+
 export async function GET() {
   try {
-    const data = await kv.get('dashboard:nightshift') as any
-    if (!data) {
-      return NextResponse.json({ days: [] })
-    }
-    return NextResponse.json(data)
-  } catch (e) {
+    const data = await redis.get(KV_KEY) as any
+    if (!data) return NextResponse.json({ days: [] })
+    return NextResponse.json(typeof data === 'string' ? JSON.parse(data) : data)
+  } catch {
     return NextResponse.json({ days: [] })
   }
 }
 
-// PUT: write nightshift data to KV (called by nightshift cron)
 export async function PUT(request: Request) {
   try {
     const body = await request.json()
-    
-    // Get existing data
-    const existing = (await kv.get('dashboard:nightshift') as any) || { days: [] }
-    
+    const existing = ((await redis.get(KV_KEY)) as any) || { days: [] }
+    const parsed = typeof existing === 'string' ? JSON.parse(existing) : existing
+
     if (body.day) {
-      // Add/update a single day
-      const idx = existing.days.findIndex((d: any) => d.date === body.day.date)
+      const idx = parsed.days.findIndex((d: any) => d.date === body.day.date)
       if (idx >= 0) {
-        existing.days[idx] = body.day
+        parsed.days[idx] = body.day
       } else {
-        existing.days.unshift(body.day)
+        parsed.days.unshift(body.day)
       }
-      // Keep last 30 days
-      existing.days = existing.days.slice(0, 30)
+      parsed.days = parsed.days.slice(0, 30)
     } else if (body.days) {
-      // Replace all
-      existing.days = body.days
+      parsed.days = body.days
     }
-    
-    await kv.set('dashboard:nightshift', existing)
+
+    await redis.set(KV_KEY, JSON.stringify(parsed))
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
