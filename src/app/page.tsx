@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react'
 // ============================================
 
 // Types
-type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'settings' | 'admin'
+type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'settings' | 'admin'
 
 type UserRole = 'superadmin' | 'admin' | 'viewer' | 'custom'
 
@@ -48,7 +48,7 @@ const DEFAULT_USERS: User[] = [
 ]
 
 // All possible tab IDs for permissions
-const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'settings', 'admin']
+const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'nightshift', 'settings', 'admin']
 const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
@@ -1441,6 +1441,7 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'masterplan', label: 'Masterplan' },
       { id: 'cases', label: 'Cases' },
       { id: 'agencyos', label: 'Agency OS' },
+      { id: 'nightshift', label: 'Nachtshift' },
     ]
   },
   {
@@ -1973,7 +1974,7 @@ export default function SalesDashboard() {
   const canEdit = currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'custom')
   const canManageUsers = currentUser?.role === 'superadmin'
   // Tabs that contain sensitive financial data - superadmin only
-  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast']
+  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast', 'nightshift']
   
   const canAccessTab = (tabId: TabId): boolean => {
     if (!currentUser) return false
@@ -5609,6 +5610,157 @@ export default function SalesDashboard() {
           })()}
 
           {/* ============================================ */}
+          {/* NACHTSHIFT TAB - Overnight Work Results */}
+          {/* ============================================ */}
+          {activeTab === 'nightshift' && (() => {
+            const [nsData, setNsData] = React.useState<{ days: { date: string; files: { name: string; path: string; category: string; content: string; size: number }[]; summary: string | null; stats: { totalFiles: number; totalLines: number; categories: Record<string, number> } }[] } | null>(null)
+            const [nsLoading, setNsLoading] = React.useState(true)
+            const [nsSelectedFile, setNsSelectedFile] = React.useState<string | null>(null)
+            const [nsSelectedDay, setNsSelectedDay] = React.useState<string | null>(null)
+
+            React.useEffect(() => {
+              fetch('/api/nightshift?days=14').then(r => r.json()).then(d => { setNsData(d); setNsLoading(false); if (d.days?.[0]) setNsSelectedDay(d.days[0].date) }).catch(() => setNsLoading(false))
+            }, [])
+
+            const selectedDayData = nsData?.days?.find(d => d.date === nsSelectedDay)
+            const selectedFileData = selectedDayData?.files?.find(f => f.path === nsSelectedFile)
+
+            const categoryColors: Record<string, string> = {
+              'Intelligence': 'text-blue-400 bg-blue-500/10 border-blue-500/20',
+              'Competitors': 'text-purple-400 bg-purple-500/10 border-purple-500/20',
+              'LinkedIn': 'text-sky-400 bg-sky-500/10 border-sky-500/20',
+              'Articles': 'text-green-400 bg-green-500/10 border-green-500/20',
+              'Case Studies': 'text-amber-400 bg-amber-500/10 border-amber-500/20',
+              'Sales Material': 'text-orange-400 bg-orange-500/10 border-orange-500/20',
+              'Pipeline': 'text-red-400 bg-red-500/10 border-red-500/20',
+              'Outreach': 'text-pink-400 bg-pink-500/10 border-pink-500/20',
+              'Reports': 'text-teal-400 bg-teal-500/10 border-teal-500/20',
+            }
+
+            const categoryIcons: Record<string, string> = {
+              'Intelligence': '🔍', 'Competitors': '🏢', 'LinkedIn': '💼', 'Articles': '📝',
+              'Case Studies': '📊', 'Sales Material': '💰', 'Pipeline': '🔥', 'Outreach': '📧', 'Reports': '📋',
+            }
+
+            if (nsLoading) return <div className={`flex items-center justify-center py-20 ${colors.textTertiary}`}>Laden...</div>
+            if (!nsData?.days?.length) return (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <span className="text-4xl">🌙</span>
+                <p className={`text-[14px] ${colors.textSecondary}`}>Nog geen nachtshift data</p>
+                <p className={`text-[12px] ${colors.textTertiary}`}>De eerste shift draait vannacht om 01:00</p>
+              </div>
+            )
+
+            return (
+              <div className="space-y-4">
+                {/* Day selector */}
+                <div className="flex gap-2 overflow-x-auto pb-1">
+                  {nsData.days.map(day => {
+                    const d = new Date(day.date + 'T12:00:00')
+                    const dayName = d.toLocaleDateString('nl-NL', { weekday: 'short' })
+                    const dayNum = d.getDate()
+                    const isSelected = day.date === nsSelectedDay
+                    return (
+                      <button key={day.date} onClick={() => { setNsSelectedDay(day.date); setNsSelectedFile(null) }}
+                        className={`flex flex-col items-center min-w-[56px] px-3 py-2 rounded-md border transition-colors ${
+                          isSelected ? `${colors.accentBg} text-white border-transparent` : `${colors.bgCard} ${colors.border} ${colors.textSecondary} hover:${colors.textPrimary}`
+                        }`}>
+                        <span className="text-[10px] uppercase">{dayName}</span>
+                        <span className="text-[16px] font-semibold">{dayNum}</span>
+                        <span className="text-[10px]">{day.stats.totalFiles} files</span>
+                      </button>
+                    )
+                  })}
+                </div>
+
+                {selectedDayData && (
+                  <>
+                    {/* Stats cards */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                        <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wider`}>Bestanden</p>
+                        <p className={`text-[20px] font-semibold font-mono ${colors.textPrimary}`}>{selectedDayData.stats.totalFiles}</p>
+                      </div>
+                      <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                        <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wider`}>Regels</p>
+                        <p className={`text-[20px] font-semibold font-mono ${colors.textPrimary}`}>{selectedDayData.stats.totalLines.toLocaleString()}</p>
+                      </div>
+                      <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                        <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wider`}>Categorieën</p>
+                        <p className={`text-[20px] font-semibold font-mono ${colors.textPrimary}`}>{Object.keys(selectedDayData.stats.categories).length}</p>
+                      </div>
+                      <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                        <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wider`}>Shifts</p>
+                        <p className={`text-[20px] font-semibold font-mono ${colors.textPrimary}`}>5</p>
+                      </div>
+                    </div>
+
+                    {/* Category badges */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {Object.entries(selectedDayData.stats.categories).map(([cat, count]) => (
+                        <span key={cat} className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium border ${categoryColors[cat] || `${colors.textSecondary} ${colors.bgInput} ${colors.border}`}`}>
+                          {categoryIcons[cat] || '📄'} {cat} ({count})
+                        </span>
+                      ))}
+                    </div>
+
+                    {/* File list + content viewer */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                      {/* File list */}
+                      <div className={`${colors.bgCard} rounded-md border ${colors.border} overflow-hidden lg:col-span-1`}>
+                        <div className={`px-3 py-2 border-b ${colors.border}`}>
+                          <h3 className={`text-[12px] font-medium ${colors.textPrimary}`}>Bestanden ({selectedDayData.files.length})</h3>
+                        </div>
+                        <div className="max-h-[500px] overflow-y-auto">
+                          {selectedDayData.files.map((file) => (
+                            <button key={file.path} onClick={() => setNsSelectedFile(file.path)}
+                              className={`w-full text-left px-3 py-2.5 border-b ${colors.border} transition-colors ${
+                                nsSelectedFile === file.path ? (isDark ? 'bg-white/5' : 'bg-black/5') : `hover:${colors.bgInput}`
+                              }`}>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[14px]">{categoryIcons[file.category] || '📄'}</span>
+                                <div className="min-w-0 flex-1">
+                                  <p className={`text-[12px] font-medium ${colors.textPrimary} truncate`}>{file.name}</p>
+                                  <p className={`text-[10px] ${colors.textTertiary}`}>{file.category} · {(file.size / 1024).toFixed(1)}KB</p>
+                                </div>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Content viewer */}
+                      <div className={`${colors.bgCard} rounded-md border ${colors.border} overflow-hidden lg:col-span-2`}>
+                        {selectedFileData ? (
+                          <>
+                            <div className={`px-3 py-2 border-b ${colors.border} flex items-center justify-between`}>
+                              <div>
+                                <h3 className={`text-[12px] font-medium ${colors.textPrimary}`}>{selectedFileData.name}</h3>
+                                <p className={`text-[10px] ${colors.textTertiary}`}>{selectedFileData.category} · {selectedFileData.content.split('\n').length} regels</p>
+                              </div>
+                              <span className={`px-2 py-0.5 rounded text-[10px] border ${categoryColors[selectedFileData.category] || ''}`}>{selectedFileData.category}</span>
+                            </div>
+                            <div className="p-3 max-h-[600px] overflow-y-auto">
+                              <pre className={`text-[12px] ${colors.textSecondary} whitespace-pre-wrap font-sans leading-relaxed`}>
+                                {selectedFileData.content}
+                              </pre>
+                            </div>
+                          </>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-16 gap-2">
+                            <span className="text-3xl">🌙</span>
+                            <p className={`text-[12px] ${colors.textTertiary}`}>Selecteer een bestand om te bekijken</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* ============================================ */}
           {/* ADMIN TAB - User Management (superadmin only) */}
           {/* ============================================ */}
           {activeTab === 'admin' && canManageUsers && (
@@ -6228,7 +6380,7 @@ export default function SalesDashboard() {
                   const icons: Record<TabId, string> = {
                     overview: '🏠', klanten: '👥', reports: '📈', pipeline: '📊',
                     prospects: '🎯', masterplan: '🗺️', cases: '💼', agencyos: '🤖',
-                    content: '✍️', strategy: '🎯', forecast: '📈', retainers: '💰',
+                    content: '✍️', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙',
                     settings: '⚙️', admin: '👤',
                   }
                   return (
