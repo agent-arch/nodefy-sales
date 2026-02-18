@@ -31,7 +31,7 @@ const DEFAULT_USERS: User[] = [
     email: 'ruben@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   },
@@ -41,7 +41,7 @@ const DEFAULT_USERS: User[] = [
     email: 'matthijs@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   }
@@ -1537,6 +1537,12 @@ export default function SalesDashboard() {
   const [selectedReportClient, setSelectedReportClient] = useState<string | null>(null)
   const [showReportModal, setShowReportModal] = useState(false)
 
+  // Nightshift state
+  const [nsData, setNsData] = useState<{ days: { date: string; files: { name: string; path: string; category: string; content: string; size: number }[]; summary: string | null; stats: { totalFiles: number; totalLines: number; categories: Record<string, number> } }[] } | null>(null)
+  const [nsLoading, setNsLoading] = useState(true)
+  const [nsSelectedFile, setNsSelectedFile] = useState<string | null>(null)
+  const [nsSelectedDay, setNsSelectedDay] = useState<string | null>(null)
+
   // Klanten editing state
   const [klantenEditMode, setKlantenEditMode] = useState(false)
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
@@ -1878,6 +1884,13 @@ export default function SalesDashboard() {
 
   // Users are managed via API, no need to save to localStorage
   // (API calls happen in createUser, saveUser, deleteUser)
+
+  // Load nightshift data
+  useEffect(() => {
+    if (activeTab === 'nightshift') {
+      fetch('/api/nightshift?days=14').then(r => r.json()).then(d => { setNsData(d); setNsLoading(false); if (d.days?.[0] && !nsSelectedDay) setNsSelectedDay(d.days[0].date) }).catch(() => setNsLoading(false))
+    }
+  }, [activeTab])
 
   // Save theme preference
   useEffect(() => {
@@ -5613,14 +5626,6 @@ export default function SalesDashboard() {
           {/* NACHTSHIFT TAB - Overnight Work Results */}
           {/* ============================================ */}
           {activeTab === 'nightshift' && (() => {
-            const [nsData, setNsData] = React.useState<{ days: { date: string; files: { name: string; path: string; category: string; content: string; size: number }[]; summary: string | null; stats: { totalFiles: number; totalLines: number; categories: Record<string, number> } }[] } | null>(null)
-            const [nsLoading, setNsLoading] = React.useState(true)
-            const [nsSelectedFile, setNsSelectedFile] = React.useState<string | null>(null)
-            const [nsSelectedDay, setNsSelectedDay] = React.useState<string | null>(null)
-
-            React.useEffect(() => {
-              fetch('/api/nightshift?days=14').then(r => r.json()).then(d => { setNsData(d); setNsLoading(false); if (d.days?.[0]) setNsSelectedDay(d.days[0].date) }).catch(() => setNsLoading(false))
-            }, [])
 
             const selectedDayData = nsData?.days?.find(d => d.date === nsSelectedDay)
             const selectedFileData = selectedDayData?.files?.find(f => f.path === nsSelectedFile)
