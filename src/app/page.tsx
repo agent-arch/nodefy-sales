@@ -2322,6 +2322,82 @@ export default function SalesDashboard() {
     accentHover: 'hover:bg-[#0040E6]',
   }
 
+  // Warm chart colors
+  const CHART_COLORS = {
+    primary: '#F97316',
+    secondary: '#3B82F6',
+    tertiary: '#FBBF24',
+    quaternary: '#EC4899',
+    success: '#22C55E',
+  }
+
+  // Section dot colors for sidebar
+  const SECTION_DOT_COLORS: Record<string, string> = {
+    'GENERAL': 'bg-green-500',
+    'STRATEGY': 'bg-blue-500',
+    'SALES': 'bg-orange-500',
+    'SYSTEM': 'bg-gray-500',
+  }
+
+  // --- Chart Components ---
+  const MiniBarChart = ({ values, color = CHART_COLORS.primary, height = 24 }: { values: number[]; color?: string; height?: number }) => {
+    const max = Math.max(...values, 1)
+    return (
+      <div className="flex items-end gap-[2px]" style={{ height }}>
+        {values.map((v, i) => (
+          <div key={i} style={{ width: 4, height: `${Math.max((v / max) * 100, 5)}%`, backgroundColor: color, borderRadius: 1, opacity: i === values.length - 1 ? 1 : 0.6 }} />
+        ))}
+      </div>
+    )
+  }
+
+  const CircularProgress = ({ value, max, size = 80, strokeWidth = 6, color = CHART_COLORS.primary, label, sublabel }: { value: number; max: number; size?: number; strokeWidth?: number; color?: string; label?: string; sublabel?: string }) => {
+    const pct = Math.min((value / max) * 100, 100)
+    const r = (size - strokeWidth) / 2
+    const circ = 2 * Math.PI * r
+    const offset = circ - (pct / 100) * circ
+    return (
+      <div className="flex flex-col items-center gap-1">
+        <svg width={size} height={size} className="-rotate-90">
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={isDark ? '#2E2E32' : '#E4E4E8'} strokeWidth={strokeWidth} />
+          <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={strokeWidth} strokeDasharray={circ} strokeDashoffset={offset} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
+        </svg>
+        <div className="text-center -mt-[52px] mb-5">
+          <p className={`text-sm font-bold font-mono ${colors.textPrimary}`}>{Math.round(pct)}%</p>
+        </div>
+        {label && <p className={`text-[10px] font-medium ${colors.textPrimary}`}>{label}</p>}
+        {sublabel && <p className={`text-[9px] ${colors.textTertiary}`}>{sublabel}</p>}
+      </div>
+    )
+  }
+
+  const RevenueAreaChart = ({ data: chartData, color = CHART_COLORS.primary, height = 120 }: { data: { label: string; value: number }[]; color?: string; height?: number }) => {
+    const max = Math.max(...chartData.map(d => d.value))
+    const min = Math.min(...chartData.map(d => d.value)) * 0.8
+    const range = max - min || 1
+    const w = 100
+    const points = chartData.map((d, i) => {
+      const x = (i / (chartData.length - 1)) * w
+      const y = height - ((d.value - min) / range) * (height - 10) - 5
+      return `${x},${y}`
+    })
+    const areaPoints = `0,${height} ${points.join(' ')} ${w},${height}`
+    return (
+      <div className="w-full overflow-hidden" style={{ height }}>
+        <svg viewBox={`0 0 ${w} ${height}`} preserveAspectRatio="none" className="w-full h-full">
+          <defs>
+            <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+              <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+            </linearGradient>
+          </defs>
+          <polygon points={areaPoints} fill="url(#areaGrad)" />
+          <polyline points={points.join(' ')} fill="none" stroke={color} strokeWidth="1.5" vectorEffect="non-scaling-stroke" />
+        </svg>
+      </div>
+    )
+  }
+
   // Computed values
   const filteredPosts = filter === 'all' ? data.linkedinPosts : data.linkedinPosts.filter(p => p.status === filter)
   const readyCount = data.linkedinPosts.filter(p => p.status === 'ready').length
@@ -2502,7 +2578,10 @@ export default function SalesDashboard() {
                           : `${colors.textSecondary} ${colors.bgCardHover}`
                       }`}
                     >
-                      <span>{item.label}</span>
+                      <span className="flex items-center gap-2">
+                        <span className={`w-1.5 h-1.5 rounded-full ${SECTION_DOT_COLORS[section.title] || 'bg-gray-500'}`} />
+                        {item.label}
+                      </span>
                       {count !== undefined && (
                         <span className={`text-[11px] ${colors.textTertiary} font-mono`}>{count}</span>
                       )}
@@ -2529,7 +2608,10 @@ export default function SalesDashboard() {
                       : `${colors.textSecondary} ${colors.bgCardHover}`
                   }`}
                 >
-                  <span>{item.label}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-500" />
+                    {item.label}
+                  </span>
                 </button>
               ))}
             </div>
@@ -2623,7 +2705,27 @@ export default function SalesDashboard() {
           {/* ============================================ */}
           {/* OVERVIEW TAB */}
           {/* ============================================ */}
-          {activeTab === 'overview' && (
+          {activeTab === 'overview' && (() => {
+            const rev2025 = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025'))
+            const revenueChartData = rev2025.map(r => ({ label: r.month.slice(5), value: r.revenue }))
+            const totalRev2025 = rev2025.reduce((s, r) => s + r.revenue, 0)
+            const activeClientCount = data.clients.filter(c => c.status === 'Actief').length
+            const arrTarget = 1500000
+            const clientsTarget = 50
+            const pipelineConversionRate = pipelineValue > 0 ? Math.min((pipelineValue / arrTarget) * 100, 100) : 0
+            const yearlyRevenue: Record<string, number> = {}
+            const yearColors = [CHART_COLORS.secondary, CHART_COLORS.tertiary, CHART_COLORS.primary, CHART_COLORS.quaternary, CHART_COLORS.success]
+            HISTORICAL_REVENUE.forEach(r => {
+              const yr = r.month.slice(0, 4)
+              yearlyRevenue[yr] = (yearlyRevenue[yr] || 0) + r.revenue
+            })
+            const years = Object.keys(yearlyRevenue).sort()
+            const maxYearRev = Math.max(...Object.values(yearlyRevenue))
+            // Sparkline data for KPI cards
+            const mrrSparkline = rev2025.map(r => r.revenue)
+            const arrSparkline = rev2025.map((_, i) => rev2025.slice(0, i + 1).reduce((s, r) => s + r.revenue, 0) / (i + 1) * 12)
+
+            return (
             <div className="space-y-4">
               {/* Header */}
               <div className="flex items-center gap-2 text-[13px] mb-4">
@@ -2632,24 +2734,88 @@ export default function SalesDashboard() {
                 <span className={colors.textPrimary}>Overview</span>
               </div>
 
-              {/* KPI Cards - Removed Weekly Spend, added period labels */}
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+              {/* Revenue Trend Chart */}
+              <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Revenue Trend</h3>
+                    <p className={`text-[11px] ${colors.textTertiary}`}>2025 Monthly Revenue</p>
+                  </div>
+                  <div className="text-right">
+                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{totalRev2025.toLocaleString('nl-NL')}</p>
+                    <p className="text-[10px] text-[#F97316]">YTD Total</p>
+                  </div>
+                </div>
+                <RevenueAreaChart data={revenueChartData} color={CHART_COLORS.primary} height={140} />
+                <div className="flex justify-between mt-2">
+                  {revenueChartData.map((d, i) => (
+                    <span key={i} className={`text-[9px] ${colors.textTertiary}`}>{d.label}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* KPI Cards Row with sparklines */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-0.5`}>Active Clients</p>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{data.clients.filter(c => c.status === 'Actief').length}</p>
-                  <p className={`text-[11px] ${colors.textTertiary} mt-0.5`}>{data.clients.filter(c => c.dashboard).length} with dashboard</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>ARR</p>
+                    <MiniBarChart values={arrSparkline.slice(-6)} color={CHART_COLORS.primary} />
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_ARR.toLocaleString('nl-NL')}</p>
+                  <p className="text-[10px] text-[#F97316] mt-0.5">Target: €{arrTarget.toLocaleString('nl-NL')}</p>
                 </div>
                 <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-0.5`}>Performance Data</p>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{CLIENT_PERFORMANCE.filter(c => c.health !== 'unknown').length}</p>
-                  <p className={`text-[11px] ${colors.textTertiary} mt-0.5`}>{CLIENT_PERFORMANCE.filter(c => c.health === 'unknown').length} zonder data</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>MRR</p>
+                    <MiniBarChart values={mrrSparkline.slice(-6)} color={CHART_COLORS.secondary} />
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_MRR.toLocaleString('nl-NL')}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Monthly Recurring</p>
                 </div>
                 <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-0.5`}>Attention</p>
-                  <p className={`text-lg font-semibold font-mono ${alertClients.length > 0 ? 'text-amber-500' : 'text-green-500'}`}>
-                    {alertClients.length}
-                  </p>
-                  <p className={`text-[11px] ${colors.textTertiary} mt-0.5`}>{alertClients.length === 0 ? 'All healthy' : 'flagged'}</p>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Active Clients</p>
+                    <span className="text-[#22C55E]">▲</span>
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{activeClientCount}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{data.clients.filter(c => c.dashboard).length} with dashboard</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <div className="flex items-center justify-between mb-1">
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Pipeline Value</p>
+                    <MiniBarChart values={[40, 55, 70, 65, 80, pipelineValue > 0 ? 100 : 30]} color={CHART_COLORS.tertiary} />
+                  </div>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{pipelineValue.toLocaleString('nl-NL')}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Open deals</p>
+                </div>
+              </div>
+
+              {/* Circular Progress Indicators + Revenue by Year */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Target Progress Rings */}
+                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Target Progress</h3>
+                  <div className="flex items-center justify-around">
+                    <CircularProgress value={RETAINER_ARR} max={arrTarget} color={CHART_COLORS.primary} label="ARR" sublabel={`€${(arrTarget/1000).toFixed(0)}K target`} />
+                    <CircularProgress value={activeClientCount} max={clientsTarget} color={CHART_COLORS.secondary} label="Clients" sublabel={`${clientsTarget} target`} />
+                    <CircularProgress value={pipelineConversionRate} max={100} color={CHART_COLORS.tertiary} label="Pipeline" sublabel="conversion" />
+                  </div>
+                </div>
+
+                {/* Revenue by Year Bar Chart */}
+                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Revenue by Year</h3>
+                  <div className="space-y-2">
+                    {years.map((yr, i) => (
+                      <div key={yr} className="flex items-center gap-3">
+                        <span className={`text-[11px] font-mono w-10 ${colors.textSecondary}`}>{yr}</span>
+                        <div className="flex-1 h-6 rounded-sm overflow-hidden" style={{ backgroundColor: isDark ? '#18181B' : '#F9F9FB' }}>
+                          <div className="h-full rounded-sm transition-all duration-500" style={{ width: `${(yearlyRevenue[yr] / maxYearRev) * 100}%`, backgroundColor: yearColors[i % yearColors.length] }} />
+                        </div>
+                        <span className={`text-[11px] font-mono w-16 text-right ${colors.textSecondary}`}>€{(yearlyRevenue[yr] / 1000).toFixed(0)}K</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -2664,12 +2830,12 @@ export default function SalesDashboard() {
                     {CLIENT_PERFORMANCE.filter(c => c.fbSpend || c.fbRoas).slice(0, 5).map((client, i) => (
                       <div key={i} className={`flex items-center justify-between py-1.5 border-b ${colors.border} last:border-0`}>
                         <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${client.health === 'good' ? 'bg-green-500' : client.health === 'warning' ? 'bg-amber-500' : 'bg-red-500'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full`} style={{ backgroundColor: client.health === 'good' ? CHART_COLORS.success : client.health === 'warning' ? CHART_COLORS.primary : CHART_COLORS.quaternary }} />
                           <span className={`text-[13px] ${colors.textPrimary}`}>{client.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          {client.fbSpend && <span className={`text-[12px] font-mono ${colors.textSecondary}`}>{client.fbSpend} <span className={colors.textTertiary}>(7d)</span></span>}
-                          {client.fbRoas && <span className="text-[12px] font-mono text-green-500">{client.fbRoas}x</span>}
+                          {client.fbSpend && <span className={`text-[12px] font-mono ${colors.textSecondary}`}>{client.fbSpend}</span>}
+                          {client.fbRoas && <span className="text-[12px] font-mono" style={{ color: CHART_COLORS.success }}>{client.fbRoas}x</span>}
                         </div>
                       </div>
                     ))}
@@ -2685,12 +2851,12 @@ export default function SalesDashboard() {
                     {CLIENT_PERFORMANCE.filter(c => c.googleSpend || c.googleRoas).slice(0, 5).map((client, i) => (
                       <div key={i} className={`flex items-center justify-between py-1.5 border-b ${colors.border} last:border-0`}>
                         <div className="flex items-center gap-2">
-                          <span className={`w-1.5 h-1.5 rounded-full ${client.health === 'good' ? 'bg-green-500' : client.health === 'warning' ? 'bg-amber-500' : 'bg-red-500'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full`} style={{ backgroundColor: client.health === 'good' ? CHART_COLORS.success : client.health === 'warning' ? CHART_COLORS.primary : CHART_COLORS.quaternary }} />
                           <span className={`text-[13px] ${colors.textPrimary}`}>{client.name}</span>
                         </div>
                         <div className="flex items-center gap-3">
-                          {client.googleSpend && <span className={`text-[12px] font-mono ${colors.textSecondary}`}>{client.googleSpend} <span className={colors.textTertiary}>(7d)</span></span>}
-                          {client.googleRoas && <span className="text-[12px] font-mono text-green-500">{client.googleRoas}x</span>}
+                          {client.googleSpend && <span className={`text-[12px] font-mono ${colors.textSecondary}`}>{client.googleSpend}</span>}
+                          {client.googleRoas && <span className="text-[12px] font-mono" style={{ color: CHART_COLORS.success }}>{client.googleRoas}x</span>}
                         </div>
                       </div>
                     ))}
@@ -2700,9 +2866,9 @@ export default function SalesDashboard() {
 
               {/* Alerts */}
               {alertClients.length > 0 && (
-                <div className={`${colors.bgCard} rounded-md p-4 border border-amber-500/30`}>
-                  <h3 className={`text-[13px] font-medium text-amber-500 mb-2 flex items-center gap-2`}>
-                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                <div className={`${colors.bgCard} rounded-md p-4 border`} style={{ borderColor: `${CHART_COLORS.primary}50` }}>
+                  <h3 className="text-[13px] font-medium mb-2 flex items-center gap-2" style={{ color: CHART_COLORS.primary }}>
+                    <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ backgroundColor: CHART_COLORS.primary }} />
                     Needs Attention
                   </h3>
                   <div className="space-y-1">
@@ -2716,40 +2882,6 @@ export default function SalesDashboard() {
                 </div>
               )}
 
-              {/* Top performers with period */}
-              <div className={`${colors.bgCard} rounded-md border ${colors.border} overflow-hidden`}>
-                <div className={`px-4 py-2 border-b ${colors.border} flex items-center justify-between`}>
-                  <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Top Performers</h3>
-                  <span className={`text-[10px] ${colors.textTertiary} px-1.5 py-0.5 rounded ${colors.bgInput}`}>Last 7 Days</span>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full text-[13px]">
-                    <thead>
-                      <tr className={`border-b ${colors.border} ${colors.bgInput}`}>
-                        <th className={`text-left py-2 px-4 font-medium ${colors.textSecondary}`}>Client</th>
-                        <th className={`text-right py-2 px-4 font-medium ${colors.textSecondary}`}>FB Spend (7d)</th>
-                        <th className={`text-right py-2 px-4 font-medium ${colors.textSecondary}`}>ROAS</th>
-                        <th className={`text-right py-2 px-4 font-medium ${colors.textSecondary}`}>Purchases</th>
-                        <th className={`text-center py-2 px-4 font-medium ${colors.textSecondary}`}>Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {CLIENT_PERFORMANCE.filter(c => c.fbRoas).sort((a, b) => parseFloat(b.fbRoas || '0') - parseFloat(a.fbRoas || '0')).slice(0, 5).map((client, i) => (
-                        <tr key={i} className={`border-b ${colors.border} last:border-0 ${colors.bgCardHover}`}>
-                          <td className={`py-2 px-4 ${colors.textPrimary}`}>{client.name}</td>
-                          <td className={`py-2 px-4 text-right font-mono ${colors.textSecondary}`}>{client.fbSpend || '—'}</td>
-                          <td className="py-2 px-4 text-right font-mono text-green-500">{client.fbRoas}x</td>
-                          <td className={`py-2 px-4 text-right font-mono ${colors.textSecondary}`}>{client.fbPurchases || '—'}</td>
-                          <td className="py-2 px-4 text-center">
-                            <span className={`w-1.5 h-1.5 rounded-full inline-block ${client.health === 'good' ? 'bg-green-500' : 'bg-amber-500'}`} />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
               {/* Client Health Grid */}
               <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
                 <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Client Health Grid</h3>
@@ -2760,23 +2892,19 @@ export default function SalesDashboard() {
                   }).map((client, i) => (
                     <div 
                       key={i} 
-                      className={`p-2 rounded-md ${colors.bgInput} border ${colors.border} text-center cursor-pointer hover:border-[#0047FF]/50 transition-colors`}
+                      className={`p-2 rounded-md ${colors.bgInput} border ${colors.border} text-center cursor-pointer transition-colors`}
+                      style={{ borderColor: client.health === 'good' ? `${CHART_COLORS.success}30` : client.health === 'warning' ? `${CHART_COLORS.primary}30` : client.health === 'critical' ? `${CHART_COLORS.quaternary}30` : undefined }}
                       title={`${client.name}: ${client.health === 'good' ? 'Healthy' : client.health === 'warning' ? 'Needs attention' : client.health === 'critical' ? 'Critical' : 'Geen data'}`}
                     >
                       <div className="flex items-center justify-center gap-1.5 mb-1">
-                        <span className={`w-2 h-2 rounded-full ${
-                          client.health === 'good' ? 'bg-green-500' : 
-                          client.health === 'warning' ? 'bg-amber-500' : 
-                          client.health === 'critical' ? 'bg-red-500' :
-                          `border ${isDark ? 'border-zinc-600' : 'border-zinc-400'}`
-                        }`} />
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: client.health === 'good' ? CHART_COLORS.success : client.health === 'warning' ? CHART_COLORS.primary : client.health === 'critical' ? CHART_COLORS.quaternary : 'transparent', border: client.health === 'unknown' ? `1px solid ${isDark ? '#52525b' : '#a1a1aa'}` : 'none' }} />
                       </div>
                       <p className={`text-[10px] ${client.health === 'unknown' ? colors.textTertiary : colors.textPrimary} truncate font-medium`}>{client.name}</p>
                       {client.fbRoas && (
-                        <p className={`text-[9px] font-mono ${parseFloat(client.fbRoas) >= 5 ? 'text-green-500' : colors.textTertiary}`}>{client.fbRoas}x</p>
+                        <p className={`text-[9px] font-mono`} style={{ color: parseFloat(client.fbRoas) >= 5 ? CHART_COLORS.success : undefined }}>{client.fbRoas}x</p>
                       )}
                       {!client.fbRoas && client.googleRoas && (
-                        <p className={`text-[9px] font-mono ${parseFloat(client.googleRoas) >= 5 ? 'text-green-500' : colors.textTertiary}`}>{client.googleRoas}x</p>
+                        <p className={`text-[9px] font-mono`} style={{ color: parseFloat(client.googleRoas) >= 5 ? CHART_COLORS.success : undefined }}>{client.googleRoas}x</p>
                       )}
                       {!client.fbRoas && !client.googleRoas && (
                         <p className={`text-[9px] ${colors.textTertiary}`}>—</p>
@@ -2786,15 +2914,15 @@ export default function SalesDashboard() {
                 </div>
                 <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-dashed" style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-green-500" />
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS.success }} />
                     <span className={`text-[10px] ${colors.textTertiary}`}>Good ({CLIENT_PERFORMANCE.filter(c => c.health === 'good').length})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" />
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS.primary }} />
                     <span className={`text-[10px] ${colors.textTertiary}`}>Warning ({CLIENT_PERFORMANCE.filter(c => c.health === 'warning').length})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-red-500" />
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: CHART_COLORS.quaternary }} />
                     <span className={`text-[10px] ${colors.textTertiary}`}>Critical ({CLIENT_PERFORMANCE.filter(c => c.health === 'critical').length})</span>
                   </div>
                   <div className="flex items-center gap-1.5">
@@ -2804,7 +2932,8 @@ export default function SalesDashboard() {
                 </div>
               </div>
             </div>
-          )}
+            )
+          })()}
 
           {/* ============================================ */}
           {/* KLANTEN TAB - With editing */}
