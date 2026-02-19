@@ -3884,7 +3884,7 @@ export default function SalesDashboard() {
                             onClick={() => setExpandedProspectId(expandedProspectId === prospect.id ? null : prospect.id)}
                             className={`border-b ${colors.border} cursor-pointer transition-colors ${prospect.status === 'archived' ? 'opacity-50' : ''} hover:bg-[#2A2A2E]`}
                           >
-                            <td className="px-3 py-2" onClick={e => e.stopPropagation()}>
+                            <td className="px-3 py-1.5" onClick={e => e.stopPropagation()}>
                               <div className={`w-4 h-4 rounded border ${colors.border} flex items-center justify-center cursor-pointer transition-colors ${selectedProspects.has(prospect.id) ? 'bg-[#0047FF] border-[#0047FF]' : colors.bgCard}`}
                                 onClick={() => {
                                   const next = new Set(selectedProspects)
@@ -3895,26 +3895,26 @@ export default function SalesDashboard() {
                                 {selectedProspects.has(prospect.id) && <span className="text-white text-[10px]">✓</span>}
                               </div>
                             </td>
-                            <td className="px-1 py-2" onClick={e => e.stopPropagation()}>
+                            <td className="px-1 py-1.5" onClick={e => e.stopPropagation()}>
                               <button
                                 onClick={() => updateProspectStatus(prospect.id, prospect.status === 'interesting' ? 'new' : 'interesting')}
                                 className={`text-[14px] transition-transform hover:scale-125 ${prospect.status === 'interesting' ? '' : 'opacity-30 hover:opacity-60'}`}
                                 title="Toggle interessant"
                               >⭐</button>
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-1.5">
                               <a href={prospect.website} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} className="text-[12px] text-blue-400 hover:text-blue-300 font-medium">
                                 {prospect.name}
                               </a>
                             </td>
-                            <td className={`px-3 py-2 text-[12px] ${colors.textSecondary}`}>{prospect.category}</td>
-                            <td className="px-3 py-2">
+                            <td className={`px-3 py-1.5 text-[12px] ${colors.textSecondary}`}>{prospect.category}</td>
+                            <td className="px-3 py-1.5">
                               {prospect.source_agency && (
                                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400">{prospect.source_agency}</span>
                               )}
                             </td>
-                            <td className={`px-3 py-2 text-[12px] ${colors.textSecondary}`}>{prospect.location}</td>
-                            <td className="px-3 py-2">
+                            <td className={`px-3 py-1.5 text-[12px] ${colors.textSecondary}`}>{prospect.location}</td>
+                            <td className="px-3 py-1.5">
                               <div className="flex items-center gap-2">
                                 <div className="w-16 h-1.5 bg-gray-700 rounded-full overflow-hidden">
                                   <div className="h-full bg-blue-500 rounded-full" style={{ width: `${prospect.match_score * 10}%` }} />
@@ -3922,23 +3922,23 @@ export default function SalesDashboard() {
                                 <span className={`text-[11px] ${colors.textSecondary}`}>{prospect.match_score}</span>
                               </div>
                             </td>
-                            <td className="px-3 py-2">
-                              <div className="flex gap-1 flex-wrap">
-                                {prospect.services.slice(0, 3).map(s => (
-                                  <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bgCard} ${colors.textTertiary} border ${colors.border}`}>{s}</span>
+                            <td className="px-3 py-1.5">
+                              <div className="flex gap-1 flex-nowrap overflow-hidden">
+                                {prospect.services.slice(0, 2).map(s => (
+                                  <span key={s} className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bgCard} ${colors.textTertiary} border ${colors.border} whitespace-nowrap`}>{s}</span>
                                 ))}
-                                {prospect.services.length > 3 && (
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.textTertiary}`}>+{prospect.services.length - 3}</span>
+                                {prospect.services.length > 2 && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.textTertiary} whitespace-nowrap`}>+{prospect.services.length - 2}</span>
                                 )}
                               </div>
                             </td>
-                            <td className={`px-3 py-2 text-[12px] ${colors.textPrimary} font-medium`}>€{prospect.retainer_potential.toLocaleString('nl-NL')}</td>
-                            <td className="px-3 py-2">
+                            <td className={`px-3 py-1.5 text-[12px] ${colors.textPrimary} font-medium`}>€{prospect.retainer_potential.toLocaleString('nl-NL')}</td>
+                            <td className="px-3 py-1.5">
                               <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${priorityColors[prospect.priority]}`}>
                                 {prospect.priority}
                               </span>
                             </td>
-                            <td className="px-3 py-2">
+                            <td className="px-3 py-1.5">
                               <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${statusColors[prospect.status]}`}>
                                 {statusLabels[prospect.status]}
                               </span>
