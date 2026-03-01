@@ -5121,10 +5121,10 @@ export default function SalesDashboard() {
                                 <span className={`text-[11px] font-medium ${colors.textPrimary}`}>{year}</span>
                                 <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(yearTotal / 1000)}k totaal</span>
                               </div>
-                              <div className="flex gap-0.5 h-12 items-end">
+                              <div className="flex gap-0.5 items-end" style={{ height: '80px' }}>
                                 {yearData.map(r => (
-                                  <div key={r.month} className="flex-1 h-full flex items-end" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
-                                    <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${Math.max((r.revenue / maxRev) * 100, 3)}%` }} />
+                                  <div key={r.month} className="flex-1 flex items-end" style={{ height: '80px' }} title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
+                                    <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${Math.max((r.revenue / maxRev) * 80, 2)}px` }} />
                                   </div>
                                 ))}
                               </div>
@@ -5145,22 +5145,25 @@ export default function SalesDashboard() {
                 <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
                   <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Scenario Planning 2026</h3>
                   {(() => {
+                    const target2026 = 1500000
+                    const currentARR = RETAINER_ARR
+                    const gap = target2026 - currentARR
                     const scenarios = [
-                      { name: 'Optimistisch', growth: 0.35, color: 'text-green-400', bgColor: 'bg-green-500/20', desc: '+35% groei, 8 nieuwe klanten' },
-                      { name: 'Realistisch', growth: 0.20, color: 'text-blue-400', bgColor: 'bg-blue-500/20', desc: '+20% groei, 5 nieuwe klanten' },
-                      { name: 'Pessimistisch', growth: 0.05, color: 'text-red-400', bgColor: 'bg-red-500/20', desc: '+5% groei, 2 nieuwe klanten' },
+                      { name: 'Optimistisch', gapPct: 0.80, color: 'text-green-400', bgColor: 'bg-green-500/20', desc: '80% van gap dichten, 8 nieuwe klanten' },
+                      { name: 'Realistisch', gapPct: 0.50, color: 'text-blue-400', bgColor: 'bg-blue-500/20', desc: '50% van gap dichten, 5 nieuwe klanten' },
+                      { name: 'Pessimistisch', gapPct: 0.20, color: 'text-red-400', bgColor: 'bg-red-500/20', desc: '20% van gap dichten, 2 nieuwe klanten' },
                     ]
-                    const lastYearRev = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025')).reduce((s, r) => s + r.revenue, 0)
                     return (
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         {scenarios.map(s => {
-                          const projected = Math.round(lastYearRev * (1 + s.growth))
+                          const projected = Math.round(currentARR + gap * s.gapPct)
+                          const growthPct = Math.round(((projected - currentARR) / currentARR) * 100)
                           return (
                             <div key={s.name} className={`p-3 rounded-md ${colors.bgInput}`}>
                               <span className={`text-[11px] font-medium ${s.color}`}>{s.name}</span>
                               <p className={`text-[18px] font-bold font-mono ${colors.textPrimary} my-1`}>€{Math.round(projected / 1000)}k</p>
                               <p className={`text-[10px] ${colors.textTertiary}`}>{s.desc}</p>
-                              <div className={`mt-2 text-[10px] px-2 py-0.5 rounded ${s.bgColor} ${s.color} inline-block`}>+{Math.round(s.growth * 100)}%</div>
+                              <div className={`mt-2 text-[10px] px-2 py-0.5 rounded ${s.bgColor} ${s.color} inline-block`}>+{growthPct}%</div>
                             </div>
                           )
                         })}
@@ -5359,10 +5362,13 @@ export default function SalesDashboard() {
             const years = ['2022', '2023', '2024', '2025']
             const maxRev = Math.max(...HISTORICAL_REVENUE.map(r => r.revenue))
             const lastYearRev = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025')).reduce((s, r) => s + r.revenue, 0)
+            const target2026 = 1500000
+            const currentARR = RETAINER_ARR
+            const gap = target2026 - currentARR
             const scenarios = [
-              { name: 'Optimistisch', growth: 0.35, color: 'text-green-400', bgColor: 'bg-green-500/20', desc: '+35% groei, 8 nieuwe klanten' },
-              { name: 'Realistisch', growth: 0.20, color: 'text-blue-400', bgColor: 'bg-blue-500/20', desc: '+20% groei, 5 nieuwe klanten' },
-              { name: 'Pessimistisch', growth: 0.05, color: 'text-red-400', bgColor: 'bg-red-500/20', desc: '+5% groei, 2 nieuwe klanten' },
+              { name: 'Optimistisch', gapPct: 0.80, color: 'text-green-400', bgColor: 'bg-green-500/20', desc: '80% van gap dichten, 8 nieuwe klanten' },
+              { name: 'Realistisch', gapPct: 0.50, color: 'text-blue-400', bgColor: 'bg-blue-500/20', desc: '50% van gap dichten, 5 nieuwe klanten' },
+              { name: 'Pessimistisch', gapPct: 0.20, color: 'text-red-400', bgColor: 'bg-red-500/20', desc: '20% van gap dichten, 2 nieuwe klanten' },
             ]
             const MONTH_LABELS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
             // Seasonal pattern from 2025
@@ -5386,10 +5392,10 @@ export default function SalesDashboard() {
                             <span className={`text-[11px] font-medium ${colors.textPrimary}`}>{year}</span>
                             <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(yearTotal / 1000)}k totaal</span>
                           </div>
-                          <div className="flex gap-0.5 h-16 items-end">
+                          <div className="flex gap-0.5 items-end" style={{ height: '80px' }}>
                             {yearData.map(r => (
-                              <div key={r.month} className="flex-1 h-full flex items-end group relative" title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
-                                <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${Math.max((r.revenue / maxRev) * 100, 3)}%` }} />
+                              <div key={r.month} className="flex-1 flex items-end group relative" style={{ height: '80px' }} title={`${r.month}: €${r.revenue.toLocaleString('nl-NL')}`}>
+                                <div className="w-full bg-blue-500/60 rounded-t-sm transition-all hover:bg-blue-400" style={{ height: `${Math.max((r.revenue / maxRev) * 80, 2)}px` }} />
                               </div>
                             ))}
                           </div>
@@ -5409,13 +5415,14 @@ export default function SalesDashboard() {
                   <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Scenario Planning 2026</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {scenarios.map(s => {
-                      const projected = Math.round(lastYearRev * (1 + s.growth))
+                      const projected = Math.round(currentARR + gap * s.gapPct)
+                      const growthPct = Math.round(((projected - currentARR) / currentARR) * 100)
                       return (
                         <div key={s.name} className={`p-3 rounded-md ${colors.bgInput}`}>
                           <span className={`text-[11px] font-medium ${s.color}`}>{s.name}</span>
                           <p className={`text-[18px] font-bold font-mono ${colors.textPrimary} my-1`}>€{Math.round(projected / 1000)}k</p>
                           <p className={`text-[10px] ${colors.textTertiary}`}>{s.desc}</p>
-                          <div className={`mt-2 text-[10px] px-2 py-0.5 rounded ${s.bgColor} ${s.color} inline-block`}>+{Math.round(s.growth * 100)}%</div>
+                          <div className={`mt-2 text-[10px] px-2 py-0.5 rounded ${s.bgColor} ${s.color} inline-block`}>+{growthPct}%</div>
                         </div>
                       )
                     })}
@@ -5442,7 +5449,7 @@ export default function SalesDashboard() {
                             <tr key={month} className={`border-b ${colors.border}`}>
                               <td className={`py-2 px-2 ${colors.textPrimary}`}>{month}</td>
                               {scenarios.map(s => {
-                                const yearTotal = lastYearRev * (1 + s.growth)
+                                const yearTotal = currentARR + gap * s.gapPct
                                 const monthVal = Math.round((yearTotal / 12) * weight)
                                 return (
                                   <td key={s.name} className={`py-2 px-2 text-right font-mono ${colors.textSecondary}`}>
@@ -5456,7 +5463,7 @@ export default function SalesDashboard() {
                         <tr className={`font-bold border-t-2 ${colors.border}`}>
                           <td className={`py-2 px-2 ${colors.textPrimary}`}>Totaal</td>
                           {scenarios.map(s => {
-                            const total = Math.round(lastYearRev * (1 + s.growth))
+                            const total = Math.round(currentARR + gap * s.gapPct)
                             return (
                               <td key={s.name} className={`py-2 px-2 text-right font-mono ${s.color}`}>
                                 €{total.toLocaleString('nl-NL')}
