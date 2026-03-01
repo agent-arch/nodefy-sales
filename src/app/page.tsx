@@ -2422,6 +2422,7 @@ export default function SalesDashboard() {
     switch(id) {
       case 'klanten': return data.clients.filter(c => c.status === 'Actief').length
       case 'pipeline': return data.pipelineDeals.filter(d => !CLOSED_STAGE_IDS.has(d.stageId)).length
+      case 'prospects': return MEGA_PROSPECTS.length
       case 'content': return readyCount
       default: return undefined
     }
@@ -5407,6 +5408,57 @@ export default function SalesDashboard() {
                         </div>
                       )
                     })}
+                  </div>
+                </div>
+
+                {/* 2026 Target Gap Visualization */}
+                <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>2026 Target: €1.5M</h3>
+                  <div className="mb-3">
+                    <div className={`h-6 rounded-full ${colors.bgInput} overflow-hidden flex`}>
+                      <div className="h-full bg-green-600 rounded-l-full transition-all" style={{ width: `${Math.min((currentARR / target2026) * 100, 100)}%` }} />
+                      <div className="h-full bg-amber-600/40 transition-all" style={{ width: `${Math.min((gap / target2026) * 100, 100 - (currentARR / target2026) * 100)}%` }} />
+                    </div>
+                    <div className="flex justify-between mt-1">
+                      <span className={`text-[10px] font-mono text-green-400`}>Bestaande ARR: €{Math.round(currentARR / 1000)}k</span>
+                      <span className={`text-[10px] font-mono text-amber-400`}>Gap: €{Math.round(gap / 1000)}k</span>
+                      <span className={`text-[10px] font-mono ${colors.textSecondary}`}>Target: €{Math.round(target2026 / 1000)}k</span>
+                    </div>
+                  </div>
+                  {/* Monthly target line visualization */}
+                  <div className="mt-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className={`text-[11px] ${colors.textSecondary}`}>Maandelijks target: €{Math.round(target2026 / 12 / 1000)}k/mnd</span>
+                      <span className={`text-[11px] ${colors.textTertiary}`}>|</span>
+                      <span className={`text-[11px] ${colors.textSecondary}`}>Huidig MRR: €{Math.round(currentARR / 12 / 1000)}k/mnd</span>
+                    </div>
+                    <div className="flex gap-0.5 items-end" style={{ height: '60px' }}>
+                      {MONTH_LABELS.map((m, i) => {
+                        const weight = seasonalWeights[i] || 1
+                        const realisticMonthly = ((currentARR + gap * 0.5) / 12) * weight
+                        const targetMonthly = (target2026 / 12) * weight
+                        const maxVal = targetMonthly * 1.2
+                        return (
+                          <div key={m} className="flex-1 relative" style={{ height: '60px' }}>
+                            {/* Target line */}
+                            <div className="absolute w-full border-t border-dashed border-amber-500/50" style={{ bottom: `${(targetMonthly / maxVal) * 60}px` }} />
+                            {/* Realistic bar */}
+                            <div className="absolute bottom-0 w-full flex items-end">
+                              <div className="w-full bg-blue-500/50 rounded-t-sm" style={{ height: `${Math.max((realisticMonthly / maxVal) * 60, 2)}px` }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                    <div className="flex gap-0.5 mt-0.5">
+                      {MONTH_LABELS.map((m, i) => (
+                        <span key={i} className={`flex-1 text-center text-[8px] ${colors.textTertiary}`}>{m}</span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="flex items-center gap-1"><div className="w-3 h-2 bg-blue-500/50 rounded-sm" /><span className={`text-[9px] ${colors.textTertiary}`}>Realistisch scenario</span></div>
+                      <div className="flex items-center gap-1"><div className="w-3 border-t border-dashed border-amber-500/50" /><span className={`text-[9px] ${colors.textTertiary}`}>Target €1.5M</span></div>
+                    </div>
                   </div>
                 </div>
 
