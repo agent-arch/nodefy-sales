@@ -2,13 +2,20 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 
+// CSS animations for command palette and panels
+const CMD_PALETTE_STYLES = `
+@keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(10px) } to { opacity: 1; transform: translateY(0) } }
+@keyframes slideInRight { from { transform: translateX(100%) } to { transform: translateX(0) } }
+`
+
 // ============================================
 // NODEFY SALES DASHBOARD v6.0
 // Major content update with editing capabilities
 // ============================================
 
 // Types
-type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'salesoverview' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'settings' | 'admin'
+type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'salesoverview' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'timeline' | 'settings' | 'admin'
 
 type UserRole = 'superadmin' | 'admin' | 'viewer' | 'custom'
 
@@ -31,7 +38,7 @@ const DEFAULT_USERS: User[] = [
     email: 'ruben@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, timeline: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   },
@@ -41,14 +48,14 @@ const DEFAULT_USERS: User[] = [
     email: 'matthijs@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, timeline: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   }
 ]
 
 // All possible tab IDs for permissions
-const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'salesoverview', 'strategy', 'forecast', 'retainers', 'nightshift', 'settings', 'admin']
+const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'salesoverview', 'strategy', 'forecast', 'retainers', 'nightshift', 'timeline', 'settings', 'admin']
 const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
@@ -999,91 +1006,89 @@ const CLOSED_STAGE_IDS = new Set(['closedwon', 'closedlost', '16170377', '398250
 
 // Retainer client data (shared between strategy & retainers tabs)
 const RETAINER_CLIENTS = [
-  { klant: 'Tours & Tickets', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 72000, jan: 6000, startJaar: 2022 },
-  { klant: 'Kisch', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 12000, jan: 1000, startJaar: 2022 },
-  { klant: 'Spirit', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 51000, jan: 4250, startJaar: 2022 },
-  { klant: 'SB+WAA+Fun', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 16800, jan: 1400, startJaar: 2022 },
-  { klant: 'Caron', recurring: true, lead: 'Merijn', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 7650, jan: 2325, feb: 2325, mrt: 300, startJaar: 2023 },
-  { klant: 'The Branding Club NL', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'HubSpot / Digital marketing', bedrag: 30000, jan: 2500, startJaar: 2023 },
-  { klant: 'Talent Care', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2023 },
-  { klant: 'Restaurants Shaul', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEA', bedrag: 12000, jan: 1000, startJaar: 2024 },
-  { klant: 'Digital Notary', recurring: true, lead: 'Carbon', status: 'Actief', onderdeel: 'SEA', bedrag: 43200, jan: 3600, startJaar: 2024 },
-  { klant: 'Padelpoints', recurring: true, lead: 'Max', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 21600, jan: 1800, startJaar: 2024 },
-  { klant: 'Franky Amsterdam', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 36000, jan: 3000, startJaar: 2024 },
-  { klant: 'The Core', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, jan: 1500, startJaar: 2024 },
-  { klant: 'Ripple Surf Therapy', recurring: true, lead: 'Loes', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 12000, jan: 1000, startJaar: 2025 },
-  { klant: 'FlorisDaken / Mankracht', recurring: true, lead: 'David', status: 'Actief', onderdeel: 'SEA', bedrag: 9600, jan: 800, startJaar: 2025 },
-  { klant: 'Rust Zacht', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'SEA', bedrag: 24000, jan: 2000, startJaar: 2025 },
-  { klant: 'Rotterdam Chemicals', recurring: false, lead: 'RQS', status: 'Start nnb', onderdeel: 'HubSpot', bedrag: 0, jan: 0, startJaar: 2025 },
-  { klant: 'Eginstill', recurring: true, lead: 'Charlotte', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 14400, jan: 1200, startJaar: 2025 },
-  { klant: 'Floryn', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 38640, jan: 3220, startJaar: 2025 },
-  { klant: 'Student Experience', recurring: true, lead: 'Cold', status: 'Actief', onderdeel: 'Dashboarding', bedrag: 10800, jan: 900, startJaar: 2025 },
-  { klant: 'App4Sales', recurring: false, lead: 'Erik', status: 'Churned', onderdeel: 'Digital marketing', bedrag: 0, jan: 950, feb: 950, startJaar: 2025 },
-  { klant: 'BunBun/Little Bonfire', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, jan: 1500, startJaar: 2025 },
-  { klant: 'Momentum', recurring: true, lead: 'Lidewij', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 33600, jan: 2800, startJaar: 2025 },
-  { klant: 'Stories', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, jan: 2600, startJaar: 2025 },
-  { klant: 'Stories (HubSpot)', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'HubSpot', bedrag: 9000, jan: 750, startJaar: 2025 },
-  { klant: 'Unity Units', recurring: true, lead: 'Benjamin Tug', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 86400, jan: 8000, startJaar: 2025 },
-  { klant: 'Displine', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 40800, jan: 3400, startJaar: 2025 },
-  { klant: 'Distillery', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, jan: 3200, startJaar: 2025 },
-  { klant: 'Lake Cycling', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 74400, jan: 6200, startJaar: 2025 },
-  { klant: 'Johan Cruyff', recurring: false, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, jan: 2000, feb: 3000, startJaar: 2025 },
-  { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, jan: 6600, feb: 4800, startJaar: 2026, startMonth: 1 },
-  { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30500, jan: 6150, feb: 1800, startJaar: 2026, startMonth: 1 },
-  { klant: 'Kremer Collectie', recurring: false, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, jan: 2300, feb: 2300, startJaar: 2026, startMonth: 1 },
-  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59800, jan: 0, feb: 4800, mrt: 5500, startJaar: 2026, startMonth: 2 },
-  { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 29000, jan: 0, feb: 5000, startJaar: 2026, startMonth: 2 },
-  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 31800, jan: 0, feb: 5800, mrt: 2800, startJaar: 2026, startMonth: 2 },
+  // Start 2022
+  { klant: 'Tours & Tickets', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 72000, months: [6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000], startJaar: 2022 },
+  { klant: 'Kisch', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 12000, months: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], startJaar: 2022 },
+  { klant: 'Spirit', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 51000, months: [4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250], startJaar: 2022 },
+  { klant: 'SB+WAA+Fun', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 16800, months: [1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400], startJaar: 2022 },
+  // Start 2023
+  { klant: 'Caron', recurring: true, lead: 'Merijn', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 7650, months: [2325, 2325, 300, 300, 300, 300, 300, 300, 300, 300, 300, 300], startJaar: 2023 },
+  { klant: 'The Branding Club NL', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'HubSpot / Digital marketing', bedrag: 30000, months: [2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500, 2500], startJaar: 2023 },
+  { klant: 'Verstegen', recurring: true, lead: 'Roy', status: 'Gepauzeerd', onderdeel: 'Digital marketing', bedrag: 0, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2023 },
+  { klant: 'Talent Care', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, months: [2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600], startJaar: 2023 },
+  // Start 2024
+  { klant: 'Restaurants Shaul', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'SEA', bedrag: 12000, months: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], startJaar: 2024 },
+  { klant: 'Digital Notary', recurring: true, lead: 'Carbon', status: 'Actief', onderdeel: 'SEA', bedrag: 43200, months: [3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600, 3600], startJaar: 2024 },
+  { klant: 'Padelpoints', recurring: true, lead: 'Max', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 21600, months: [1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800], startJaar: 2024 },
+  { klant: 'Franky Amsterdam', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 36000, months: [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000], startJaar: 2024 },
+  { klant: 'Van der Kooij Advocaten', recurring: true, lead: 'RQS', status: 'Gestopt', onderdeel: 'Digital marketing', bedrag: 2200, months: [2200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2024 },
+  { klant: 'The Core', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, months: [1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500], startJaar: 2024 },
+  // Start 2025
+  { klant: 'Ripple Surf Therapy', recurring: true, lead: 'Loes', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 12000, months: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], startJaar: 2025 },
+  { klant: 'FlorisDaken / Mankracht', recurring: true, lead: 'David', status: 'Actief', onderdeel: 'SEA', bedrag: 9600, months: [800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800], startJaar: 2025 },
+  { klant: 'Rust Zacht', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'SEA', bedrag: 24000, months: [2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000], startJaar: 2025 },
+  { klant: 'Rotterdam Chemicals', recurring: false, lead: 'RQS', status: 'Actief', onderdeel: 'HubSpot', bedrag: 0, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2025 },
+  { klant: 'Eginstill', recurring: true, lead: 'Charlotte', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 14400, months: [1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200], startJaar: 2025 },
+  { klant: 'Floryn', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 38640, months: [3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220], startJaar: 2025 },
+  { klant: 'Student Experience', recurring: true, lead: 'Cold', status: 'Actief', onderdeel: 'Dashboarding', bedrag: 10800, months: [900, 900, 900, 900, 900, 900, 900, 900, 900, 900, 900, 900], startJaar: 2025 },
+  { klant: 'App4Sales', recurring: true, lead: 'Erik', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 1900, months: [950, 950, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2025 },
+  { klant: 'BunBun/Little Bonfire', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, months: [1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500], startJaar: 2025 },
+  { klant: 'Momentum', recurring: true, lead: 'Lidewij', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 33600, months: [2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800], startJaar: 2025 },
+  { klant: 'Stories (DM)', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, months: [2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600], startJaar: 2025 },
+  { klant: 'Stories (HubSpot)', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'HubSpot', bedrag: 9000, months: [750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750], startJaar: 2025 },
+  { klant: 'Unity Units', recurring: true, lead: 'Benjamin Tug', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 86400, months: [8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 5600, 5600, 5600, 5600], startJaar: 2025 },
+  { klant: 'Displine', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 40800, months: [3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400], startJaar: 2025 },
+  { klant: 'Distillery', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, months: [3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200], startJaar: 2025 },
+  { klant: 'Lake Cycling', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 74400, months: [6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200], startJaar: 2025 },
+  { klant: 'Johan Cruyff', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, months: [2000, 3000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2025 },
+  // Start 2026
+  { klant: 'Bikeshoe4u / Grutto', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59400, months: [6600, 4800, 4800, 4800, 4800, 4800, 4800, 4800, 4800, 4800, 4800, 4800], startJaar: 2026 },
+  { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, months: [6150, 6150, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800], startJaar: 2026 },
+  { klant: 'Kremer Collectie', recurring: false, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, months: [2300, 2300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2026 },
+  { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59800, months: [0, 4800, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500], startJaar: 2026 },
+  { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 29000, months: [0, 5000, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400], startJaar: 2026 },
+  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 31800, months: [0, 3800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800], startJaar: 2026 },
+  { klant: 'Artis', recurring: true, lead: '', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 35000, months: [0, 0, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500], startJaar: 2026 },
 ] as const
 
 // Computed retainer KPIs
 const ACTIVE_RETAINER_CLIENTS = RETAINER_CLIENTS.filter(c => c.status === 'Actief')
 const RETAINER_ARR = ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => sum + c.bedrag, 0)
-// MRR = current month's actual revenue (feb = month index 1)
 const CURRENT_MONTH_IDX = new Date().getMonth() // 0=jan, 1=feb, etc.
-const RETAINER_MRR = ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => {
-  const sm = (c as any).startMonth as number | undefined
-  const startIdx = sm !== undefined ? sm - 1 : 0
-  if (CURRENT_MONTH_IDX < startIdx) return sum
-  const feb = (c as any).feb as number | undefined
-  const mrt = (c as any).mrt as number | undefined
-  // Non-recurring: only count in explicitly defined months
-  if (!c.recurring) {
-    if (CURRENT_MONTH_IDX === 0 && startIdx === 0) return sum + c.jan
-    if (CURRENT_MONTH_IDX === 1 && feb !== undefined) return sum + feb
-    if (CURRENT_MONTH_IDX === 1 && startIdx === 0 && feb === undefined) return sum + c.jan
-    if (CURRENT_MONTH_IDX === 2 && mrt !== undefined) return sum + mrt
-    return sum
-  }
-  const stableMonthly = mrt !== undefined ? mrt : (feb !== undefined ? feb : (c.jan || Math.round(c.bedrag / 12)))
-  if (CURRENT_MONTH_IDX === 0) return sum + c.jan
-  if (CURRENT_MONTH_IDX === 1) return sum + (feb !== undefined ? feb : stableMonthly)
-  return sum + stableMonthly
-}, 0)
-const RETAINER_AVG_MRR = Math.round(RETAINER_MRR / ACTIVE_RETAINER_CLIENTS.filter(c => {
-  const sm = (c as any).startMonth as number | undefined
-  const startIdx = sm !== undefined ? sm - 1 : 0
-  return CURRENT_MONTH_IDX >= startIdx
-}).length)
+const RETAINER_MRR = ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => sum + c.months[CURRENT_MONTH_IDX], 0)
+const RETAINER_AVG_MRR = Math.round(RETAINER_MRR / ACTIVE_RETAINER_CLIENTS.filter(c => c.months[CURRENT_MONTH_IDX] > 0).length || 1)
 const RETAINER_NEW_2026 = RETAINER_CLIENTS.filter(c => c.startJaar === 2026).length
 
+// Costs data
+const MONTHLY_COSTS = {
+  overhead: { kantoor: 5000, auto: 700, bedrijfsuitjes: 1250, tools: 2000, diversen: 5000, total: 13950 },
+  personnel: { ruben: 10000, loes: 5500, koen: 4940, thijs: 4680, benjamin: 3770, jasper: 4940, dane: 1200, noah: 1200, megan: 1400, matthijs: 1500, total: 39130 },
+  kickbacks: { jaron: { jan: 4160, monthly: 3800 }, roy: 657 },
+  totalMonthly: 53080,
+  totalAnnual: 636960,
+}
+
 const HISTORICAL_REVENUE: {month: string; revenue: number}[] = [
-  {month: '2022-01', revenue: 15420}, {month: '2022-02', revenue: 18350}, {month: '2022-03', revenue: 22100},
-  {month: '2022-04', revenue: 19800}, {month: '2022-05', revenue: 24500}, {month: '2022-06', revenue: 28900},
-  {month: '2022-07', revenue: 21200}, {month: '2022-08', revenue: 18900}, {month: '2022-09', revenue: 31500},
-  {month: '2022-10', revenue: 35200}, {month: '2022-11', revenue: 38100}, {month: '2022-12', revenue: 29800},
-  {month: '2023-01', revenue: 32100}, {month: '2023-02', revenue: 35800}, {month: '2023-03', revenue: 41200},
-  {month: '2023-04', revenue: 38500}, {month: '2023-05', revenue: 44100}, {month: '2023-06', revenue: 48200},
-  {month: '2023-07', revenue: 39800}, {month: '2023-08', revenue: 36500}, {month: '2023-09', revenue: 52100},
-  {month: '2023-10', revenue: 55800}, {month: '2023-11', revenue: 58200}, {month: '2023-12', revenue: 49500},
-  {month: '2024-01', revenue: 51200}, {month: '2024-02', revenue: 54800}, {month: '2024-03', revenue: 59100},
-  {month: '2024-04', revenue: 56200}, {month: '2024-05', revenue: 62500}, {month: '2024-06', revenue: 67800},
-  {month: '2024-07', revenue: 58200}, {month: '2024-08', revenue: 54100}, {month: '2024-09', revenue: 71200},
-  {month: '2024-10', revenue: 74500}, {month: '2024-11', revenue: 78100}, {month: '2024-12', revenue: 68200},
-  {month: '2025-01', revenue: 65800}, {month: '2025-02', revenue: 68200}, {month: '2025-03', revenue: 72100},
-  {month: '2025-04', revenue: 69500}, {month: '2025-05', revenue: 74200}, {month: '2025-06', revenue: 78900},
-  {month: '2025-07', revenue: 71200}, {month: '2025-08', revenue: 67800}, {month: '2025-09', revenue: 82100},
-  {month: '2025-10', revenue: 85200}, {month: '2025-11', revenue: 79500}, {month: '2025-12', revenue: 68400},
+  // 2022
+  {month: '2022-01', revenue: 4664}, {month: '2022-02', revenue: 3689}, {month: '2022-03', revenue: 4891},
+  {month: '2022-04', revenue: 11344}, {month: '2022-05', revenue: 11418}, {month: '2022-06', revenue: 16450},
+  {month: '2022-07', revenue: 17840}, {month: '2022-08', revenue: 20685}, {month: '2022-09', revenue: 30717},
+  {month: '2022-10', revenue: 30628}, {month: '2022-11', revenue: 34388}, {month: '2022-12', revenue: 32250},
+  // 2023
+  {month: '2023-01', revenue: 29605}, {month: '2023-02', revenue: 35715}, {month: '2023-03', revenue: 30338},
+  {month: '2023-04', revenue: 29883}, {month: '2023-05', revenue: 26220}, {month: '2023-06', revenue: 37725},
+  {month: '2023-07', revenue: 37535}, {month: '2023-08', revenue: 27480}, {month: '2023-09', revenue: 29050},
+  {month: '2023-10', revenue: 32730}, {month: '2023-11', revenue: 40107}, {month: '2023-12', revenue: 35110},
+  // 2024
+  {month: '2024-01', revenue: 40771}, {month: '2024-02', revenue: 42633}, {month: '2024-03', revenue: 43481},
+  {month: '2024-04', revenue: 48873}, {month: '2024-05', revenue: 41611}, {month: '2024-06', revenue: 42118},
+  {month: '2024-07', revenue: 38498}, {month: '2024-08', revenue: 41998}, {month: '2024-09', revenue: 54635},
+  {month: '2024-10', revenue: 63935}, {month: '2024-11', revenue: 70935}, {month: '2024-12', revenue: 60860},
+  // 2025
+  {month: '2025-01', revenue: 68170}, {month: '2025-02', revenue: 61576}, {month: '2025-03', revenue: 67520},
+  {month: '2025-04', revenue: 61145}, {month: '2025-05', revenue: 70470}, {month: '2025-06', revenue: 64370},
+  {month: '2025-07', revenue: 70224}, {month: '2025-08', revenue: 72787}, {month: '2025-09', revenue: 72387},
+  {month: '2025-10', revenue: 83587}, {month: '2025-11', revenue: 83987}, {month: '2025-12', revenue: 81987},
 ];
 
 const DEFAULT_MONTHLY_FORECAST = Array.from({ length: 12 }, (_, i) => ({
@@ -1442,6 +1447,7 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'cases', label: 'Cases' },
       { id: 'agencyos', label: 'Agency OS' },
       { id: 'nightshift', label: 'Nachtshift' },
+      { id: 'timeline', label: 'Timeline' },
     ]
   },
   {
@@ -1544,6 +1550,12 @@ export default function SalesDashboard() {
   const [nsSelectedFile, setNsSelectedFile] = useState<string | null>(null)
   const [nsSelectedDay, setNsSelectedDay] = useState<string | null>(null)
 
+  // Timeline state
+  const [tlData, setTlData] = useState<{ days: { date: string; label: string; items: { text: string; category: string; time?: string }[] }[] } | null>(null)
+  const [tlLoading, setTlLoading] = useState(true)
+  const [tlRange, setTlRange] = useState<7 | 14 | 30>(7)
+  const [tlFilter, setTlFilter] = useState<string | null>(null)
+
   // Klanten editing state
   const [klantenEditMode, setKlantenEditMode] = useState(false)
   const [editingClientId, setEditingClientId] = useState<string | null>(null)
@@ -1578,6 +1590,22 @@ export default function SalesDashboard() {
   const [prospectStatuses, setProspectStatuses] = useState<Record<number, { status: string; notes?: string }>>({})
   const [editingNotesId, setEditingNotesId] = useState<number | null>(null)
   const [notesDraft, setNotesDraft] = useState('')
+
+  // === Feature 1: Command Palette (Cmd+K) ===
+  const [cmdPaletteOpen, setCmdPaletteOpen] = useState(false)
+  const [cmdSearch, setCmdSearch] = useState('')
+  const [cmdSelectedIdx, setCmdSelectedIdx] = useState(0)
+  const cmdInputRef = useRef<HTMLInputElement>(null)
+
+  // === Feature 2: Data Freshness (timestamps tracked) ===
+  const [dataTimestamps] = useState(() => ({
+    pipeline: new Date().toISOString(),
+    retainers: new Date().toISOString(),
+    prospects: new Date().toISOString(),
+  }))
+
+  // === Feature 3: Client Quick-View Panel ===
+  const [quickViewClient, setQuickViewClient] = useState<string | null>(null)
 
   // Prospect statuses are loaded from API in main useEffect
 
@@ -1893,6 +1921,14 @@ export default function SalesDashboard() {
     }
   }, [activeTab])
 
+  // Load timeline data
+  useEffect(() => {
+    if (activeTab === 'timeline') {
+      setTlLoading(true)
+      fetch(`/api/timeline?range=${tlRange}`).then(r => r.json()).then(d => { setTlData(d); setTlLoading(false) }).catch(() => setTlLoading(false))
+    }
+  }, [activeTab, tlRange])
+
   // Save theme preference
   useEffect(() => {
     localStorage.setItem('nodefy-theme', theme)
@@ -1988,7 +2024,7 @@ export default function SalesDashboard() {
   const canEdit = currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'custom')
   const canManageUsers = currentUser?.role === 'superadmin'
   // Tabs that contain sensitive financial data - superadmin only
-  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast', 'nightshift', 'salesoverview']
+  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast', 'nightshift', 'salesoverview', 'timeline']
   
   const canAccessTab = (tabId: TabId): boolean => {
     if (!currentUser) return false
@@ -2295,6 +2331,66 @@ export default function SalesDashboard() {
   }
 
   // ============================================
+  // CMD+K COMMAND PALETTE LOGIC
+  // ============================================
+  const cmdPaletteResults = React.useMemo(() => {
+    if (!cmdSearch.trim()) return []
+    const q = cmdSearch.toLowerCase()
+    const results: { type: string; emoji: string; label: string; sub: string; action: () => void }[] = []
+    
+    // Search clients
+    data.clients.filter(c => c.naam.toLowerCase().includes(q) || c.vertical?.toLowerCase().includes(q)).slice(0, 5).forEach(c => {
+      results.push({ type: 'Client', emoji: '👤', label: c.naam, sub: `${c.status} · ${c.vertical || ''}`, action: () => { setActiveTab('klanten'); setCmdPaletteOpen(false) } })
+    })
+    
+    // Search pipeline deals
+    data.pipelineDeals.filter(d => d.name.toLowerCase().includes(q)).slice(0, 5).forEach(d => {
+      results.push({ type: 'Pipeline', emoji: '💰', label: d.name, sub: d.value ? `€${d.value.toLocaleString()}` : 'No value', action: () => { setActiveTab('pipeline'); setCmdPaletteOpen(false) } })
+    })
+    
+    // Search prospects
+    MEGA_PROSPECTS.filter(p => p.name.toLowerCase().includes(q) || p.category?.toLowerCase().includes(q)).slice(0, 5).forEach(p => {
+      results.push({ type: 'Prospect', emoji: '🎯', label: p.name, sub: `${p.priority} · ${p.category}`, action: () => { setActiveTab('prospects'); setCmdPaletteOpen(false) } })
+    })
+    
+    // Search tabs
+    const tabLabels: Record<string, string> = { overview: 'Klanten Overview', klanten: 'Klanten', reports: 'Reports', pipeline: 'Pipeline', prospects: 'Prospects', masterplan: 'Masterplan', cases: 'Cases', agencyos: 'Agency OS', content: 'Content', strategy: 'Strategy', retainers: 'Retainers', salesoverview: 'Sales Overview' }
+    Object.entries(tabLabels).filter(([, label]) => label.toLowerCase().includes(q)).forEach(([id, label]) => {
+      results.push({ type: 'Tab', emoji: '📑', label, sub: 'Navigate to tab', action: () => { setActiveTab(id as TabId); setCmdPaletteOpen(false) } })
+    })
+    
+    return results
+  }, [cmdSearch, data.clients, data.pipelineDeals])
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault()
+        setCmdPaletteOpen(prev => !prev)
+        setCmdSearch('')
+        setCmdSelectedIdx(0)
+      }
+      if (e.key === 'Escape' && cmdPaletteOpen) {
+        setCmdPaletteOpen(false)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [cmdPaletteOpen])
+
+  useEffect(() => {
+    if (cmdPaletteOpen && cmdInputRef.current) {
+      cmdInputRef.current.focus()
+    }
+  }, [cmdPaletteOpen])
+
+  const handleCmdKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') { e.preventDefault(); setCmdSelectedIdx(prev => Math.min(prev + 1, cmdPaletteResults.length - 1)) }
+    if (e.key === 'ArrowUp') { e.preventDefault(); setCmdSelectedIdx(prev => Math.max(prev - 1, 0)) }
+    if (e.key === 'Enter' && cmdPaletteResults[cmdSelectedIdx]) { cmdPaletteResults[cmdSelectedIdx].action() }
+  }, [cmdPaletteResults, cmdSelectedIdx])
+
+  // ============================================
   // LINEAR-STYLE THEME CLASSES
   // ============================================
   const isDark = theme === 'dark'
@@ -2527,6 +2623,7 @@ export default function SalesDashboard() {
   // ============================================
   return (
     <main className={`min-h-screen ${colors.bgMain} ${colors.textPrimary} flex transition-colors duration-150`}>
+      <style dangerouslySetInnerHTML={{ __html: CMD_PALETTE_STYLES }} />
       {/* Mobile sidebar toggle */}
       <button
         onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -2699,10 +2796,170 @@ export default function SalesDashboard() {
       </aside>
 
       {/* ============================================ */}
+      {/* CMD+K COMMAND PALETTE */}
+      {/* ============================================ */}
+      {cmdPaletteOpen && (
+        <div className="fixed inset-0 z-[100] flex items-start justify-center pt-[20vh]" onClick={() => setCmdPaletteOpen(false)}>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" style={{ animation: 'fadeIn 150ms ease-out' }} />
+          <div 
+            className={`relative w-full max-w-[520px] mx-4 ${isDark ? 'bg-[#222225] border-[#2E2E32]' : 'bg-white border-[#E4E4E8]'} border rounded-lg shadow-2xl overflow-hidden`}
+            style={{ animation: 'slideUp 150ms ease-out' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className={`flex items-center gap-2 px-4 py-3 border-b ${isDark ? 'border-[#2E2E32]' : 'border-[#E4E4E8]'}`}>
+              <span className={`text-sm ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>⌘K</span>
+              <input
+                ref={cmdInputRef}
+                value={cmdSearch}
+                onChange={e => { setCmdSearch(e.target.value); setCmdSelectedIdx(0) }}
+                onKeyDown={handleCmdKeyDown}
+                placeholder="Search clients, deals, prospects, tabs..."
+                className={`flex-1 bg-transparent text-sm ${isDark ? 'text-[#E8E8ED] placeholder:text-[#5C5C63]' : 'text-gray-900 placeholder:text-gray-400'} outline-none`}
+              />
+              <kbd className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'bg-[#2A2A2E] text-[#5C5C63]' : 'bg-gray-100 text-gray-400'}`}>ESC</kbd>
+            </div>
+            {cmdPaletteResults.length > 0 && (
+              <div className="max-h-[300px] overflow-y-auto py-1">
+                {cmdPaletteResults.map((r, i) => (
+                  <button
+                    key={`${r.type}-${r.label}-${i}`}
+                    onClick={r.action}
+                    className={`w-full flex items-center gap-3 px-4 py-2 text-left transition-colors ${
+                      i === cmdSelectedIdx
+                        ? isDark ? 'bg-[#2A2A2E]' : 'bg-gray-100'
+                        : isDark ? 'hover:bg-[#2A2A2E]' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-base">{r.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-[13px] ${isDark ? 'text-[#E8E8ED]' : 'text-gray-900'} truncate`}>{r.label}</p>
+                      <p className={`text-[11px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'} truncate`}>{r.sub}</p>
+                    </div>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'bg-[#18181B] text-[#5C5C63]' : 'bg-gray-100 text-gray-400'}`}>{r.type}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {cmdSearch && cmdPaletteResults.length === 0 && (
+              <div className={`py-8 text-center text-[13px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>No results found</div>
+            )}
+            {!cmdSearch && (
+              <div className={`py-6 text-center text-[13px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>Type to search...</div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ============================================ */}
+      {/* CLIENT QUICK-VIEW PANEL */}
+      {/* ============================================ */}
+      {quickViewClient && (() => {
+        const client = data.clients.find(c => c.id === quickViewClient)
+        const retainerInfo = RETAINER_CLIENTS.find(r => r.klant === client?.naam)
+        const clientDeals = data.pipelineDeals.filter(d => d.name.toLowerCase().includes(client?.naam?.toLowerCase() || '___'))
+        if (!client) return null
+        return (
+          <div className="fixed inset-0 z-[90] flex justify-end" onClick={() => setQuickViewClient(null)}>
+            <div className="fixed inset-0 bg-black/30" />
+            <div 
+              className={`relative w-full max-w-[400px] h-full ${isDark ? 'bg-[#1C1C1F] border-l border-[#2E2E32]' : 'bg-white border-l border-[#E4E4E8]'} shadow-2xl overflow-y-auto`}
+              style={{ animation: 'slideInRight 200ms ease-out' }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div className={`sticky top-0 ${isDark ? 'bg-[#1C1C1F]' : 'bg-white'} z-10 px-5 py-4 border-b ${isDark ? 'border-[#2E2E32]' : 'border-[#E4E4E8]'} flex items-center justify-between`}>
+                <h2 className={`text-[15px] font-semibold ${isDark ? 'text-[#E8E8ED]' : 'text-gray-900'}`}>{client.naam}</h2>
+                <button onClick={() => setQuickViewClient(null)} className={`p-1 rounded ${isDark ? 'hover:bg-[#2A2A2E] text-[#8B8B93]' : 'hover:bg-gray-100 text-gray-400'}`}>✕</button>
+              </div>
+              <div className="px-5 py-4 space-y-5">
+                {/* Status */}
+                <div className="flex items-center gap-2">
+                  <span className={`w-2 h-2 rounded-full ${client.status === 'Actief' ? 'bg-green-500' : client.status === 'Churned' ? 'bg-red-500' : 'bg-yellow-500'}`} />
+                  <span className={`text-[13px] ${isDark ? 'text-[#E8E8ED]' : 'text-gray-900'}`}>{client.status}</span>
+                  <span className={`text-[11px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>· {client.vertical}</span>
+                </div>
+
+                {/* Retainer Info */}
+                {retainerInfo && (
+                  <div className={`${isDark ? 'bg-[#222225] border-[#2E2E32]' : 'bg-gray-50 border-[#E4E4E8]'} border rounded-md p-3`}>
+                    <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'} mb-1`}>Retainer</p>
+                    <p className={`text-lg font-mono font-semibold ${isDark ? 'text-[#E8E8ED]' : 'text-gray-900'}`}>€{retainerInfo.bedrag.toLocaleString()}<span className={`text-[11px] font-normal ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>/jaar</span></p>
+                    <p className={`text-[11px] ${isDark ? 'text-[#8B8B93]' : 'text-gray-500'} mt-1`}>{retainerInfo.onderdeel} · {retainerInfo.lead}</p>
+                    {/* Mini monthly chart */}
+                    <div className="mt-3">
+                      <p className={`text-[10px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'} mb-1`}>Maandelijks verloop</p>
+                      <div className="flex items-end gap-[3px]" style={{ height: 32 }}>
+                        {retainerInfo.months.map((m, i) => {
+                          const max = Math.max(...retainerInfo.months, 1)
+                          return <div key={i} style={{ width: 6, height: `${Math.max((m / max) * 100, 4)}%`, backgroundColor: i <= new Date().getMonth() ? '#0047FF' : isDark ? '#2E2E32' : '#E4E4E8', borderRadius: 1 }} />
+                        })}
+                      </div>
+                      <div className="flex justify-between mt-1">
+                        <span className={`text-[9px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>Jan</span>
+                        <span className={`text-[9px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>Dec</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Pipeline Deals */}
+                <div>
+                  <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'} mb-2`}>Pipeline Deals ({clientDeals.length})</p>
+                  {clientDeals.length > 0 ? clientDeals.map(d => (
+                    <div key={d.id} className={`flex items-center justify-between py-1.5 border-b ${isDark ? 'border-[#2E2E32]' : 'border-[#E4E4E8]'} last:border-0`}>
+                      <span className={`text-[12px] ${isDark ? 'text-[#E8E8ED]' : 'text-gray-900'} truncate`}>{d.name}</span>
+                      <span className={`text-[11px] font-mono ${isDark ? 'text-[#8B8B93]' : 'text-gray-500'}`}>{d.value ? `€${d.value.toLocaleString()}` : '—'}</span>
+                    </div>
+                  )) : <p className={`text-[12px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>Geen actieve deals</p>}
+                </div>
+
+                {/* Services */}
+                <div>
+                  <p className={`text-[10px] uppercase tracking-wide ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'} mb-2`}>Services</p>
+                  <div className="flex flex-wrap gap-1">
+                    {client.services.map((s, i) => (
+                      <span key={i} className={`text-[11px] px-2 py-0.5 rounded ${isDark ? 'bg-[#2A2A2E] text-[#8B8B93]' : 'bg-gray-100 text-gray-500'}`}>{s}</span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Quick Links */}
+                <div className="flex gap-2 pt-2">
+                  <button onClick={() => { setActiveTab('retainers'); setQuickViewClient(null) }} className="flex-1 text-[12px] py-1.5 rounded bg-[#0047FF]/10 text-[#0047FF] hover:bg-[#0047FF]/20 transition-colors">💰 Retainers</button>
+                  <button onClick={() => { setActiveTab('pipeline'); setQuickViewClient(null) }} className="flex-1 text-[12px] py-1.5 rounded bg-[#0047FF]/10 text-[#0047FF] hover:bg-[#0047FF]/20 transition-colors">📊 Pipeline</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
+      {/* ============================================ */}
       {/* MAIN CONTENT */}
       {/* ============================================ */}
       <div className="flex-1 min-w-0 min-h-screen lg:ml-0">
         <div className="max-w-5xl mx-auto px-3 py-4 sm:px-4 lg:px-6 lg:py-5">
+          {/* Feature 2: Data Freshness Indicators */}
+          <div className={`flex items-center justify-end gap-3 mb-3 text-[11px] ${isDark ? 'text-[#5C5C63]' : 'text-gray-400'}`}>
+            <button onClick={() => setCmdPaletteOpen(true)} className={`flex items-center gap-1.5 px-2 py-1 rounded ${isDark ? 'bg-[#222225] border-[#2E2E32] hover:bg-[#2A2A2E]' : 'bg-gray-50 border-[#E4E4E8] hover:bg-gray-100'} border transition-colors`}>
+              <span>🔍</span>
+              <span>Search</span>
+              <kbd className={`text-[9px] ml-1 px-1 py-0.5 rounded ${isDark ? 'bg-[#18181B] text-[#5C5C63]' : 'bg-gray-200 text-gray-400'}`}>⌘K</kbd>
+            </button>
+            {[
+              { label: 'Pipeline', ts: data.pipelineLastUpdated || dataTimestamps.pipeline },
+              { label: 'Retainers', ts: dataTimestamps.retainers },
+              { label: 'Prospects', ts: dataTimestamps.prospects },
+            ].map(({ label, ts }) => {
+              const hours = (Date.now() - new Date(ts).getTime()) / (1000 * 60 * 60)
+              const dotColor = hours < 24 ? 'bg-green-500' : hours < 168 ? 'bg-yellow-500' : 'bg-red-500'
+              return (
+                <span key={label} className="flex items-center gap-1" title={`${label}: ${new Date(ts).toLocaleString()}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                  {label}
+                </span>
+              )
+            })}
+          </div>
           
           {/* ============================================ */}
           {/* OVERVIEW TAB */}
@@ -2816,9 +3073,10 @@ export default function SalesDashboard() {
                   }).map((client, i) => (
                     <div 
                       key={i} 
-                      className={`p-2 rounded-md ${colors.bgInput} border ${colors.border} text-center cursor-pointer transition-colors`}
+                      className={`p-2 rounded-md ${colors.bgInput} border ${colors.border} text-center cursor-pointer transition-colors hover:scale-105`}
                       style={{ borderColor: client.health === 'good' ? `${CHART_COLORS.success}30` : client.health === 'warning' ? `${CHART_COLORS.primary}30` : client.health === 'critical' ? `${CHART_COLORS.quaternary}30` : undefined }}
                       title={`${client.name}: ${client.health === 'good' ? 'Healthy' : client.health === 'warning' ? 'Needs attention' : client.health === 'critical' ? 'Critical' : 'Geen data'}`}
+                      onClick={() => { const match = data.clients.find(c => c.naam === client.name); if (match) setQuickViewClient(match.id) }}
                     >
                       <div className="flex items-center justify-center gap-1.5 mb-1">
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: client.health === 'good' ? CHART_COLORS.success : client.health === 'warning' ? CHART_COLORS.primary : client.health === 'critical' ? CHART_COLORS.quaternary : 'transparent', border: client.health === 'unknown' ? `1px solid ${isDark ? '#52525b' : '#a1a1aa'}` : 'none' }} />
@@ -4644,29 +4902,10 @@ export default function SalesDashboard() {
             const monthsRemaining = Math.max(12 - currentMonth, 1)
             const neededPerMonth = Math.round(gap / monthsRemaining)
 
-            // Monthly MRR from retainers — uses actual jan/feb data + startMonth for accurate per-month revenue
+            // Monthly MRR from retainers — uses months array for accurate per-month revenue
             const MONTH_NAMES = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
             const getMonthlyMRR = (monthIdx: number) => {
-              return activeClients.reduce((sum, c) => {
-                const sm = (c as any).startMonth as number | undefined
-                const startIdx = sm !== undefined ? sm - 1 : 0
-                if (monthIdx < startIdx) return sum // client hasn't started yet
-                const feb = (c as any).feb as number | undefined
-                const mrt = (c as any).mrt as number | undefined
-                // Non-recurring: only count explicitly defined months
-                if (!c.recurring) {
-                  if (monthIdx === 0 && startIdx === 0) return sum + c.jan
-                  if (monthIdx === 1 && feb !== undefined) return sum + feb
-                  if (monthIdx === 1 && startIdx === 0 && feb === undefined) return sum + c.jan
-                  if (monthIdx === 2 && mrt !== undefined) return sum + mrt
-                  return sum
-                }
-                if (monthIdx === 0) return sum + c.jan
-                if (monthIdx === 1) return sum + (feb !== undefined ? feb : c.jan)
-                // Month 2+ (mrt onwards): use mrt if defined, else feb if defined, else jan, else bedrag/12
-                const stableMonthly = mrt !== undefined ? mrt : (feb !== undefined ? feb : (c.jan || Math.round(c.bedrag / 12)))
-                return sum + stableMonthly
-              }, 0)
+              return activeClients.reduce((sum, c) => sum + c.months[monthIdx], 0)
             }
 
             // Q1 recurring from actual monthly data
@@ -5540,7 +5779,7 @@ export default function SalesDashboard() {
             const MONTHS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
             const MONTH_TARGET = RETAINER_ARR / 12
 
-            const realClients = RETAINER_CLIENTS.filter(c => c.status === 'Actief' || c.status === 'Start nnb')
+            const realClients = RETAINER_CLIENTS.filter(c => c.status === 'Actief')
 
             // Get unique values for filters
             const jaren = [...new Set(realClients.map(c => String(c.startJaar)))].sort()
@@ -5582,54 +5821,22 @@ export default function SalesDashboard() {
             const fmtEur = (n: number) => n === 0 ? '€0' : `€${n.toLocaleString('nl-NL')}`
             const fmtEurK = (n: number) => n >= 1000 ? `€${(n / 1000).toFixed(1)}K` : fmtEur(n)
 
-            // Monthly calculations: use actual jan/feb data, estimate rest from bedrag / active months
+            // Monthly calculations: use months array directly
             const getClientMonthly = (c: (typeof RETAINER_CLIENTS)[number]) => {
-              if (c.bedrag === 0) return Array(12).fill(0)
-              const sm = (c as any).startMonth as number | undefined // 1=jan, 2=feb, etc.
-              const startIdx = sm !== undefined ? sm - 1 : 0 // 0-indexed month where client starts
-              const feb = (c as any).feb as number | undefined
-              const mrt = (c as any).mrt as number | undefined
-              
-              const result = Array(12).fill(0)
-              
-              // Non-recurring: only fill explicitly defined months
-              if (!c.recurring) {
-                if (startIdx === 0) result[0] = c.jan
-                if (startIdx <= 1 && feb !== undefined) result[1] = feb
-                else if (startIdx === 0 && feb === undefined) result[1] = c.jan
-                if (mrt !== undefined) result[2] = mrt
-                return result
-              }
-              
-              // Determine the "stable" monthly amount (what the client pays from month 3 onwards)
-              const stableMonthly = mrt !== undefined ? mrt : (feb !== undefined ? feb : (c.jan || Math.round(c.bedrag / 12)))
-              
-              if (startIdx === 0) {
-                result[0] = c.jan
-                result[1] = feb !== undefined ? feb : stableMonthly
-                for (let i = 2; i < 12; i++) result[i] = stableMonthly
-              } else {
-                for (let i = startIdx; i < 12; i++) {
-                  if (i === startIdx && feb !== undefined) result[i] = feb
-                  else if (i === startIdx) result[i] = stableMonthly
-                  else if (i === startIdx + 1 && mrt !== undefined) result[i] = mrt
-                  else result[i] = stableMonthly
-                }
-              }
-              return result
+              return [...c.months] as number[]
             }
 
             const monthlyTotals = MONTHS.map((_, mi) => {
               return realClients.reduce((sum, c) => sum + getClientMonthly(c)[mi], 0)
             })
 
-            // Count new clients per month based on startMonth
+            // Count new clients per month based on first month with revenue
             const newClientsPerMonth = MONTHS.map((_, mi) => {
               return realClients.filter(c => {
-                const sm = (c as any).startMonth as number | undefined
                 if (c.startJaar !== 2026) return false
-                if (sm) return sm - 1 === mi
-                return mi === 0 && c.jan > 0
+                // Client starts in the first month where months[i] > 0
+                const firstMonth = c.months.findIndex(v => v > 0)
+                return firstMonth === mi
               }).length
             })
 
@@ -5987,6 +6194,118 @@ export default function SalesDashboard() {
                     </div>
                   </>
                 )}
+              </div>
+            )
+          })()}
+
+          {/* ============================================ */}
+          {/* TIMELINE TAB */}
+          {/* ============================================ */}
+          {activeTab === 'timeline' && (() => {
+            const TL_CATEGORIES: Record<string, { color: string; bg: string; emoji: string }> = {
+              'build': { color: '#3B82F6', bg: 'bg-blue-500/10', emoji: '🔨' },
+              'pipeline': { color: '#10B981', bg: 'bg-emerald-500/10', emoji: '📊' },
+              'content': { color: '#8B5CF6', bg: 'bg-violet-500/10', emoji: '✍️' },
+              'research': { color: '#F59E0B', bg: 'bg-amber-500/10', emoji: '🔍' },
+              'chat': { color: '#6B7280', bg: 'bg-gray-500/10', emoji: '💬' },
+              'system': { color: '#4B5563', bg: 'bg-gray-600/10', emoji: '⚙️' },
+            }
+
+            const allCategories = Object.keys(TL_CATEGORIES)
+            const filteredDays = tlData?.days?.map(day => ({
+              ...day,
+              items: tlFilter ? day.items.filter(i => i.category === tlFilter) : day.items
+            })).filter(day => day.items.length > 0) || []
+
+            const today = new Date().toISOString().split('T')[0]
+            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
+            const formatDayLabel = (date: string) => {
+              if (date === today) return 'Vandaag'
+              if (date === yesterday) return 'Gisteren'
+              const d = new Date(date + 'T12:00:00')
+              return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
+            }
+
+            if (tlLoading) return <div className={`flex items-center justify-center py-20 ${colors.textTertiary}`}>Laden...</div>
+            if (!tlData?.days?.length) return (
+              <div className="flex flex-col items-center justify-center py-20 gap-3">
+                <span className="text-4xl">📅</span>
+                <p className={`text-[14px] ${colors.textSecondary}`}>Nog geen timeline data</p>
+                <p className={`text-[12px] ${colors.textTertiary}`}>Push memory data via de API om de timeline te vullen</p>
+              </div>
+            )
+
+            return (
+              <div className="space-y-4">
+                {/* Range tabs + Category filter */}
+                <div className="flex flex-wrap items-center gap-2">
+                  {([{ label: 'Week', value: 7 }, { label: '2 Weken', value: 14 }, { label: 'Maand', value: 30 }] as const).map(r => (
+                    <button key={r.value} onClick={() => setTlRange(r.value as 7 | 14 | 30)}
+                      className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
+                        tlRange === r.value ? `${colors.accentBg} text-white` : `${colors.bgCard} ${colors.border} border ${colors.textSecondary} hover:${colors.textPrimary}`
+                      }`}>
+                      {r.label}
+                    </button>
+                  ))}
+                  <div className="w-px h-5 bg-[#2E2E32] mx-1" />
+                  <button onClick={() => setTlFilter(null)}
+                    className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
+                      !tlFilter ? `${colors.bgActive} ${colors.textPrimary}` : `${colors.textTertiary} hover:${colors.textSecondary}`
+                    }`}>
+                    Alles
+                  </button>
+                  {allCategories.map(cat => (
+                    <button key={cat} onClick={() => setTlFilter(tlFilter === cat ? null : cat)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
+                        tlFilter === cat ? `${colors.bgActive} ${colors.textPrimary}` : `${colors.textTertiary} hover:${colors.textSecondary}`
+                      }`}>
+                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: TL_CATEGORIES[cat].color }} />
+                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Timeline */}
+                <div className="relative pl-6">
+                  {/* Vertical line */}
+                  <div className={`absolute left-[9px] top-2 bottom-2 w-px ${colors.border}`} />
+
+                  {filteredDays.map((day, di) => (
+                    <div key={day.date} className={di > 0 ? 'mt-6' : ''}>
+                      {/* Day header */}
+                      <div className="flex items-center gap-3 mb-3 relative">
+                        <div className="absolute -left-6 w-[18px] h-[18px] rounded-full border-2 border-[#2E2E32] bg-[#18181B] flex items-center justify-center z-10">
+                          <div className="w-2 h-2 rounded-full bg-[#5C5C63]" />
+                        </div>
+                        <span className={`text-[13px] font-semibold ${colors.textPrimary}`}>{formatDayLabel(day.date)}</span>
+                        <span className={`text-[11px] ${colors.textTertiary} tabular-nums`}>{day.items.length} items</span>
+                      </div>
+
+                      {/* Items */}
+                      <div className="space-y-1">
+                        {day.items.map((item, ii) => {
+                          const cat = TL_CATEGORIES[item.category] || TL_CATEGORIES['chat']
+                          return (
+                            <div key={ii} className={`group flex items-start gap-2.5 py-1.5 px-2 -mx-2 rounded-md transition-colors hover:${isDark ? 'bg-[#222225]' : 'bg-gray-50'} relative`}>
+                              {/* Dot on line */}
+                              <div className="absolute -left-6 top-[11px] w-[18px] flex justify-center z-10">
+                                <div className="w-[7px] h-[7px] rounded-full" style={{ backgroundColor: cat.color }} />
+                              </div>
+                              {/* Time */}
+                              {item.time && <span className={`text-[11px] ${colors.textTertiary} tabular-nums flex-shrink-0 w-10 pt-0.5`}>{item.time}</span>}
+                              {/* Category emoji */}
+                              <span className="text-[12px] flex-shrink-0 pt-0.5">{cat.emoji}</span>
+                              {/* Text */}
+                              <span className={`text-[13px] ${colors.textSecondary} group-hover:${colors.textPrimary.replace('text-', 'text-')} transition-colors leading-relaxed`}>
+                                {item.text}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )
           })()}
@@ -6611,7 +6930,7 @@ export default function SalesDashboard() {
                   const icons: Record<TabId, string> = {
                     overview: '🏠', klanten: '👥', reports: '📈', pipeline: '📊',
                     prospects: '🎯', masterplan: '🗺️', cases: '💼', agencyos: '🤖',
-                    content: '✍️', salesoverview: '💹', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙',
+                    content: '✍️', salesoverview: '💹', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙', timeline: '📅',
                     settings: '⚙️', admin: '👤',
                   }
                   return (
