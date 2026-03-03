@@ -2966,6 +2966,17 @@ export default function SalesDashboard() {
           {/* ============================================ */}
           {activeTab === 'overview' && (() => {
             const activeClientCount = data.clients.filter(c => c.status === 'Actief').length
+            const TARGET_ARR = 2000000
+            const arrProgress = Math.min((RETAINER_ARR / TARGET_ARR) * 100, 100)
+            const pipelineTotal = data.pipelineDeals.filter(d => !CLOSED_STAGE_IDS.has(d.stageId)).reduce((s, d) => s + (d.value || 0), 0)
+            const openDeals = data.pipelineDeals.filter(d => !CLOSED_STAGE_IDS.has(d.stageId))
+            const offerteDeals = openDeals.filter(d => d.stageId === 'decisionmakerboughtin')
+            const openVoorOfferte = openDeals.filter(d => d.stageId === 'qualifiedtobuy')
+            const topDeals = [...openDeals].filter(d => d.value && d.value > 0).sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5)
+            // Deals without next steps = need attention
+            const dealsNeedingAction = openDeals.filter(d => !nextSteps[d.id] || nextSteps[d.id].trim() === '')
+            // High-value deals without values set
+            const dealsWithoutValue = openDeals.filter(d => !d.value || d.value === 0)
 
             return (
             <div className="space-y-4">
@@ -2973,7 +2984,143 @@ export default function SalesDashboard() {
               <div className="flex items-center gap-2 text-[13px] mb-4">
                 <span className={colors.textTertiary}>Dashboard</span>
                 <span className={colors.textTertiary}>/</span>
-                <span className={colors.textPrimary}>Klanten Overview</span>
+                <span className={colors.textPrimary}>Command Center</span>
+              </div>
+
+              {/* === REVENUE SCOREBOARD === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>💰</span> Revenue Scoreboard
+                  </h3>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                    arrProgress >= 80 ? 'bg-green-500/20 text-green-400' : arrProgress >= 50 ? 'bg-yellow-500/20 text-yellow-400' : 'bg-red-500/20 text-red-400'
+                  }`}>
+                    {arrProgress.toFixed(0)}% van target
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-3">
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>ARR</p>
+                    <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.success }}>€{(RETAINER_ARR / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>MRR</p>
+                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(RETAINER_MRR / 1000).toFixed(1)}K</p>
+                  </div>
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Pipeline</p>
+                    <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.primary }}>€{(pipelineTotal / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Gap to €2M</p>
+                    <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.quaternary }}>€{((TARGET_ARR - RETAINER_ARR) / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Klanten</p>
+                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>{ACTIVE_RETAINER_CLIENTS.length}</p>
+                  </div>
+                </div>
+                {/* Progress bar */}
+                <div className={`w-full h-3 rounded-full ${colors.bgInput} overflow-hidden relative`}>
+                  <div
+                    className="h-full rounded-full transition-all duration-1000"
+                    style={{ width: `${arrProgress}%`, background: `linear-gradient(90deg, ${CHART_COLORS.success}, ${CHART_COLORS.primary})` }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className={`text-[9px] font-mono font-bold ${colors.textPrimary}`} style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
+                      €{(RETAINER_ARR / 1000).toFixed(0)}K / €{(TARGET_ARR / 1000).toFixed(0)}K
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* === PIPELINE QUICK SUMMARY + WEEKLY PRIORITIES === */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Pipeline Quick Summary */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                      <span>📊</span> Pipeline Quick View
+                    </h3>
+                    <button onClick={() => setActiveTab('pipeline')} className={`text-[10px] ${colors.accent} hover:underline`}>Bekijk alles →</button>
+                  </div>
+                  {/* Stage breakdown mini */}
+                  <div className="flex items-center gap-1 mb-3">
+                    {[
+                      { label: 'Offerte', count: offerteDeals.length, color: CHART_COLORS.success },
+                      { label: 'Open', count: openVoorOfferte.length, color: CHART_COLORS.primary },
+                      { label: 'Overig', count: openDeals.length - offerteDeals.length - openVoorOfferte.length, color: isDark ? '#52525b' : '#a1a1aa' },
+                    ].map((s, i) => (
+                      <div key={i} className="flex-1" title={`${s.label}: ${s.count} deals`}>
+                        <div className="h-2 rounded-full" style={{ backgroundColor: s.color, opacity: s.count > 0 ? 1 : 0.2 }} />
+                        <p className={`text-[9px] ${colors.textTertiary} text-center mt-1`}>{s.label} ({s.count})</p>
+                      </div>
+                    ))}
+                  </div>
+                  {/* Top deals by value */}
+                  <div className="space-y-1">
+                    {topDeals.map((deal, i) => {
+                      const stage = PIPELINES.flatMap(p => p.stages).find(s => s.id === deal.stageId)
+                      return (
+                        <div key={deal.id} className={`flex items-center justify-between py-1.5 ${i < topDeals.length - 1 ? `border-b ${colors.border}` : ''}`}>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className={`text-[10px] font-mono ${colors.textTertiary} w-4`}>#{i+1}</span>
+                            <span className={`text-[12px] ${colors.textPrimary} truncate`}>{deal.name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bgInput} ${colors.textTertiary}`}>{stage?.name?.substring(0, 12) || '-'}</span>
+                            <span className={`text-[12px] font-mono font-medium`} style={{ color: CHART_COLORS.success }}>€{((deal.value || 0) / 1000).toFixed(0)}K</span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    {topDeals.length === 0 && <p className={`text-[11px] ${colors.textTertiary} text-center py-2`}>Geen deals met waarde</p>}
+                  </div>
+                </div>
+
+                {/* Weekly Priorities */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2 mb-3`}>
+                    <span>🎯</span> Actiepunten
+                  </h3>
+                  <div className="space-y-2">
+                    {offerteDeals.length > 0 && (
+                      <div className={`p-2 rounded-md border`} style={{ borderColor: `${CHART_COLORS.success}40`, backgroundColor: `${CHART_COLORS.success}08` }}>
+                        <p className="text-[11px] font-medium" style={{ color: CHART_COLORS.success }}>🔥 {offerteDeals.length} deals in offerte fase</p>
+                        <div className="mt-1 space-y-0.5">
+                          {offerteDeals.slice(0, 3).map(d => (
+                            <p key={d.id} className={`text-[11px] ${colors.textSecondary}`}>• {d.name} {d.value ? `(€${(d.value/1000).toFixed(0)}K)` : ''}</p>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {dealsNeedingAction.length > 0 && (
+                      <div className={`p-2 rounded-md border`} style={{ borderColor: `${CHART_COLORS.primary}40`, backgroundColor: `${CHART_COLORS.primary}08` }}>
+                        <p className="text-[11px] font-medium" style={{ color: CHART_COLORS.primary }}>⚠️ {dealsNeedingAction.length} deals zonder volgende stap</p>
+                        <div className="mt-1 space-y-0.5">
+                          {dealsNeedingAction.slice(0, 3).map(d => (
+                            <p key={d.id} className={`text-[11px] ${colors.textSecondary}`}>• {d.name}</p>
+                          ))}
+                          {dealsNeedingAction.length > 3 && <p className={`text-[10px] ${colors.textTertiary}`}>+{dealsNeedingAction.length - 3} meer</p>}
+                        </div>
+                      </div>
+                    )}
+                    {dealsWithoutValue.length > 0 && (
+                      <div className={`p-2 rounded-md border ${colors.border}`}>
+                        <p className={`text-[11px] font-medium ${colors.textSecondary}`}>📝 {dealsWithoutValue.length} deals zonder bedrag ingevuld</p>
+                      </div>
+                    )}
+                    {alertClients.length > 0 && (
+                      <div className={`p-2 rounded-md border`} style={{ borderColor: `${CHART_COLORS.quaternary}40`, backgroundColor: `${CHART_COLORS.quaternary}08` }}>
+                        <p className="text-[11px] font-medium" style={{ color: CHART_COLORS.quaternary }}>🚨 {alertClients.length} klanten met warning/critical status</p>
+                      </div>
+                    )}
+                    {offerteDeals.length === 0 && dealsNeedingAction.length === 0 && alertClients.length === 0 && (
+                      <p className={`text-[11px] ${colors.textTertiary} text-center py-4`}>✅ Alles op orde!</p>
+                    )}
+                  </div>
+                </div>
               </div>
 
               {/* Client Stats */}
