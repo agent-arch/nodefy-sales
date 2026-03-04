@@ -3368,6 +3368,79 @@ export default function SalesDashboard() {
                 </div>
               </div>
 
+              {/* === MRR FORECAST 2026 (month by month from retainer data) === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>🔮</span> MRR Forecast 2026 (op basis van retainers)
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Per maand op basis van getekende retainers</span>
+                </div>
+                {(() => {
+                  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+                  const monthlyMRR = months.map((_, idx) => 
+                    ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => sum + c.months[idx], 0)
+                  )
+                  const maxMRR = Math.max(...monthlyMRR)
+                  const targetMonthlyMRR = 2000000 / 12
+                  const currentMonthIdx = CURRENT_MONTH_IDX
+                  return (
+                    <div>
+                      <div className="relative" style={{ height: 120 }}>
+                        {/* Target line */}
+                        <div className="absolute w-full border-t-2 border-dashed" style={{ 
+                          bottom: `${(targetMonthlyMRR / Math.max(maxMRR, targetMonthlyMRR) * 100)}%`,
+                          borderColor: CHART_COLORS.quaternary,
+                          opacity: 0.4
+                        }}>
+                          <span className="absolute right-0 -top-4 text-[8px] font-mono" style={{ color: CHART_COLORS.quaternary }}>
+                            €{(targetMonthlyMRR/1000).toFixed(0)}K target
+                          </span>
+                        </div>
+                        <div className="flex items-end h-full gap-1">
+                          {monthlyMRR.map((mrr, i) => {
+                            const h = (mrr / Math.max(maxMRR, targetMonthlyMRR)) * 100
+                            const isPast = i < currentMonthIdx
+                            const isCurrent = i === currentMonthIdx
+                            const isFuture = i > currentMonthIdx
+                            return (
+                              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                                <div className={`absolute -top-6 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[9px] font-mono whitespace-nowrap ${colors.bgInput} ${colors.textPrimary} border ${colors.border} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+                                  €{(mrr/1000).toFixed(1)}K
+                                </div>
+                                <div 
+                                  className="w-full rounded-t transition-all"
+                                  style={{ 
+                                    height: `${Math.max(h, 2)}%`, 
+                                    backgroundColor: isCurrent ? CHART_COLORS.primary : isPast ? CHART_COLORS.success : CHART_COLORS.secondary,
+                                    opacity: isFuture ? 0.4 : isCurrent ? 1 : 0.7
+                                  }} 
+                                />
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {months.map((m, i) => (
+                          <div key={i} className="flex-1 text-center">
+                            <span className={`text-[9px] ${i === currentMonthIdx ? colors.textPrimary + ' font-bold' : colors.textTertiary}`}>{m}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-4 mt-2 pt-2 border-t border-dashed" style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <span className={`text-[9px] ${colors.textTertiary}`}>
+                          📉 Daling in H2: klanten met afbouwende retainers (Unity Units, Synvest, Bikeshoe4u)
+                        </span>
+                        <span className={`text-[10px] font-mono ml-auto`} style={{ color: CHART_COLORS.success }}>
+                          ARR: €{(monthlyMRR.reduce((a, b) => a + b, 0) / 1000).toFixed(0)}K
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
               {/* Client Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
