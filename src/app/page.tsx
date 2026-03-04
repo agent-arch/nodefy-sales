@@ -3035,6 +3035,251 @@ export default function SalesDashboard() {
                 </div>
               </div>
 
+              {/* === REVENUE TREND CHART === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>📈</span> Revenue Trend (Maandelijks)
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Laatste 15 maanden</span>
+                </div>
+                {(() => {
+                  const last15 = HISTORICAL_REVENUE.slice(-15)
+                  const maxRev = Math.max(...last15.map(r => r.revenue), MONTHLY_COSTS.totalMonthly)
+                  const targetMonthly = 2000000 / 12 // €166.6K/month for €2M target
+                  const barW = 100 / last15.length
+                  return (
+                    <div>
+                      <div className="relative" style={{ height: 160 }}>
+                        {/* Target line */}
+                        <div className="absolute w-full border-t-2 border-dashed" style={{ 
+                          bottom: `${(targetMonthly / maxRev) * 100}%`,
+                          borderColor: CHART_COLORS.quaternary,
+                          opacity: 0.5
+                        }}>
+                          <span className="absolute right-0 -top-4 text-[9px] font-mono" style={{ color: CHART_COLORS.quaternary }}>
+                            €{(targetMonthly/1000).toFixed(0)}K target
+                          </span>
+                        </div>
+                        {/* Cost line */}
+                        <div className="absolute w-full border-t border-dashed" style={{ 
+                          bottom: `${(MONTHLY_COSTS.totalMonthly / maxRev) * 100}%`,
+                          borderColor: isDark ? '#52525b' : '#a1a1aa',
+                          opacity: 0.4
+                        }}>
+                          <span className={`absolute left-0 -top-4 text-[9px] font-mono ${colors.textTertiary}`}>
+                            €{(MONTHLY_COSTS.totalMonthly/1000).toFixed(0)}K kosten
+                          </span>
+                        </div>
+                        {/* Bars */}
+                        <div className="flex items-end h-full gap-[3px]">
+                          {last15.map((r, i) => {
+                            const h = (r.revenue / maxRev) * 100
+                            const isProfit = r.revenue > MONTHLY_COSTS.totalMonthly
+                            const isCurrent = i === last15.length - 1
+                            return (
+                              <div key={i} className="flex-1 flex flex-col items-center justify-end h-full group relative">
+                                <div className={`absolute -top-6 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[9px] font-mono whitespace-nowrap ${colors.bgInput} ${colors.textPrimary} border ${colors.border} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+                                  €{(r.revenue/1000).toFixed(1)}K
+                                </div>
+                                <div 
+                                  className="w-full rounded-t transition-all duration-300"
+                                  style={{ 
+                                    height: `${h}%`, 
+                                    backgroundColor: isCurrent ? CHART_COLORS.primary : isProfit ? CHART_COLORS.success : CHART_COLORS.quaternary,
+                                    opacity: isCurrent ? 1 : 0.7,
+                                    minHeight: 2
+                                  }} 
+                                />
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                      {/* Labels */}
+                      <div className="flex gap-[3px] mt-1">
+                        {last15.map((r, i) => (
+                          <div key={i} className="flex-1 text-center">
+                            <span className={`text-[8px] ${i === last15.length - 1 ? colors.textPrimary : colors.textTertiary} font-mono`}>
+                              {r.month.slice(2, 4)}/{r.month.slice(5)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Legend */}
+                      <div className="flex items-center gap-4 mt-2 pt-2 border-t border-dashed" style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS.success, opacity: 0.7 }} />
+                          <span className={`text-[9px] ${colors.textTertiary}`}>Winstgevend</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS.quaternary, opacity: 0.7 }} />
+                          <span className={`text-[9px] ${colors.textTertiary}`}>Onder kosten</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS.primary }} />
+                          <span className={`text-[9px] ${colors.textTertiary}`}>Huidige maand</span>
+                        </div>
+                        <span className={`text-[9px] ${colors.textTertiary} ml-auto font-mono`}>
+                          Groei YoY: {(() => {
+                            const cur = last15[last15.length - 1]?.revenue || 0
+                            const prevYear = HISTORICAL_REVENUE.find(r => r.month === `${parseInt(last15[last15.length - 1]?.month || '2026') - 1}-${(last15[last15.length - 1]?.month || '').slice(5)}`)?.revenue
+                            if (!prevYear) return 'N/A'
+                            const growth = ((cur - prevYear) / prevYear * 100)
+                            return `${growth > 0 ? '+' : ''}${growth.toFixed(0)}%`
+                          })()}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* === TEAM LEADERBOARD + MONTHLY P&L === */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Team Revenue Leaderboard */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2 mb-3`}>
+                    <span>👥</span> Team Revenue (MRR per Lead)
+                  </h3>
+                  {(() => {
+                    const leadRevenue: Record<string, { mrr: number; clients: number }> = {}
+                    ACTIVE_RETAINER_CLIENTS.forEach(c => {
+                      const lead = c.lead || 'Onbekend'
+                      if (!leadRevenue[lead]) leadRevenue[lead] = { mrr: 0, clients: 0 }
+                      leadRevenue[lead].mrr += c.months[CURRENT_MONTH_IDX]
+                      if (c.months[CURRENT_MONTH_IDX] > 0) leadRevenue[lead].clients++
+                    })
+                    const sorted = Object.entries(leadRevenue)
+                      .filter(([, v]) => v.mrr > 0)
+                      .sort((a, b) => b[1].mrr - a[1].mrr)
+                    const maxMrr = sorted[0]?.[1].mrr || 1
+                    const teamColors = [CHART_COLORS.primary, CHART_COLORS.success, CHART_COLORS.secondary, CHART_COLORS.quaternary, '#8B5CF6', '#EC4899', '#F59E0B', '#06B6D4']
+                    return (
+                      <div className="space-y-2">
+                        {sorted.map(([lead, val], i) => (
+                          <div key={lead} className="flex items-center gap-2">
+                            <span className={`text-[11px] ${colors.textSecondary} w-20 truncate font-medium`}>{lead}</span>
+                            <div className="flex-1 relative">
+                              <div className={`h-5 rounded ${colors.bgInput}`}>
+                                <div className="h-full rounded transition-all duration-500 flex items-center px-2" style={{ 
+                                  width: `${Math.max((val.mrr / maxMrr) * 100, 8)}%`,
+                                  backgroundColor: teamColors[i % teamColors.length],
+                                  opacity: 0.8
+                                }}>
+                                  <span className="text-[9px] font-mono text-white font-bold whitespace-nowrap">
+                                    €{(val.mrr/1000).toFixed(1)}K
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <span className={`text-[10px] ${colors.textTertiary} w-8 text-right`}>{val.clients}×</span>
+                          </div>
+                        ))}
+                        <div className={`flex items-center justify-between pt-2 mt-1 border-t border-dashed`} style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                          <span className={`text-[10px] font-medium ${colors.textSecondary}`}>Totaal MRR</span>
+                          <span className={`text-[12px] font-bold font-mono`} style={{ color: CHART_COLORS.success }}>
+                            €{(RETAINER_MRR/1000).toFixed(1)}K
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
+
+                {/* Monthly P&L Summary */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2 mb-3`}>
+                    <span>💵</span> Maandelijkse P&L
+                  </h3>
+                  {(() => {
+                    const monthlyProfit = RETAINER_MRR - MONTHLY_COSTS.totalMonthly
+                    const margin = RETAINER_MRR > 0 ? (monthlyProfit / RETAINER_MRR * 100) : 0
+                    const annualProfit = monthlyProfit * 12
+                    return (
+                      <div className="space-y-3">
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[11px] ${colors.textSecondary}`}>Omzet (MRR)</span>
+                            <span className={`text-[13px] font-mono font-bold`} style={{ color: CHART_COLORS.success }}>€{RETAINER_MRR.toLocaleString('nl-NL')}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[11px] ${colors.textSecondary}`}>Personeel</span>
+                            <span className={`text-[13px] font-mono ${colors.textTertiary}`}>-€{MONTHLY_COSTS.personnel.total.toLocaleString('nl-NL')}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[11px] ${colors.textSecondary}`}>Overhead</span>
+                            <span className={`text-[13px] font-mono ${colors.textTertiary}`}>-€{MONTHLY_COSTS.overhead.total.toLocaleString('nl-NL')}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[11px] ${colors.textSecondary}`}>Kickbacks</span>
+                            <span className={`text-[13px] font-mono ${colors.textTertiary}`}>-€{(MONTHLY_COSTS.kickbacks.jaron.monthly + MONTHLY_COSTS.kickbacks.roy).toLocaleString('nl-NL')}</span>
+                          </div>
+                        </div>
+                        <div className={`border-t ${colors.border} pt-2`}>
+                          <div className="flex items-center justify-between">
+                            <span className={`text-[12px] font-medium ${colors.textPrimary}`}>Maandwinst</span>
+                            <span className={`text-[15px] font-bold font-mono`} style={{ color: monthlyProfit >= 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>
+                              {monthlyProfit >= 0 ? '+' : ''}€{monthlyProfit.toLocaleString('nl-NL')}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className={`text-[10px] ${colors.textTertiary}`}>Marge</span>
+                            <span className={`text-[11px] font-mono ${margin >= 40 ? 'text-green-400' : margin >= 20 ? 'text-yellow-400' : 'text-red-400'}`}>
+                              {margin.toFixed(1)}%
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between mt-1">
+                            <span className={`text-[10px] ${colors.textTertiary}`}>Jaarwinst (projectie)</span>
+                            <span className={`text-[11px] font-mono`} style={{ color: annualProfit >= 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>
+                              €{(annualProfit/1000).toFixed(0)}K
+                            </span>
+                          </div>
+                        </div>
+                        {/* Visual margin bar */}
+                        <div className={`${colors.bgInput} rounded-full h-3 overflow-hidden relative`}>
+                          <div className="absolute inset-0 flex">
+                            <div className="h-full transition-all duration-500" style={{ 
+                              width: `${Math.min((MONTHLY_COSTS.personnel.total / RETAINER_MRR) * 100, 100)}%`,
+                              backgroundColor: CHART_COLORS.quaternary,
+                              opacity: 0.6
+                            }} />
+                            <div className="h-full transition-all duration-500" style={{ 
+                              width: `${Math.min((MONTHLY_COSTS.overhead.total / RETAINER_MRR) * 100, 100)}%`,
+                              backgroundColor: CHART_COLORS.primary,
+                              opacity: 0.5
+                            }} />
+                            <div className="h-full transition-all duration-500" style={{ 
+                              width: `${Math.min(((MONTHLY_COSTS.kickbacks.jaron.monthly + MONTHLY_COSTS.kickbacks.roy) / RETAINER_MRR) * 100, 100)}%`,
+                              backgroundColor: '#8B5CF6',
+                              opacity: 0.5
+                            }} />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: CHART_COLORS.quaternary, opacity: 0.6 }} />
+                            <span className={`text-[8px] ${colors.textTertiary}`}>Personeel</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: CHART_COLORS.primary, opacity: 0.5 }} />
+                            <span className={`text-[8px] ${colors.textTertiary}`}>Overhead</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: '#8B5CF6', opacity: 0.5 }} />
+                            <span className={`text-[8px] ${colors.textTertiary}`}>Kickbacks</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: CHART_COLORS.success }} />
+                            <span className={`text-[8px] ${colors.textTertiary}`}>Winst ({margin.toFixed(0)}%)</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })()}
+                </div>
+              </div>
+
               {/* === PIPELINE QUICK SUMMARY + WEEKLY PRIORITIES === */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {/* Pipeline Quick Summary */}
