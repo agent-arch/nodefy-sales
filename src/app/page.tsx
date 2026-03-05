@@ -3441,6 +3441,256 @@ export default function SalesDashboard() {
                 })()}
               </div>
 
+              {/* === CLIENT REVENUE CONCENTRATION === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>🎯</span> Revenue Concentration
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Top klanten als % van MRR</span>
+                </div>
+                {(() => {
+                  const clientMRR = ACTIVE_RETAINER_CLIENTS
+                    .map(c => ({ name: c.klant, mrr: c.months[CURRENT_MONTH_IDX], lead: c.lead }))
+                    .filter(c => c.mrr > 0)
+                    .sort((a, b) => b.mrr - a.mrr)
+                  const totalMRR = clientMRR.reduce((s, c) => s + c.mrr, 0)
+                  const top5 = clientMRR.slice(0, 5)
+                  const top5Pct = Math.round((top5.reduce((s, c) => s + c.mrr, 0) / totalMRR) * 100)
+                  const top10 = clientMRR.slice(0, 10)
+                  const top10Pct = Math.round((top10.reduce((s, c) => s + c.mrr, 0) / totalMRR) * 100)
+                  const riskLevel = top5Pct >= 60 ? 'high' : top5Pct >= 45 ? 'medium' : 'low'
+                  const riskColor = riskLevel === 'high' ? CHART_COLORS.quaternary : riskLevel === 'medium' ? CHART_COLORS.primary : CHART_COLORS.success
+                  const barColors = [CHART_COLORS.primary, CHART_COLORS.success, CHART_COLORS.secondary, CHART_COLORS.quaternary, '#8B5CF6']
+                  let cumPct = 0
+                  return (
+                    <div>
+                      {/* Risk indicator */}
+                      <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-md`} style={{ backgroundColor: `${riskColor}15`, border: `1px solid ${riskColor}30` }}>
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: riskColor }} />
+                        <span className="text-[11px] font-medium" style={{ color: riskColor }}>
+                          {riskLevel === 'high' ? 'Hoge concentratie' : riskLevel === 'medium' ? 'Matige concentratie' : 'Gezonde spreiding'}
+                          {' — '}Top 5 = {top5Pct}% van MRR
+                        </span>
+                      </div>
+                      {/* Stacked bar */}
+                      <div className="flex h-6 rounded-full overflow-hidden mb-3">
+                        {top5.map((c, i) => {
+                          const pct = (c.mrr / totalMRR) * 100
+                          return (
+                            <div key={c.name} className="h-full relative group" style={{ width: `${pct}%`, backgroundColor: barColors[i] }} title={`${c.name}: €${c.mrr.toLocaleString('nl-NL')}/mnd (${pct.toFixed(1)}%)`}>
+                              <div className={`absolute -top-8 left-1/2 -translate-x-1/2 px-1.5 py-0.5 rounded text-[9px] font-mono whitespace-nowrap ${colors.bgInput} ${colors.textPrimary} border ${colors.border} opacity-0 group-hover:opacity-100 transition-opacity z-10`}>
+                                {c.name}: {pct.toFixed(1)}%
+                              </div>
+                            </div>
+                          )
+                        })}
+                        <div className="h-full flex-1" style={{ backgroundColor: isDark ? '#27272a' : '#e4e4e7' }} title={`Overige ${clientMRR.length - 5} klanten: ${100 - top5Pct}%`} />
+                      </div>
+                      {/* Top 5 list with cumulative */}
+                      <div className="space-y-1">
+                        {top5.map((c, i) => {
+                          const pct = (c.mrr / totalMRR) * 100
+                          cumPct += pct
+                          return (
+                            <div key={c.name} className={`flex items-center justify-between py-1 ${i < 4 ? `border-b ${colors.border}` : ''}`}>
+                              <div className="flex items-center gap-2">
+                                <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: barColors[i] }} />
+                                <span className={`text-[12px] ${colors.textPrimary}`}>{c.name}</span>
+                                <span className={`text-[10px] ${colors.textTertiary}`}>{c.lead}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{c.mrr.toLocaleString('nl-NL')}/mnd</span>
+                                <span className={`text-[10px] font-mono ${colors.textTertiary} w-10 text-right`}>{pct.toFixed(1)}%</span>
+                                <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${colors.bgInput}`} style={{ color: cumPct > 50 ? CHART_COLORS.quaternary : CHART_COLORS.success }}>{cumPct.toFixed(0)}%</span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div className={`flex justify-between mt-2 pt-2 border-t border-dashed`} style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <span className={`text-[10px] ${colors.textTertiary}`}>Top 10: {top10Pct}% van MRR ({top10.length} klanten)</span>
+                        <span className={`text-[10px] ${colors.textTertiary}`}>Totaal: {clientMRR.length} actieve klanten</span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* === CHURN RISK RADAR === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>⚠️</span> Churn Risk Radar
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Klanten met dalende of eindigende spend</span>
+                </div>
+                {(() => {
+                  const currentIdx = CURRENT_MONTH_IDX
+                  const risks = ACTIVE_RETAINER_CLIENTS
+                    .map(c => {
+                      const currentMRR = c.months[currentIdx]
+                      // Check future months for decline
+                      const futureMonths = c.months.slice(currentIdx + 1)
+                      const minFuture = futureMonths.length > 0 ? Math.min(...futureMonths) : currentMRR
+                      const maxFuture = futureMonths.length > 0 ? Math.max(...futureMonths) : currentMRR
+                      // Check for zero months coming (contract ending)
+                      const firstZero = futureMonths.findIndex(m => m === 0)
+                      const monthsUntilEnd = firstZero >= 0 ? firstZero + 1 : null
+                      // Check for step-down
+                      const stepDown = currentMRR > 0 && minFuture < currentMRR ? currentMRR - minFuture : 0
+                      const stepDownPct = currentMRR > 0 ? Math.round((stepDown / currentMRR) * 100) : 0
+                      // Risk score
+                      let risk: 'critical' | 'warning' | 'watch' | 'safe' = 'safe'
+                      if (monthsUntilEnd !== null && monthsUntilEnd <= 2) risk = 'critical'
+                      else if (monthsUntilEnd !== null && monthsUntilEnd <= 4) risk = 'warning'
+                      else if (stepDownPct >= 30) risk = 'warning'
+                      else if (stepDownPct >= 10) risk = 'watch'
+                      return { klant: c.klant, lead: c.lead, currentMRR, minFuture, stepDown, stepDownPct, monthsUntilEnd, risk, futureMonths }
+                    })
+                    .filter(r => r.risk !== 'safe' && r.currentMRR > 0)
+                    .sort((a, b) => {
+                      const riskOrder = { critical: 0, warning: 1, watch: 2, safe: 3 }
+                      return riskOrder[a.risk] - riskOrder[b.risk] || b.stepDown - a.stepDown
+                    })
+                  const totalAtRisk = risks.reduce((s, r) => s + r.stepDown, 0)
+                  const endingSoon = risks.filter(r => r.monthsUntilEnd !== null)
+                  
+                  if (risks.length === 0) {
+                    return (
+                      <div className={`text-center py-6 ${colors.textTertiary}`}>
+                        <p className="text-[13px]">✅ Geen churn risico&apos;s gedetecteerd</p>
+                        <p className="text-[11px] mt-1">Alle klanten hebben stabiele of groeiende retainers</p>
+                      </div>
+                    )
+                  }
+                  
+                  return (
+                    <div>
+                      {/* Summary */}
+                      <div className="grid grid-cols-3 gap-2 mb-3">
+                        <div className={`p-2 rounded-md ${colors.bgInput} text-center`}>
+                          <p className={`text-[10px] ${colors.textTertiary}`}>Klanten at risk</p>
+                          <p className={`text-[16px] font-bold font-mono`} style={{ color: CHART_COLORS.quaternary }}>{risks.length}</p>
+                        </div>
+                        <div className={`p-2 rounded-md ${colors.bgInput} text-center`}>
+                          <p className={`text-[10px] ${colors.textTertiary}`}>MRR at risk</p>
+                          <p className={`text-[16px] font-bold font-mono`} style={{ color: CHART_COLORS.quaternary }}>€{totalAtRisk.toLocaleString('nl-NL')}</p>
+                        </div>
+                        <div className={`p-2 rounded-md ${colors.bgInput} text-center`}>
+                          <p className={`text-[10px] ${colors.textTertiary}`}>Eindigend &lt;4 mnd</p>
+                          <p className={`text-[16px] font-bold font-mono`} style={{ color: endingSoon.length > 0 ? CHART_COLORS.quaternary : CHART_COLORS.success }}>{endingSoon.length}</p>
+                        </div>
+                      </div>
+                      {/* Risk list */}
+                      <div className="space-y-1.5">
+                        {risks.map(r => (
+                          <div key={r.klant} className={`flex items-center justify-between p-2 rounded-md ${colors.bgInput} border-l-2`} style={{
+                            borderLeftColor: r.risk === 'critical' ? CHART_COLORS.quaternary : r.risk === 'warning' ? CHART_COLORS.primary : '#6B7280'
+                          }}>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[12px]">{r.risk === 'critical' ? '🔴' : r.risk === 'warning' ? '🟡' : '👀'}</span>
+                              <div>
+                                <span className={`text-[12px] font-medium ${colors.textPrimary}`}>{r.klant}</span>
+                                <span className={`text-[10px] ${colors.textTertiary} ml-2`}>{r.lead}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{r.currentMRR.toLocaleString('nl-NL')}/mnd</span>
+                              {r.monthsUntilEnd !== null ? (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 font-medium">
+                                  Stopt over {r.monthsUntilEnd} mnd
+                                </span>
+                              ) : (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-mono">
+                                  -{r.stepDownPct}% (€{r.stepDown.toLocaleString('nl-NL')})
+                                </span>
+                              )}
+                              {/* Mini sparkline of future months */}
+                              <div className="flex items-end gap-px h-4 w-16">
+                                {r.futureMonths.slice(0, 9).map((m, i) => (
+                                  <div key={i} className="flex-1 rounded-t-sm" style={{
+                                    height: `${Math.max((m / (r.currentMRR || 1)) * 100, 4)}%`,
+                                    backgroundColor: m === 0 ? (isDark ? '#3f3f46' : '#d4d4d8') : m < r.currentMRR ? CHART_COLORS.quaternary : CHART_COLORS.success,
+                                    opacity: m === 0 ? 0.3 : 0.7
+                                  }} />
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* === CLIENT COHORT ANALYSIS === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>📊</span> Client Cohort Analyse
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Klanten & MRR per startjaar</span>
+                </div>
+                {(() => {
+                  const cohorts = [2022, 2023, 2024, 2025, 2026].map(year => {
+                    const clients = ACTIVE_RETAINER_CLIENTS.filter(c => c.startJaar === year)
+                    const mrr = clients.reduce((s, c) => s + c.months[CURRENT_MONTH_IDX], 0)
+                    const total = RETAINER_CLIENTS.filter(c => c.startJaar === year).length
+                    const active = clients.length
+                    const churned = total - active
+                    return { year, clients, mrr, total, active, churned, retentionPct: total > 0 ? Math.round((active / total) * 100) : 0 }
+                  })
+                  const maxMRR = Math.max(...cohorts.map(c => c.mrr))
+                  const totalMRR = cohorts.reduce((s, c) => s + c.mrr, 0)
+                  const cohortColors = [CHART_COLORS.quaternary, '#8B5CF6', CHART_COLORS.primary, CHART_COLORS.success, CHART_COLORS.secondary]
+                  return (
+                    <div>
+                      <div className="space-y-2">
+                        {cohorts.map((cohort, i) => {
+                          const pct = totalMRR > 0 ? (cohort.mrr / totalMRR) * 100 : 0
+                          return (
+                            <div key={cohort.year}>
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[12px] font-medium ${colors.textPrimary} w-10`}>{cohort.year}</span>
+                                  <span className={`text-[10px] ${colors.textTertiary}`}>{cohort.active} actief</span>
+                                  {cohort.churned > 0 && <span className="text-[10px] text-red-400">({cohort.churned} gestopt)</span>}
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{cohort.mrr.toLocaleString('nl-NL')}/mnd</span>
+                                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${colors.bgInput}`} style={{ color: cohortColors[i] }}>{pct.toFixed(0)}%</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <div className={`flex-1 h-4 rounded-full ${colors.bgInput} overflow-hidden`}>
+                                  <div className="h-full rounded-full transition-all" style={{ width: `${maxMRR > 0 ? (cohort.mrr / maxMRR) * 100 : 0}%`, backgroundColor: cohortColors[i] }} />
+                                </div>
+                                {cohort.total > 1 && (
+                                  <span className={`text-[9px] font-mono ${cohort.retentionPct >= 80 ? 'text-green-400' : cohort.retentionPct >= 60 ? 'text-amber-400' : 'text-red-400'} w-12 text-right`}>
+                                    {cohort.retentionPct}% ret
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {/* Summary */}
+                      <div className={`flex justify-between mt-3 pt-2 border-t border-dashed`} style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <span className={`text-[10px] ${colors.textTertiary}`}>
+                          2025-2026 groei: {cohorts.filter(c => c.year >= 2025).reduce((s, c) => s + c.active, 0)} nieuwe klanten, €{cohorts.filter(c => c.year >= 2025).reduce((s, c) => s + c.mrr, 0).toLocaleString('nl-NL')}/mnd
+                        </span>
+                        <span className={`text-[10px] font-mono`} style={{ color: CHART_COLORS.success }}>
+                          Totaal: €{totalMRR.toLocaleString('nl-NL')}/mnd
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
               {/* Client Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
