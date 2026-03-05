@@ -3441,6 +3441,67 @@ export default function SalesDashboard() {
                 })()}
               </div>
 
+              {/* === PIPELINE FUNNEL === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>🏗️</span> Pipeline Funnel (Warm)
+                  </h3>
+                  <button onClick={() => setActiveTab('pipeline')} className={`text-[10px] ${colors.accent} hover:underline`}>Details →</button>
+                </div>
+                {(() => {
+                  const warmStages = PIPELINES[0].stages.filter(s => !s.closed)
+                  const warmDeals = data.pipelineDeals.filter(d => d.pipelineId === 'default' && !CLOSED_STAGE_IDS.has(d.stageId))
+                  const stageData = warmStages.map(stage => {
+                    const deals = warmDeals.filter(d => d.stageId === stage.id)
+                    const value = deals.reduce((s, d) => s + (d.value || 0), 0)
+                    return { ...stage, deals, count: deals.length, value }
+                  })
+                  const maxCount = Math.max(...stageData.map(s => s.count), 1)
+                  const totalValue = warmDeals.reduce((s, d) => s + (d.value || 0), 0)
+                  const funnelColors = [CHART_COLORS.secondary, CHART_COLORS.primary, CHART_COLORS.success, '#10B981']
+                  return (
+                    <div>
+                      <div className="space-y-2">
+                        {stageData.map((stage, i) => {
+                          const widthPct = Math.max((stage.count / maxCount) * 100, 15)
+                          return (
+                            <div key={stage.id} className="flex items-center gap-3">
+                              <span className={`text-[11px] ${colors.textSecondary} w-32 text-right flex-shrink-0 truncate`}>{stage.name}</span>
+                              <div className="flex-1 relative">
+                                <div 
+                                  className="h-8 rounded-md flex items-center px-3 transition-all"
+                                  style={{ 
+                                    width: `${widthPct}%`, 
+                                    backgroundColor: `${funnelColors[i]}20`,
+                                    border: `1px solid ${funnelColors[i]}40`,
+                                    marginLeft: `${(100 - widthPct) / 2}%`
+                                  }}
+                                >
+                                  <span className={`text-[12px] font-mono font-medium ${colors.textPrimary}`}>{stage.count} deals</span>
+                                  {stage.value > 0 && (
+                                    <span className="text-[11px] font-mono ml-auto" style={{ color: funnelColors[i] }}>€{(stage.value / 1000).toFixed(0)}K</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      {/* Conversion indicators */}
+                      <div className="flex justify-between mt-3 pt-2 border-t border-dashed" style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <span className={`text-[10px] ${colors.textTertiary}`}>
+                          {warmDeals.length} deals in pipeline · €{(totalValue / 1000).toFixed(0)}K totale waarde
+                        </span>
+                        <span className={`text-[10px] font-mono`} style={{ color: CHART_COLORS.success }}>
+                          {stageData[stageData.length - 1]?.count || 0} in offerte fase
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
               {/* === CLIENT REVENUE CONCENTRATION === */}
               <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
                 <div className="flex items-center justify-between mb-3">
