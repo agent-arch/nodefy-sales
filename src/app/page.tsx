@@ -1656,6 +1656,7 @@ export default function SalesDashboard() {
     setSelectedProspects(new Set())
   }, [saveProspectsToApi])
   const [nextSteps, setNextSteps] = useState<Record<string, string>>({})
+  const [dealProbability, setDealProbability] = useState<Record<string, number>>({})
 
   // Strategy tab state
   const [taskFilter, setTaskFilter] = useState<string>('all')
@@ -1835,11 +1836,17 @@ export default function SalesDashboard() {
           if (result.success && result.data) {
             setNextSteps(result.data)
           }
+          if (result.probability) {
+            setDealProbability(result.probability)
+            localStorage.setItem('nodefy-pipeline-probability', JSON.stringify(result.probability))
+          }
         }
       } catch (e) {
         // Fallback to localStorage
         const saved = localStorage.getItem('nodefy-pipeline-nextsteps')
         if (saved) setNextSteps(JSON.parse(saved))
+        const savedProb = localStorage.getItem('nodefy-pipeline-probability')
+        if (savedProb) setDealProbability(JSON.parse(savedProb))
       }
       
       // After loading cached data, sync pipeline from HubSpot (source of truth)
@@ -2327,6 +2334,25 @@ export default function SalesDashboard() {
           body: JSON.stringify(updated),
         })
       } catch (e) { console.error('Failed to save next steps to KV:', e); }
+    }, 1500)
+  }
+
+  // Update probability for a deal
+  const probSaveTimer = useRef<NodeJS.Timeout | null>(null)
+  const updateDealProbability = (dealId: string, value: number) => {
+    const updated = { ...dealProbability, [dealId]: value }
+    setDealProbability(updated)
+    localStorage.setItem('nodefy-pipeline-probability', JSON.stringify(updated))
+    
+    if (probSaveTimer.current) clearTimeout(probSaveTimer.current)
+    probSaveTimer.current = setTimeout(async () => {
+      try {
+        await fetch('/api/pipeline-nextsteps', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...nextSteps, _probability: updated }),
+        })
+      } catch (e) { console.error('Failed to save probability to KV:', e); }
     }, 1500)
   }
 
@@ -5114,6 +5140,8 @@ export default function SalesDashboard() {
                           <th className={`text-left p-3 font-medium ${colors.textSecondary}`}>Deal</th>
                           <th className={`text-left p-3 font-medium ${colors.textSecondary}`}>Stage</th>
                           <th className={`text-right p-3 font-medium ${colors.textSecondary}`}>Bedrag</th>
+                          <th className={`text-right p-3 font-medium ${colors.textSecondary} w-[90px]`}>Slagingskans</th>
+                          <th className={`text-right p-3 font-medium ${colors.textSecondary} w-[100px]`}>Gewogen</th>
                           <th className={`text-left p-3 font-medium ${colors.textSecondary}`}>Volgende stap</th>
                           <th className={`text-center p-3 font-medium ${colors.textSecondary} w-10`}></th>
                         </tr>
@@ -5142,6 +5170,30 @@ export default function SalesDashboard() {
                                 <td className={`p-3 text-right font-mono ${deal.value ? colors.accent : colors.textTertiary}`}>
                                   {formatValue(deal.value)}
                                 </td>
+                                <td className="p-3 text-right">
+                                  <select
+                                    value={dealProbability[deal.id] ?? ''}
+                                    onChange={(e) => updateDealProbability(deal.id, Number(e.target.value))}
+                                    className={`text-[12px] font-mono ${colors.textSecondary} bg-transparent border ${colors.border} rounded px-1.5 py-0.5 focus:outline-none focus:ring-1 focus:ring-[#0047FF] cursor-pointer`}
+                                  >
+                                    <option value="">—</option>
+                                    <option value="10">10%</option>
+                                    <option value="20">20%</option>
+                                    <option value="30">30%</option>
+                                    <option value="40">40%</option>
+                                    <option value="50">50%</option>
+                                    <option value="60">60%</option>
+                                    <option value="70">70%</option>
+                                    <option value="80">80%</option>
+                                    <option value="90">90%</option>
+                                    <option value="100">100%</option>
+                                  </select>
+                                </td>
+                                <td className={`p-3 text-right font-mono ${dealProbability[deal.id] && deal.value ? 'text-green-500' : colors.textTertiary}`}>
+                                  {dealProbability[deal.id] && deal.value
+                                    ? `€${Math.round((deal.value * dealProbability[deal.id]) / 100).toLocaleString('nl-NL')}`
+                                    : '—'}
+                                </td>
                                 <td className={`p-3`}>
                                   <input
                                     type="text"
@@ -5167,6 +5219,22 @@ export default function SalesDashboard() {
                               </tr>
                             )
                           })}
+                        {/* Totaal rij */}
+                        <tr className={`border-t-2 ${colors.border} font-medium`}>
+                          <td className={`p-3 ${colors.textPrimary}`}>Totaal</td>
+                          <td className="p-3"></td>
+                          <td className={`p-3 text-right font-mono ${colors.accent}`}>
+                            €{filteredDeals.reduce((sum, d) => sum + (d.value || 0), 0).toLocaleString('nl-NL')}
+                          </td>
+                          <td className="p-3"></td>
+                          <td className={`p-3 text-right font-mono text-green-500`}>
+                            €{filteredDeals.reduce((sum, d) => {
+                              const prob = dealProbability[d.id] || 0
+                              return sum + Math.round(((d.value || 0) * prob) / 100)
+                            }, 0).toLocaleString('nl-NL')}
+                          </td>
+                          <td className="p-3" colSpan={2}></td>
+                        </tr>
                       </tbody>
                     </table>
                   </div>
