@@ -3889,6 +3889,452 @@ export default function SalesDashboard() {
                   </div>
                 </div>
               </div>
+
+              {/* === SALES VELOCITY METRICS === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>⚡</span> Sales Velocity
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Pipeline efficiency metrics</span>
+                </div>
+                {(() => {
+                  const warmPipeline = PIPELINES.find(p => p.id === 'default')!
+                  const warmDeals = data.pipelineDeals.filter(d => d.pipelineId === 'default')
+                  const openWarm = warmDeals.filter(d => !CLOSED_STAGE_IDS.has(d.stageId))
+                  const wonDeals = warmDeals.filter(d => d.stageId === 'closedwon')
+                  const lostDeals = warmDeals.filter(d => d.stageId === 'closedlost' || d.stageId === '16170377')
+                  const totalClosed = wonDeals.length + lostDeals.length
+                  const winRate = totalClosed > 0 ? Math.round((wonDeals.length / totalClosed) * 100) : 0
+                  const avgDealSize = wonDeals.length > 0 ? Math.round(wonDeals.reduce((s, d) => s + (d.value || 0), 0) / wonDeals.length) : 0
+                  const pipelineValue = openWarm.reduce((s, d) => s + (d.value || 0), 0)
+                  const weightedPipeline = Math.round(pipelineValue * (winRate / 100))
+                  // Deals per stage
+                  const stageDistribution = warmPipeline.stages.filter(s => !s.closed).map(stage => {
+                    const deals = openWarm.filter(d => d.stageId === stage.id)
+                    const value = deals.reduce((s, d) => s + (d.value || 0), 0)
+                    return { name: stage.name.replace('Eerste gesprek gehad', 'Gesprek').replace('Afspraak ingepland', 'Afspraak').replace('Open voor een offerte', 'Offerte-ready').replace('Offerte verstuurd', 'Offerte uit'), count: deals.length, value }
+                  })
+                  const maxStageCount = Math.max(...stageDistribution.map(s => s.count), 1)
+                  // Velocity = (# deals × avg deal size × win rate) / avg cycle time
+                  // Simplified since we don't have cycle time data
+                  const velocityScore = openWarm.length > 0 ? Math.round((openWarm.length * (avgDealSize || 15000) * (winRate / 100)) / 1000) : 0
+
+                  return (
+                    <div>
+                      {/* KPI row */}
+                      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-4">
+                        <div>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Win Rate</p>
+                          <p className={`text-lg font-bold font-mono`} style={{ color: winRate >= 50 ? CHART_COLORS.success : winRate >= 30 ? CHART_COLORS.primary : CHART_COLORS.quaternary }}>{winRate}%</p>
+                          <p className={`text-[9px] ${colors.textTertiary}`}>{wonDeals.length}W / {lostDeals.length}L</p>
+                        </div>
+                        <div>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Gem. Deal</p>
+                          <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(avgDealSize / 1000).toFixed(1)}K</p>
+                          <p className={`text-[9px] ${colors.textTertiary}`}>won deals</p>
+                        </div>
+                        <div>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Open Pipeline</p>
+                          <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.primary }}>€{(pipelineValue / 1000).toFixed(0)}K</p>
+                          <p className={`text-[9px] ${colors.textTertiary}`}>{openWarm.length} deals</p>
+                        </div>
+                        <div>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Gewogen</p>
+                          <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.secondary }}>€{(weightedPipeline / 1000).toFixed(0)}K</p>
+                          <p className={`text-[9px] ${colors.textTertiary}`}>× {winRate}% win rate</p>
+                        </div>
+                        <div>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Velocity Score</p>
+                          <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.success }}>{velocityScore}</p>
+                          <p className={`text-[9px] ${colors.textTertiary}`}>K€/maand potentieel</p>
+                        </div>
+                      </div>
+                      {/* Stage distribution bars */}
+                      <div className="space-y-2">
+                        <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Deals per Stage</p>
+                        {stageDistribution.map((stage, i) => {
+                          const stageColors = [CHART_COLORS.primary, CHART_COLORS.secondary, '#8B5CF6', CHART_COLORS.success]
+                          return (
+                            <div key={i} className="flex items-center gap-2">
+                              <span className={`text-[10px] ${colors.textSecondary} w-24 truncate`}>{stage.name}</span>
+                              <div className="flex-1 relative">
+                                <div className={`h-5 rounded ${colors.bgInput}`}>
+                                  <div className="h-full rounded flex items-center px-2 transition-all duration-500" style={{
+                                    width: `${Math.max((stage.count / maxStageCount) * 100, 8)}%`,
+                                    backgroundColor: stageColors[i % stageColors.length],
+                                    opacity: 0.8
+                                  }}>
+                                    <span className="text-[10px] font-mono text-white font-medium">{stage.count}</span>
+                                  </div>
+                                </div>
+                              </div>
+                              <span className={`text-[10px] font-mono ${colors.textTertiary} w-14 text-right`}>€{(stage.value / 1000).toFixed(0)}K</span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* === MRR WATERFALL (Month-over-Month Changes) === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>🌊</span> MRR Waterfall
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Maand-over-maand bewegingen</span>
+                </div>
+                {(() => {
+                  // Calculate MRR changes month-over-month from retainer data
+                  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+                  const waterfall: { month: string; startMRR: number; newClients: number; expansion: number; contraction: number; churn: number; endMRR: number }[] = []
+                  
+                  for (let m = 1; m <= Math.min(CURRENT_MONTH_IDX + 1, 12); m++) {
+                    const prev = m - 1
+                    let newClients = 0
+                    let expansion = 0
+                    let contraction = 0
+                    let churn = 0
+                    
+                    RETAINER_CLIENTS.forEach(c => {
+                      const prevVal = c.months[prev] || 0
+                      const curVal = c.months[m] || 0
+                      
+                      if (prevVal === 0 && curVal > 0) {
+                        newClients += curVal // new or reactivated
+                      } else if (prevVal > 0 && curVal === 0) {
+                        churn += prevVal // churned
+                      } else if (curVal > prevVal) {
+                        expansion += (curVal - prevVal)
+                      } else if (curVal < prevVal) {
+                        contraction += (prevVal - curVal)
+                      }
+                    })
+                    
+                    const startMRR = RETAINER_CLIENTS.reduce((s, c) => s + (c.months[prev] || 0), 0)
+                    const endMRR = RETAINER_CLIENTS.reduce((s, c) => s + (c.months[m] || 0), 0)
+                    
+                    waterfall.push({
+                      month: monthNames[m],
+                      startMRR,
+                      newClients,
+                      expansion,
+                      contraction,
+                      churn,
+                      endMRR
+                    })
+                  }
+                  
+                  // Also show future months with projected data
+                  const futureMonths: typeof waterfall = []
+                  for (let m = Math.min(CURRENT_MONTH_IDX + 1, 11) + 1; m <= 11; m++) {
+                    const prev = m - 1
+                    let newClients = 0, expansion = 0, contraction = 0, churn = 0
+                    RETAINER_CLIENTS.forEach(c => {
+                      const prevVal = c.months[prev] || 0
+                      const curVal = c.months[m] || 0
+                      if (prevVal === 0 && curVal > 0) newClients += curVal
+                      else if (prevVal > 0 && curVal === 0) churn += prevVal
+                      else if (curVal > prevVal) expansion += (curVal - prevVal)
+                      else if (curVal < prevVal) contraction += (prevVal - curVal)
+                    })
+                    const startMRR = RETAINER_CLIENTS.reduce((s, c) => s + (c.months[prev] || 0), 0)
+                    const endMRR = RETAINER_CLIENTS.reduce((s, c) => s + (c.months[m] || 0), 0)
+                    futureMonths.push({ month: monthNames[m], startMRR, newClients, expansion, contraction, churn, endMRR })
+                  }
+                  
+                  const allMonths = [...waterfall, ...futureMonths]
+                  const maxChange = Math.max(...allMonths.map(m => Math.max(m.newClients + m.expansion, m.contraction + m.churn)), 1)
+                  
+                  return (
+                    <div>
+                      <div className="overflow-x-auto">
+                        <div className="min-w-[500px]">
+                          {/* Header */}
+                          <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `60px repeat(${allMonths.length}, 1fr)` }}>
+                            <div />
+                            {allMonths.map((m, i) => (
+                              <div key={i} className={`text-center text-[9px] font-mono ${i < waterfall.length ? colors.textSecondary : colors.textTertiary}`}>
+                                {m.month}
+                                {i >= waterfall.length && <span className="opacity-50"> *</span>}
+                              </div>
+                            ))}
+                          </div>
+                          
+                          {/* Growth bars (positive - up) */}
+                          <div className="grid gap-1 items-end" style={{ gridTemplateColumns: `60px repeat(${allMonths.length}, 1fr)`, height: 50 }}>
+                            <div className={`text-[9px] ${colors.textTertiary} self-center`}>↑ Groei</div>
+                            {allMonths.map((m, i) => {
+                              const total = m.newClients + m.expansion
+                              const h = maxChange > 0 ? (total / maxChange) * 100 : 0
+                              return (
+                                <div key={i} className="flex flex-col items-center justify-end h-full group relative">
+                                  <div className={`absolute -top-5 px-1 py-0.5 rounded text-[8px] font-mono whitespace-nowrap ${colors.bgInput} ${colors.textPrimary} border ${colors.border} opacity-0 group-hover:opacity-100 z-10`}>
+                                    +€{(total / 1000).toFixed(1)}K ({m.newClients > 0 ? `nieuw €${(m.newClients/1000).toFixed(1)}K` : ''}
+                                    {m.expansion > 0 ? ` exp €${(m.expansion/1000).toFixed(1)}K` : ''})
+                                  </div>
+                                  <div className="w-full flex flex-col items-stretch">
+                                    {m.expansion > 0 && (
+                                      <div className="w-full rounded-t" style={{ 
+                                        height: `${Math.max((m.expansion / maxChange) * 50, total > 0 ? 2 : 0)}px`,
+                                        backgroundColor: '#8B5CF6', opacity: i < waterfall.length ? 0.8 : 0.4
+                                      }} />
+                                    )}
+                                    {m.newClients > 0 && (
+                                      <div className="w-full" style={{ 
+                                        height: `${Math.max((m.newClients / maxChange) * 50, 2)}px`,
+                                        backgroundColor: CHART_COLORS.success, opacity: i < waterfall.length ? 0.8 : 0.4,
+                                        borderRadius: m.expansion > 0 ? '0' : '4px 4px 0 0'
+                                      }} />
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          
+                          {/* Divider line */}
+                          <div className="grid gap-1 my-0.5" style={{ gridTemplateColumns: `60px repeat(${allMonths.length}, 1fr)` }}>
+                            <div />
+                            {allMonths.map((_, i) => (
+                              <div key={i} className="border-t" style={{ borderColor: isDark ? '#3f3f46' : '#d4d4d8' }} />
+                            ))}
+                          </div>
+                          
+                          {/* Loss bars (negative - down) */}
+                          <div className="grid gap-1 items-start" style={{ gridTemplateColumns: `60px repeat(${allMonths.length}, 1fr)`, height: 50 }}>
+                            <div className={`text-[9px] ${colors.textTertiary} self-center`}>↓ Verlies</div>
+                            {allMonths.map((m, i) => {
+                              const total = m.contraction + m.churn
+                              return (
+                                <div key={i} className="flex flex-col items-center h-full group relative">
+                                  {m.churn > 0 && (
+                                    <div className="w-full" style={{ 
+                                      height: `${Math.max((m.churn / maxChange) * 50, 2)}px`,
+                                      backgroundColor: CHART_COLORS.quaternary, opacity: i < waterfall.length ? 0.8 : 0.4,
+                                      borderRadius: m.contraction > 0 ? '0' : '0 0 4px 4px'
+                                    }} />
+                                  )}
+                                  {m.contraction > 0 && (
+                                    <div className="w-full rounded-b" style={{ 
+                                      height: `${Math.max((m.contraction / maxChange) * 50, total > 0 ? 2 : 0)}px`,
+                                      backgroundColor: CHART_COLORS.primary, opacity: i < waterfall.length ? 0.8 : 0.4
+                                    }} />
+                                  )}
+                                  <div className={`absolute top-12 px-1 py-0.5 rounded text-[8px] font-mono whitespace-nowrap ${colors.bgInput} ${colors.textPrimary} border ${colors.border} opacity-0 group-hover:opacity-100 z-10`}>
+                                    -€{(total / 1000).toFixed(1)}K
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          
+                          {/* Net MRR row */}
+                          <div className="grid gap-1 mt-2 pt-2 border-t border-dashed" style={{ gridTemplateColumns: `60px repeat(${allMonths.length}, 1fr)`, borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                            <div className={`text-[9px] ${colors.textTertiary}`}>Net MRR</div>
+                            {allMonths.map((m, i) => {
+                              const net = (m.newClients + m.expansion) - (m.contraction + m.churn)
+                              return (
+                                <div key={i} className="text-center">
+                                  <span className={`text-[9px] font-mono font-medium ${net > 0 ? 'text-green-400' : net < 0 ? 'text-red-400' : colors.textTertiary}`}>
+                                    {net > 0 ? '+' : ''}{net === 0 ? '—' : `€${(net/1000).toFixed(1)}K`}
+                                  </span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                          
+                          {/* End MRR row */}
+                          <div className="grid gap-1 mt-1" style={{ gridTemplateColumns: `60px repeat(${allMonths.length}, 1fr)` }}>
+                            <div className={`text-[9px] ${colors.textTertiary}`}>MRR</div>
+                            {allMonths.map((m, i) => (
+                              <div key={i} className="text-center">
+                                <span className={`text-[8px] font-mono ${i < waterfall.length ? colors.textSecondary : colors.textTertiary}`}>
+                                  €{(m.endMRR/1000).toFixed(0)}K
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {/* Legend */}
+                      <div className="flex items-center gap-4 mt-3 pt-2 border-t border-dashed" style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS.success, opacity: 0.8 }} />
+                          <span className={`text-[9px] ${colors.textTertiary}`}>Nieuw</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: '#8B5CF6', opacity: 0.8 }} />
+                          <span className={`text-[9px] ${colors.textTertiary}`}>Expansie</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS.primary, opacity: 0.8 }} />
+                          <span className={`text-[9px] ${colors.textTertiary}`}>Contractie</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: CHART_COLORS.quaternary, opacity: 0.8 }} />
+                          <span className={`text-[9px] ${colors.textTertiary}`}>Churn</span>
+                        </div>
+                        <span className={`text-[9px] ${colors.textTertiary} ml-auto`}>* = projectie op basis van contractdata</span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* === DEAL AGE HEATMAP === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>🔥</span> Deal Leeftijd & Prioriteit
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Warm pipeline — gesorteerd op waarde × urgentie</span>
+                </div>
+                {(() => {
+                  const warmDeals = data.pipelineDeals.filter(d => d.pipelineId === 'default' && !CLOSED_STAGE_IDS.has(d.stageId))
+                  const stages = PIPELINES[0].stages.filter(s => !s.closed)
+                  
+                  // Score each deal: value × stage weight (later stages = hotter)
+                  const scoredDeals = warmDeals.map(deal => {
+                    const stage = stages.find(s => s.id === deal.stageId)
+                    const stageOrder = stage?.order || 1
+                    const stageWeight = stageOrder / stages.length // 0.25 to 1.0
+                    const valueScore = deal.value ? deal.value / 10000 : 0.5 // normalize, unknown = 0.5
+                    const priority = valueScore * stageWeight
+                    return { ...deal, stageName: stage?.name || '?', stageOrder, priority }
+                  }).sort((a, b) => b.priority - a.priority)
+                  
+                  const maxPriority = Math.max(...scoredDeals.map(d => d.priority), 1)
+                  
+                  return (
+                    <div className="space-y-1.5">
+                      {scoredDeals.map((deal, i) => {
+                        const pct = (deal.priority / maxPriority) * 100
+                        // Color: green (low prio) → yellow → red (high prio, needs attention)
+                        const heatColor = deal.stageOrder >= 4 ? CHART_COLORS.success 
+                          : deal.stageOrder >= 3 ? '#8B5CF6'
+                          : deal.stageOrder >= 2 ? CHART_COLORS.primary 
+                          : CHART_COLORS.secondary
+                        const stageBadgeColor = deal.stageOrder >= 4 ? 'bg-green-500/20 text-green-400' 
+                          : deal.stageOrder >= 3 ? 'bg-purple-500/20 text-purple-400'
+                          : deal.stageOrder >= 2 ? 'bg-blue-500/20 text-blue-400'
+                          : 'bg-gray-500/20 text-gray-400'
+                        
+                        return (
+                          <div key={deal.id} className={`flex items-center gap-2 group`}>
+                            <span className={`text-[10px] ${colors.textTertiary} w-4 text-right font-mono`}>{i + 1}</span>
+                            <div className="flex-1 relative">
+                              <div className={`h-7 rounded ${colors.bgInput} overflow-hidden flex items-center`}>
+                                <div className="h-full rounded transition-all duration-500 flex items-center px-2 gap-2" style={{
+                                  width: `${Math.max(pct, 15)}%`,
+                                  backgroundColor: heatColor,
+                                  opacity: 0.2
+                                }} />
+                                <div className="absolute inset-0 flex items-center px-2 gap-2">
+                                  <span className={`text-[11px] font-medium ${colors.textPrimary} truncate`} style={{ maxWidth: '45%' }}>{deal.name.replace(' - Digital marketing', '').replace(' - Digital Marketing', '')}</span>
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${stageBadgeColor} whitespace-nowrap`}>
+                                    {deal.stageName.replace('Eerste gesprek gehad', 'Gesprek').replace('Afspraak ingepland', 'Afspraak').replace('Open voor een offerte', 'Offerte-ready').replace('Offerte verstuurd', 'Offerte uit')}
+                                  </span>
+                                  <span className={`text-[10px] font-mono ${colors.textSecondary} ml-auto`}>
+                                    {deal.value ? `€${(deal.value / 1000).toFixed(0)}K` : '—'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                      {/* Summary */}
+                      <div className={`flex justify-between mt-2 pt-2 border-t border-dashed`} style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <span className={`text-[10px] ${colors.textTertiary}`}>
+                          {scoredDeals.filter(d => !d.value).length} deals zonder waarde — {scoredDeals.filter(d => d.stageOrder >= 3).length} in late stage
+                        </span>
+                        <span className={`text-[10px] font-mono`} style={{ color: CHART_COLORS.success }}>
+                          Totaal: €{(scoredDeals.reduce((s, d) => s + (d.value || 0), 0) / 1000).toFixed(0)}K
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* === RETAINER SIZE DISTRIBUTION === */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                    <span>📐</span> Retainer Spreiding
+                  </h3>
+                  <span className={`text-[10px] ${colors.textTertiary}`}>Verdeling per prijsband</span>
+                </div>
+                {(() => {
+                  const bands = [
+                    { label: '< €1K', min: 0, max: 1000, color: '#6B7280' },
+                    { label: '€1-2K', min: 1000, max: 2000, color: CHART_COLORS.secondary },
+                    { label: '€2-3K', min: 2000, max: 3000, color: CHART_COLORS.primary },
+                    { label: '€3-5K', min: 3000, max: 5000, color: '#8B5CF6' },
+                    { label: '€5-8K', min: 5000, max: 8000, color: CHART_COLORS.success },
+                    { label: '€8K+', min: 8000, max: Infinity, color: '#F59E0B' },
+                  ]
+                  
+                  const distribution = bands.map(band => {
+                    const clients = ACTIVE_RETAINER_CLIENTS.filter(c => {
+                      const mrr = c.months[CURRENT_MONTH_IDX]
+                      return mrr >= band.min && mrr < band.max && mrr > 0
+                    })
+                    const totalMRR = clients.reduce((s, c) => s + c.months[CURRENT_MONTH_IDX], 0)
+                    return { ...band, count: clients.length, mrr: totalMRR, clients: clients.map(c => c.klant) }
+                  })
+                  
+                  const maxCount = Math.max(...distribution.map(d => d.count), 1)
+                  const totalClients = distribution.reduce((s, d) => s + d.count, 0)
+                  const totalMRR = distribution.reduce((s, d) => s + d.mrr, 0)
+                  const avgMRR = totalClients > 0 ? Math.round(totalMRR / totalClients) : 0
+                  
+                  return (
+                    <div>
+                      <div className="space-y-2">
+                        {distribution.map((band, i) => (
+                          <div key={i} className="group">
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[10px] ${colors.textSecondary} w-12 font-mono`}>{band.label}</span>
+                              <div className="flex-1 relative">
+                                <div className={`h-6 rounded ${colors.bgInput}`}>
+                                  <div className="h-full rounded flex items-center px-2 transition-all duration-500" style={{
+                                    width: `${Math.max((band.count / maxCount) * 100, band.count > 0 ? 12 : 0)}%`,
+                                    backgroundColor: band.color,
+                                    opacity: 0.75
+                                  }}>
+                                    {band.count > 0 && <span className="text-[10px] font-mono text-white font-medium">{band.count}</span>}
+                                  </div>
+                                </div>
+                              </div>
+                              <span className={`text-[10px] font-mono ${colors.textTertiary} w-16 text-right`}>€{(band.mrr / 1000).toFixed(1)}K</span>
+                            </div>
+                            {/* Client names on hover */}
+                            {band.clients.length > 0 && (
+                              <div className={`ml-14 mt-0.5 text-[9px] ${colors.textTertiary} opacity-0 group-hover:opacity-100 transition-opacity truncate`}>
+                                {band.clients.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className={`flex justify-between mt-3 pt-2 border-t border-dashed`} style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                        <span className={`text-[10px] ${colors.textTertiary}`}>
+                          Gem. retainer: €{(avgMRR).toLocaleString('nl-NL')}/mnd
+                        </span>
+                        <span className={`text-[10px] ${colors.textTertiary}`}>
+                          {distribution.filter(d => d.count > 0 && d.min >= 3000).reduce((s, d) => s + d.count, 0)} van {totalClients} boven €3K target
+                        </span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
             </div>
             )
           })()}
