@@ -3917,6 +3917,28 @@ export default function SalesDashboard() {
                       {formatDate(data.pipelineLastUpdated)}
                     </span>
                     <button
+                      onClick={() => {
+                        const rows = [['Deal', 'Stage', 'Bedrag', 'Kans %', 'Gewogen', 'Leeftijd (d)', 'Volgende Stap'].join(',')]
+                        const openStagesLocal = (PIPELINES.find(p => p.id === activePipelineId) || PIPELINES[0]).stages.filter(s => !s.closed)
+                        data.pipelineDeals.filter(d => d.pipelineId === activePipelineId && !CLOSED_STAGE_IDS.has(d.stageId)).forEach(d => {
+                          const stage = openStagesLocal.find(s => s.id === d.stageId)?.name || d.stageId
+                          const prob = d.slagingskans || 25
+                          const weighted = Math.round((d.value || 0) * prob / 100)
+                          const age = d.createdAt ? Math.round((Date.now() - new Date(d.createdAt).getTime()) / (24*60*60*1000)) : ''
+                          const ns = (nextSteps[d.id] || '').replace(/"/g, '""')
+                          rows.push(`"${d.name}","${stage}",${d.value || 0},${prob},${weighted},${age},"${ns}"`)
+                        })
+                        const blob = new Blob([rows.join('\n')], { type: 'text/csv' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url; a.download = `pipeline-${new Date().toISOString().slice(0, 10)}.csv`; a.click()
+                        URL.revokeObjectURL(url)
+                      }}
+                      className={`px-3 py-1 rounded text-[12px] font-medium ${colors.bgCard} ${colors.textSecondary} border ${colors.border} hover:${colors.textPrimary} transition-all flex items-center gap-1.5`}
+                    >
+                      📥 CSV
+                    </button>
+                    <button
                       onClick={refreshPipeline}
                       disabled={pipelineSyncing}
                       className={`px-3 py-1 rounded text-[12px] font-medium ${colors.bgCard} ${colors.textSecondary} border ${colors.border} hover:${colors.textPrimary} disabled:opacity-50 transition-all flex items-center gap-1.5`}
@@ -3965,6 +3987,31 @@ export default function SalesDashboard() {
                     onChange={(e) => setPipelineSearch(e.target.value)}
                     className={`w-full px-3 py-2 rounded-md ${colors.bgCard} ${colors.textPrimary} placeholder:${colors.textTertiary} focus:outline-none text-[13px]`}
                   />
+                </div>
+
+                {/* Pipeline Funnel */}
+                <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Pipeline Funnel</h3>
+                  <div className="space-y-1">
+                    {groupedDeals.map((group, idx) => {
+                      const stageValue = group.deals.reduce((s, d) => s + (d.value || 0), 0)
+                      const maxValue = Math.max(...groupedDeals.map(g => g.deals.reduce((s, d) => s + (d.value || 0), 0)), 1)
+                      const pct = (stageValue / maxValue) * 100
+                      const stageColors = [CHART_COLORS.secondary, CHART_COLORS.primary, CHART_COLORS.tertiary, CHART_COLORS.success, CHART_COLORS.quaternary]
+                      const color = stageColors[idx % stageColors.length]
+                      return (
+                        <div key={group.stage.id} className="flex items-center gap-3">
+                          <span className={`text-[11px] w-28 text-right ${colors.textSecondary} truncate`}>{group.stage.name}</span>
+                          <div className="flex-1 h-6 rounded-sm overflow-hidden" style={{ backgroundColor: isDark ? '#1C1C1E' : '#F4F4F5' }}>
+                            <div className="h-full rounded-sm flex items-center justify-end px-2 transition-all duration-500" style={{ width: `${Math.max(pct, 3)}%`, backgroundColor: color + '40' }}>
+                              {stageValue > 0 && <span className="text-[10px] font-mono font-medium" style={{ color }}>€{(stageValue / 1000).toFixed(0)}K</span>}
+                            </div>
+                          </div>
+                          <span className={`text-[11px] font-mono ${colors.textTertiary} w-8 text-right`}>{group.deals.length}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
 
                 {/* Kanban columns */}
