@@ -4029,6 +4029,14 @@ export default function SalesDashboard() {
                                     </svg>
                                   </a>
                                 </div>
+                                {/* Deal age + probability badges */}
+                                <div className="flex items-center gap-1.5 mt-1">
+                                  {deal.createdAt && (() => {
+                                    const age = Math.round((Date.now() - new Date(deal.createdAt).getTime()) / (24*60*60*1000))
+                                    return <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${age > 60 ? 'bg-red-500/15 text-red-400' : age > 30 ? 'bg-amber-500/15 text-amber-400' : `${colors.bgInput} ${colors.textTertiary}`}`}>{age}d</span>
+                                  })()}
+                                  {deal.slagingskans && <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${colors.bgInput}`} style={{ color: deal.slagingskans >= 75 ? CHART_COLORS.success : deal.slagingskans >= 50 ? CHART_COLORS.primary : undefined }}>{deal.slagingskans}%</span>}
+                                </div>
                                 <input
                                   type="text"
                                   value={nextSteps[deal.id] || ''}
