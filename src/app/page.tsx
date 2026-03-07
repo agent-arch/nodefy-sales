@@ -267,6 +267,9 @@ interface PipelineDeal {
   value: number | null
   stageId: string
   pipelineId: string
+  slagingskans?: number
+  closedAt?: string
+  createdAt?: string
 }
 
 interface PipelineStage {
@@ -3004,6 +3007,31 @@ export default function SalesDashboard() {
             // High-value deals without values set
             const dealsWithoutValue = openDeals.filter(d => !d.value || d.value === 0)
 
+            // Weighted pipeline (using slagingskans)
+            const weightedPipeline = openDeals.reduce((sum, d) => {
+              const prob = d.slagingskans || 25
+              return sum + ((d.value || 0) * prob / 100)
+            }, 0)
+            // Won deals this year
+            const wonDealsThisYear = data.pipelineDeals.filter(d => d.stageId === 'closedwon' && d.closedAt && new Date(d.closedAt).getFullYear() === new Date().getFullYear())
+            const wonValue = wonDealsThisYear.reduce((s, d) => s + (d.value || 0), 0)
+            const lostDealsThisYear = data.pipelineDeals.filter(d => (d.stageId === 'closedlost' || d.stageId === '3982505168') && d.closedAt && new Date(d.closedAt).getFullYear() === new Date().getFullYear())
+            const winRate = wonDealsThisYear.length + lostDealsThisYear.length > 0 ? Math.round((wonDealsThisYear.length / (wonDealsThisYear.length + lostDealsThisYear.length)) * 100) : 0
+            // Monthly MRR trend from retainers
+            const mrrTrend = Array.from({ length: Math.min(CURRENT_MONTH_IDX + 1, 12) }, (_, i) => ({
+              label: ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec'][i],
+              value: ACTIVE_RETAINER_CLIENTS.reduce((s, c) => s + c.months[i], 0)
+            }))
+            // Stale deals (created > 45 days ago, still open)
+            const now = Date.now()
+            const staleDeals = openDeals.filter(d => {
+              const created = d.createdAt ? new Date(d.createdAt).getTime() : now
+              return (now - created) > 45 * 24 * 60 * 60 * 1000 && (d.value || 0) > 10000
+            }).sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5)
+            // Costs & profit
+            const monthlyProfit = RETAINER_MRR - MONTHLY_COSTS.totalMonthly
+            const profitMargin = RETAINER_MRR > 0 ? Math.round((monthlyProfit / RETAINER_MRR) * 100) : 0
+
             return (
             <div className="space-y-4">
               {/* Header */}
@@ -3013,6 +3041,114 @@ export default function SalesDashboard() {
                 <span className={colors.textPrimary}>Command Center</span>
               </div>
 
+              {/* === REVENUE & PIPELINE HERO === */}
+              <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-center">
+                  {/* ARR Progress Ring */}
+                  <div className="flex items-center gap-3 col-span-2 lg:col-span-1">
+                    <CircularProgress value={RETAINER_ARR} max={TARGET_ARR} size={72} strokeWidth={5} color={arrProgress >= 75 ? CHART_COLORS.success : arrProgress >= 50 ? CHART_COLORS.primary : CHART_COLORS.quaternary} />
+                    <div>
+                      <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>ARR → €2M Target</p>
+                      <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(RETAINER_ARR / 1000).toFixed(0)}K</p>
+                      <p className={`text-[10px] ${colors.textTertiary}`}>€{((TARGET_ARR - RETAINER_ARR) / 1000).toFixed(0)}K to go</p>
+                    </div>
+                  </div>
+                  {/* MRR + Profit */}
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>MRR (maart)</p>
+                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(RETAINER_MRR / 1000).toFixed(1)}K</p>
+                    <p className={`text-[10px] font-mono`} style={{ color: monthlyProfit > 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>
+                      {monthlyProfit > 0 ? '+' : ''}€{(monthlyProfit / 1000).toFixed(1)}K profit ({profitMargin}%)
+                    </p>
+                  </div>
+                  {/* Pipeline */}
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Open Pipeline</p>
+                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(pipelineTotal / 1000).toFixed(0)}K</p>
+                    <p className={`text-[10px] ${colors.textTertiary}`}>{openDeals.length} deals · €{(weightedPipeline / 1000).toFixed(0)}K gewogen</p>
+                  </div>
+                  {/* Win Rate + YTD */}
+                  <div>
+                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>YTD Won</p>
+                    <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.success }}>€{(wonValue / 1000).toFixed(0)}K</p>
+                    <p className={`text-[10px] ${colors.textTertiary}`}>{wonDealsThisYear.length} deals · {winRate}% win rate</p>
+                  </div>
+                </div>
+                {/* MRR Trend Sparkline */}
+                {mrrTrend.length > 1 && (
+                  <div className="mt-3 pt-3 border-t border-dashed" style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className={`text-[10px] ${colors.textTertiary}`}>MRR Trend {new Date().getFullYear()}</p>
+                      <p className={`text-[10px] font-mono ${colors.textTertiary}`}>
+                        {mrrTrend.length >= 2 && (() => {
+                          const prev = mrrTrend[mrrTrend.length - 2].value
+                          const curr = mrrTrend[mrrTrend.length - 1].value
+                          const change = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : 0
+                          return <span style={{ color: change >= 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>{change >= 0 ? '↑' : '↓'} {Math.abs(change)}% MoM</span>
+                        })()}
+                      </p>
+                    </div>
+                    <RevenueAreaChart data={mrrTrend} color={CHART_COLORS.success} height={60} />
+                    <div className="flex justify-between mt-1">
+                      {mrrTrend.map((m, i) => <span key={i} className={`text-[8px] ${colors.textTertiary}`}>{m.label}</span>)}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* === TOP DEALS + STALE DEALS === */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Top 5 Deals */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-2 flex items-center gap-2`}>
+                    🎯 Top Deals
+                    <span className={`text-[10px] ${colors.textTertiary} font-normal`}>by value</span>
+                  </h3>
+                  <div className="space-y-1">
+                    {topDeals.map((deal, i) => (
+                      <div key={deal.id} className={`flex items-center justify-between py-1.5 ${i < topDeals.length - 1 ? `border-b ${colors.border}` : ''}`}>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[10px] font-mono ${colors.textTertiary} w-4`}>{i + 1}.</span>
+                          <span className={`text-[13px] ${colors.textPrimary}`}>{deal.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[11px] font-mono font-medium ${colors.textPrimary}`}>€{((deal.value || 0) / 1000).toFixed(0)}K</span>
+                          {deal.slagingskans && <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${colors.bgInput}`} style={{ color: deal.slagingskans >= 75 ? CHART_COLORS.success : deal.slagingskans >= 50 ? CHART_COLORS.primary : colors.textTertiary }}>{deal.slagingskans}%</span>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Stale Deals Alert */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium mb-2 flex items-center gap-2`} style={{ color: staleDeals.length > 0 ? CHART_COLORS.primary : CHART_COLORS.success }}>
+                    {staleDeals.length > 0 ? '⏰' : '✅'} {staleDeals.length > 0 ? 'Stale Deals (>45 dagen)' : 'Geen stale deals'}
+                    <span className={`text-[10px] ${colors.textTertiary} font-normal`}>&gt;€10K, open pipeline</span>
+                  </h3>
+                  {staleDeals.length > 0 ? (
+                    <div className="space-y-1">
+                      {staleDeals.map((deal, i) => {
+                        const age = Math.round((now - new Date(deal.createdAt || now).getTime()) / (24 * 60 * 60 * 1000))
+                        return (
+                          <div key={deal.id} className={`flex items-center justify-between py-1.5 ${i < staleDeals.length - 1 ? `border-b ${colors.border}` : ''}`}>
+                            <div className="flex items-center gap-2">
+                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: age > 90 ? CHART_COLORS.quaternary : CHART_COLORS.primary }} />
+                              <span className={`text-[13px] ${colors.textPrimary}`}>{deal.name}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-[11px] font-mono ${colors.textTertiary}`}>{age}d</span>
+                              <span className={`text-[11px] font-mono font-medium ${colors.textPrimary}`}>€{((deal.value || 0) / 1000).toFixed(0)}K</span>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <p className={`text-[12px] ${colors.textTertiary}`}>Alle high-value deals zijn actief. 👌</p>
+                  )}
+                </div>
+              </div>
 
               {/* Client Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
