@@ -6204,6 +6204,75 @@ export default function SalesDashboard() {
                       </div>
                     </div>
 
+                    {/* P&L Summary */}
+                    <div className={`${colors.bgCard} rounded-md border ${colors.border} overflow-hidden`}>
+                      <div className={`px-4 py-2.5 border-b ${colors.border}`}>
+                        <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>P&L Overzicht 2026</h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-[12px] min-w-[700px]">
+                          <thead>
+                            <tr className={`border-b ${colors.border}`}>
+                              <th className={`text-left px-4 py-2 ${colors.textTertiary} font-medium`}>Maand</th>
+                              <th className={`text-right px-4 py-2 ${colors.textTertiary} font-medium`}>Omzet</th>
+                              <th className={`text-right px-4 py-2 ${colors.textTertiary} font-medium`}>Kosten</th>
+                              <th className={`text-right px-4 py-2 ${colors.textTertiary} font-medium`}>Winst</th>
+                              <th className={`text-right px-4 py-2 ${colors.textTertiary} font-medium`}>Marge</th>
+                              <th className={`px-4 py-2 ${colors.textTertiary} font-medium w-[120px]`}>Visualisatie</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {MONTHS.map((m, mi) => {
+                              const rev = monthlyTotals[mi]
+                              const costs = MONTHLY_COSTS.totalMonthly
+                              const profit = rev - costs
+                              const margin = rev > 0 ? Math.round((profit / rev) * 100) : 0
+                              return (
+                                <tr key={m} className={`border-b ${colors.border} hover:${colors.bgInput}`}>
+                                  <td className={`px-4 py-2 ${colors.textPrimary}`}>{m}</td>
+                                  <td className={`px-4 py-2 text-right font-mono ${colors.textPrimary}`}>{fmtEur(Math.round(rev))}</td>
+                                  <td className={`px-4 py-2 text-right font-mono ${colors.textTertiary}`}>{fmtEur(Math.round(costs))}</td>
+                                  <td className={`px-4 py-2 text-right font-mono font-medium`} style={{ color: profit > 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>
+                                    {profit > 0 ? '+' : ''}{fmtEur(Math.round(profit))}
+                                  </td>
+                                  <td className={`px-4 py-2 text-right font-mono`} style={{ color: margin > 30 ? CHART_COLORS.success : margin > 0 ? CHART_COLORS.primary : CHART_COLORS.quaternary }}>
+                                    {margin}%
+                                  </td>
+                                  <td className="px-4 py-2">
+                                    <div className="flex items-center gap-1">
+                                      <div className="h-2 rounded-sm" style={{ width: `${Math.max(Math.min((rev / (Math.max(...monthlyTotals) || 1)) * 100, 100), 2)}%`, backgroundColor: CHART_COLORS.success + '40' }} />
+                                      <div className="h-2 rounded-sm" style={{ width: `${Math.max((costs / (Math.max(...monthlyTotals) || 1)) * 100, 2)}%`, backgroundColor: CHART_COLORS.quaternary + '30' }} />
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })}
+                            <tr className={`font-medium border-t-2 ${colors.border}`}>
+                              <td className={`px-4 py-2 ${colors.textPrimary}`}>Totaal</td>
+                              <td className={`px-4 py-2 text-right font-mono ${colors.textPrimary}`}>{fmtEurK(monthlyTotals.reduce((s, v) => s + v, 0))}</td>
+                              <td className={`px-4 py-2 text-right font-mono ${colors.textTertiary}`}>{fmtEurK(MONTHLY_COSTS.totalMonthly * 12)}</td>
+                              <td className={`px-4 py-2 text-right font-mono`} style={{ color: monthlyTotals.reduce((s, v) => s + v, 0) - MONTHLY_COSTS.totalMonthly * 12 > 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>
+                                {fmtEurK(monthlyTotals.reduce((s, v) => s + v, 0) - MONTHLY_COSTS.totalMonthly * 12)}
+                              </td>
+                              <td className={`px-4 py-2 text-right font-mono ${colors.textTertiary}`}>
+                                {Math.round(((monthlyTotals.reduce((s, v) => s + v, 0) - MONTHLY_COSTS.totalMonthly * 12) / Math.max(monthlyTotals.reduce((s, v) => s + v, 0), 1)) * 100)}%
+                              </td>
+                              <td></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                      {/* Cost Breakdown */}
+                      <div className={`px-4 py-3 border-t ${colors.border}`}>
+                        <div className="flex flex-wrap gap-4 text-[11px]">
+                          <span className={colors.textTertiary}>Kosten breakdown:</span>
+                          <span className={colors.textSecondary}>👥 Personeel €{MONTHLY_COSTS.personnel.total.toLocaleString('nl-NL')}/mnd</span>
+                          <span className={colors.textSecondary}>🏢 Overhead €{MONTHLY_COSTS.overhead.total.toLocaleString('nl-NL')}/mnd</span>
+                          <span className={colors.textSecondary}>💰 Totaal €{MONTHLY_COSTS.totalMonthly.toLocaleString('nl-NL')}/mnd</span>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Filters */}
                     <div className="flex gap-2 flex-wrap">
                       <select value={retainerFilter.jaar} onChange={e => setRetainerFilter(f => ({ ...f, jaar: e.target.value }))} className={`${colors.bgCard} ${colors.textPrimary} border ${colors.border} rounded px-2 py-1 text-[11px]`}>
