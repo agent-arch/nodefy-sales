@@ -15,7 +15,7 @@ const CMD_PALETTE_STYLES = `
 // ============================================
 
 // Types
-type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'salesoverview' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'timeline' | 'settings' | 'admin'
+type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'settings' | 'admin'
 
 type UserRole = 'superadmin' | 'admin' | 'viewer' | 'custom'
 
@@ -38,7 +38,7 @@ const DEFAULT_USERS: User[] = [
     email: 'ruben@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, timeline: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   },
@@ -48,14 +48,14 @@ const DEFAULT_USERS: User[] = [
     email: 'matthijs@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, salesoverview: true, nightshift: true, timeline: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   }
 ]
 
 // All possible tab IDs for permissions
-const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'salesoverview', 'strategy', 'forecast', 'retainers', 'nightshift', 'timeline', 'settings', 'admin']
+const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'nightshift', 'settings', 'admin']
 const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
@@ -1134,6 +1134,7 @@ const DEFAULT_MASTER_TASKS: MasterTask[] = [
   { id: 'mt4', title: '90-day roadmap reviewen', done: true, deadline: '2026-02-10', category: 'Masterplan', priority: 'medium' },
   { id: 'mt5', title: 'Pipeline deals follow-up', done: false, deadline: '2026-02-18', category: 'Pipeline', priority: 'high' },
   { id: 'mt6', title: 'KPI targets Q2 bepalen', done: false, deadline: '2026-02-25', category: 'Strategy', priority: 'medium' },
+  { id: 'mt7', title: 'Nodefy Platform Upgrade: monorepo (Turborepo), Supabase DB, shared auth (Clerk), Sentry monitoring, shared UI package — 17 losse apps → 1 platform', done: false, deadline: '2026-04-30', category: 'Agency OS', priority: 'high' },
 ]
 
 const STORAGE_KEY = 'nodefy-dashboard-v12'
@@ -1450,13 +1451,11 @@ const NAV_SECTIONS: NavSection[] = [
       { id: 'cases', label: 'Cases' },
       { id: 'agencyos', label: 'Agency OS' },
       { id: 'nightshift', label: 'Nachtshift' },
-      { id: 'timeline', label: 'Timeline' },
     ]
   },
   {
     title: 'SALES',
     items: [
-      { id: 'salesoverview', label: 'Sales Overview' },
       { id: 'pipeline', label: 'Pipeline' },
       { id: 'prospects', label: 'Prospects' },
       { id: 'content', label: 'Content' },
@@ -1522,7 +1521,7 @@ export default function SalesDashboard() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   // Theme state
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [theme, setTheme] = useState<'dark' | 'light'>('light')
 
   // UI state
   const [activeTab, setActiveTab] = useState<TabId>('overview')
@@ -1554,10 +1553,6 @@ export default function SalesDashboard() {
   const [nsSelectedDay, setNsSelectedDay] = useState<string | null>(null)
 
   // Timeline state
-  const [tlData, setTlData] = useState<{ days: { date: string; label: string; items: { text: string; category: string; time?: string }[] }[] } | null>(null)
-  const [tlLoading, setTlLoading] = useState(true)
-  const [tlRange, setTlRange] = useState<7 | 14 | 30>(7)
-  const [tlFilter, setTlFilter] = useState<string | null>(null)
 
   // Klanten editing state
   const [klantenEditMode, setKlantenEditMode] = useState(false)
@@ -1757,10 +1752,8 @@ export default function SalesDashboard() {
       }
 
       // 4. Load theme from localStorage (UI preference, keep in localStorage)
-      const savedTheme = localStorage.getItem('nodefy-theme') as 'dark' | 'light' | null
-      if (savedTheme) {
-        setTheme(savedTheme)
-      }
+      const savedTheme = (localStorage.getItem('nodefy-theme') || 'light') as 'dark' | 'light'
+      setTheme(savedTheme)
 
       // 5. Load main dashboard data from API (with localStorage fallback)
       try {
@@ -1776,6 +1769,12 @@ export default function SalesDashboard() {
                 }
               }
               merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
+              // Merge new default master tasks that don't exist in saved data
+              if (merged.masterTasks) {
+                const existingIds = new Set(merged.masterTasks.map((t: MasterTask) => t.id))
+                const newTasks = DEFAULT_MASTER_TASKS.filter(t => !existingIds.has(t.id))
+                if (newTasks.length) merged.masterTasks = [...merged.masterTasks, ...newTasks]
+              }
               return merged
             })
           } else {
@@ -1791,6 +1790,11 @@ export default function SalesDashboard() {
                   }
                 }
                 merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
+                if (merged.masterTasks) {
+                  const existingIds = new Set(merged.masterTasks.map((t: MasterTask) => t.id))
+                  const newTasks = DEFAULT_MASTER_TASKS.filter(t => !existingIds.has(t.id))
+                  if (newTasks.length) merged.masterTasks = [...merged.masterTasks, ...newTasks]
+                }
                 return merged
               })
             }
@@ -1810,6 +1814,11 @@ export default function SalesDashboard() {
                 }
               }
               merged.agencyOsApps = DEFAULT_AGENCY_OS_APPS
+              if (merged.masterTasks) {
+                const existingIds = new Set(merged.masterTasks.map((t: MasterTask) => t.id))
+                const newTasks = DEFAULT_MASTER_TASKS.filter(t => !existingIds.has(t.id))
+                if (newTasks.length) merged.masterTasks = [...merged.masterTasks, ...newTasks]
+              }
               return merged
             })
           } catch {}
@@ -1931,14 +1940,6 @@ export default function SalesDashboard() {
     }
   }, [activeTab])
 
-  // Load timeline data
-  useEffect(() => {
-    if (activeTab === 'timeline') {
-      setTlLoading(true)
-      fetch(`/api/timeline?range=${tlRange}`).then(r => r.json()).then(d => { setTlData(d); setTlLoading(false) }).catch(() => setTlLoading(false))
-    }
-  }, [activeTab, tlRange])
-
   // Save theme preference
   useEffect(() => {
     localStorage.setItem('nodefy-theme', theme)
@@ -2034,7 +2035,7 @@ export default function SalesDashboard() {
   const canEdit = currentUser && (currentUser.role === 'superadmin' || currentUser.role === 'admin' || currentUser.role === 'custom')
   const canManageUsers = currentUser?.role === 'superadmin'
   // Tabs that contain sensitive financial data - superadmin only
-  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast', 'nightshift', 'salesoverview', 'timeline']
+  const SUPERADMIN_ONLY_TABS: TabId[] = ['retainers', 'strategy', 'forecast', 'nightshift', ]
   
   const canAccessTab = (tabId: TabId): boolean => {
     if (!currentUser) return false
@@ -2383,7 +2384,7 @@ export default function SalesDashboard() {
     })
     
     // Search tabs
-    const tabLabels: Record<string, string> = { overview: 'Klanten Overview', klanten: 'Klanten', reports: 'Reports', pipeline: 'Pipeline', prospects: 'Prospects', masterplan: 'Masterplan', cases: 'Cases', agencyos: 'Agency OS', content: 'Content', strategy: 'Strategy', retainers: 'Retainers', salesoverview: 'Sales Overview' }
+    const tabLabels: Record<string, string> = { overview: 'Klanten Overview', klanten: 'Klanten', reports: 'Reports', pipeline: 'Pipeline', prospects: 'Prospects', masterplan: 'Masterplan', cases: 'Cases', agencyos: 'Agency OS', content: 'Content', strategy: 'Strategy', retainers: 'Retainers' }
     Object.entries(tabLabels).filter(([, label]) => label.toLowerCase().includes(q)).forEach(([id, label]) => {
       results.push({ type: 'Tab', emoji: '📑', label, sub: 'Navigate to tab', action: () => { setActiveTab(id as TabId); setCmdPaletteOpen(false) } })
     })
@@ -3038,117 +3039,12 @@ export default function SalesDashboard() {
               <div className="flex items-center gap-2 text-[13px] mb-4">
                 <span className={colors.textTertiary}>Dashboard</span>
                 <span className={colors.textTertiary}>/</span>
-                <span className={colors.textPrimary}>Command Center</span>
+                <span className={colors.textPrimary}>Client Overview</span>
               </div>
 
-              {/* === REVENUE & PIPELINE HERO === */}
-              <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 items-center">
-                  {/* ARR Progress Ring */}
-                  <div className="flex items-center gap-3 col-span-2 lg:col-span-1">
-                    <CircularProgress value={RETAINER_ARR} max={TARGET_ARR} size={72} strokeWidth={5} color={arrProgress >= 75 ? CHART_COLORS.success : arrProgress >= 50 ? CHART_COLORS.primary : CHART_COLORS.quaternary} />
-                    <div>
-                      <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>ARR → €2M Target</p>
-                      <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(RETAINER_ARR / 1000).toFixed(0)}K</p>
-                      <p className={`text-[10px] ${colors.textTertiary}`}>€{((TARGET_ARR - RETAINER_ARR) / 1000).toFixed(0)}K to go</p>
-                    </div>
-                  </div>
-                  {/* MRR + Profit */}
-                  <div>
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>MRR (maart)</p>
-                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(RETAINER_MRR / 1000).toFixed(1)}K</p>
-                    <p className={`text-[10px] font-mono`} style={{ color: monthlyProfit > 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>
-                      {monthlyProfit > 0 ? '+' : ''}€{(monthlyProfit / 1000).toFixed(1)}K profit ({profitMargin}%)
-                    </p>
-                  </div>
-                  {/* Pipeline */}
-                  <div>
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Open Pipeline</p>
-                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{(pipelineTotal / 1000).toFixed(0)}K</p>
-                    <p className={`text-[10px] ${colors.textTertiary}`}>{openDeals.length} deals · €{(weightedPipeline / 1000).toFixed(0)}K gewogen</p>
-                  </div>
-                  {/* Win Rate + YTD */}
-                  <div>
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>YTD Won</p>
-                    <p className={`text-lg font-bold font-mono`} style={{ color: CHART_COLORS.success }}>€{(wonValue / 1000).toFixed(0)}K</p>
-                    <p className={`text-[10px] ${colors.textTertiary}`}>{wonDealsThisYear.length} deals · {winRate}% win rate</p>
-                  </div>
-                </div>
-                {/* MRR Trend Sparkline */}
-                {mrrTrend.length > 1 && (
-                  <div className="mt-3 pt-3 border-t border-dashed" style={{ borderColor: isDark ? '#2E2E32' : '#E4E4E8' }}>
-                    <div className="flex items-center justify-between mb-1">
-                      <p className={`text-[10px] ${colors.textTertiary}`}>MRR Trend {new Date().getFullYear()}</p>
-                      <p className={`text-[10px] font-mono ${colors.textTertiary}`}>
-                        {mrrTrend.length >= 2 && (() => {
-                          const prev = mrrTrend[mrrTrend.length - 2].value
-                          const curr = mrrTrend[mrrTrend.length - 1].value
-                          const change = prev > 0 ? Math.round(((curr - prev) / prev) * 100) : 0
-                          return <span style={{ color: change >= 0 ? CHART_COLORS.success : CHART_COLORS.quaternary }}>{change >= 0 ? '↑' : '↓'} {Math.abs(change)}% MoM</span>
-                        })()}
-                      </p>
-                    </div>
-                    <RevenueAreaChart data={mrrTrend} color={CHART_COLORS.success} height={60} />
-                    <div className="flex justify-between mt-1">
-                      {mrrTrend.map((m, i) => <span key={i} className={`text-[8px] ${colors.textTertiary}`}>{m.label}</span>)}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* === TOP DEALS + STALE DEALS === */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                {/* Top 5 Deals */}
-                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
-                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-2 flex items-center gap-2`}>
-                    🎯 Top Deals
-                    <span className={`text-[10px] ${colors.textTertiary} font-normal`}>by value</span>
-                  </h3>
-                  <div className="space-y-1">
-                    {topDeals.map((deal, i) => (
-                      <div key={deal.id} className={`flex items-center justify-between py-1.5 ${i < topDeals.length - 1 ? `border-b ${colors.border}` : ''}`}>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[10px] font-mono ${colors.textTertiary} w-4`}>{i + 1}.</span>
-                          <span className={`text-[13px] ${colors.textPrimary}`}>{deal.name}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={`text-[11px] font-mono font-medium ${colors.textPrimary}`}>€{((deal.value || 0) / 1000).toFixed(0)}K</span>
-                          {deal.slagingskans && <span className={`text-[9px] px-1.5 py-0.5 rounded font-mono ${colors.bgInput}`} style={{ color: deal.slagingskans >= 75 ? CHART_COLORS.success : deal.slagingskans >= 50 ? CHART_COLORS.primary : colors.textTertiary }}>{deal.slagingskans}%</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Stale Deals Alert */}
-                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
-                  <h3 className={`text-[13px] font-medium mb-2 flex items-center gap-2`} style={{ color: staleDeals.length > 0 ? CHART_COLORS.primary : CHART_COLORS.success }}>
-                    {staleDeals.length > 0 ? '⏰' : '✅'} {staleDeals.length > 0 ? 'Stale Deals (>45 dagen)' : 'Geen stale deals'}
-                    <span className={`text-[10px] ${colors.textTertiary} font-normal`}>&gt;€10K, open pipeline</span>
-                  </h3>
-                  {staleDeals.length > 0 ? (
-                    <div className="space-y-1">
-                      {staleDeals.map((deal, i) => {
-                        const age = Math.round((now - new Date(deal.createdAt || now).getTime()) / (24 * 60 * 60 * 1000))
-                        return (
-                          <div key={deal.id} className={`flex items-center justify-between py-1.5 ${i < staleDeals.length - 1 ? `border-b ${colors.border}` : ''}`}>
-                            <div className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: age > 90 ? CHART_COLORS.quaternary : CHART_COLORS.primary }} />
-                              <span className={`text-[13px] ${colors.textPrimary}`}>{deal.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className={`text-[11px] font-mono ${colors.textTertiary}`}>{age}d</span>
-                              <span className={`text-[11px] font-mono font-medium ${colors.textPrimary}`}>€{((deal.value || 0) / 1000).toFixed(0)}K</span>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  ) : (
-                    <p className={`text-[12px] ${colors.textTertiary}`}>Alle high-value deals zijn actief. 👌</p>
-                  )}
-                </div>
-              </div>
+              {/* === REVENUE & PIPELINE REMOVED — belongs in Pipeline/Sales tab ONLY === */}
+              {/* RULE: NOOIT omzet data in Overview. Alleen in tabs onder SALES sectie. */}
+              {/* Revenue/pipeline/deals content REMOVED from Overview — see Pipeline tab */}
 
               {/* Client Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
@@ -3867,6 +3763,10 @@ export default function SalesDashboard() {
           )}
 
           {/* ============================================ */}
+          {/* SALES OVERVIEW TAB */}
+          {/* ============================================ */}
+
+          {/* ============================================ */}
           {/* PIPELINE TAB - Multi-pipeline with HubSpot links */}
           {/* ============================================ */}
           {activeTab === 'pipeline' && (() => {
@@ -4040,6 +3940,15 @@ export default function SalesDashboard() {
                                   className={`w-full px-2 py-1 rounded text-[13px] ${colors.bgCard} ${colors.textPrimary} border ${colors.border} focus:outline-none focus:ring-1 focus:ring-[#0047FF]`}
                                 />
                                 <AmountInput value={deal.value || 0} onChange={(v) => updateDeal(deal.id, 'value', v)} />
+                                <select
+                                  value={deal.stageId}
+                                  onChange={(e) => updateDeal(deal.id, 'stageId', e.target.value)}
+                                  className={`w-full px-2 py-1 rounded text-[12px] ${colors.bgCard} ${colors.textSecondary} border ${colors.border} focus:outline-none focus:ring-1 focus:ring-[#0047FF]`}
+                                >
+                                  {openStages.map(s => (
+                                    <option key={s.id} value={s.id}>{s.name}</option>
+                                  ))}
+                                </select>
                                 <input
                                   type="text"
                                   value={nextSteps[deal.id] || ''}
@@ -4142,15 +4051,23 @@ export default function SalesDashboard() {
                               <tr key={deal.id} className={`border-t ${colors.border} hover:${isDark ? 'bg-white/[0.02]' : 'bg-black/[0.015]'} transition-colors`}>
                                 <td className={`px-5 py-3 font-medium ${colors.textPrimary} sticky left-0 ${colors.bgCard} z-10`}>{deal.name}</td>
                                 <td className="px-4 py-3">
-                                  <span className={`text-[11px] px-2 py-0.5 rounded-full font-medium ${
-                                    stageOrder >= 4 ? 'bg-emerald-500/15 text-emerald-500' :
-                                    stageOrder === 3 ? 'bg-blue-500/15 text-blue-400' :
-                                    stageOrder === 2 ? 'bg-violet-500/15 text-violet-400' :
-                                    `${colors.bgActive} ${colors.textSecondary}`
-                                  }`}>{stage?.name || '-'}</span>
+                                  <select
+                                    value={deal.stageId}
+                                    onChange={(e) => updateDeal(deal.id, 'stageId', e.target.value)}
+                                    className={`text-[11px] px-2 py-1 rounded-full font-medium border-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#0047FF]/50 ${
+                                      stageOrder >= 4 ? 'bg-emerald-500/15 text-emerald-500' :
+                                      stageOrder === 3 ? 'bg-blue-500/15 text-blue-400' :
+                                      stageOrder === 2 ? 'bg-violet-500/15 text-violet-400' :
+                                      `${colors.bgActive} ${colors.textSecondary}`
+                                    }`}
+                                  >
+                                    {openStages.map(s => (
+                                      <option key={s.id} value={s.id}>{s.name}</option>
+                                    ))}
+                                  </select>
                                 </td>
-                                <td className={`px-4 py-3 text-right font-mono text-[13px] ${deal.value ? colors.accent : colors.textTertiary}`}>
-                                  {formatValue(deal.value)}
+                                <td className="px-4 py-3 text-right">
+                                  <AmountInput value={deal.value || 0} onChange={(v) => updateDeal(deal.id, 'value', v)} className={`font-mono text-[13px] ${deal.value ? colors.accent : colors.textTertiary}`} />
                                 </td>
                                 <td className="px-4 py-3 text-right">
                                   <select
@@ -5039,121 +4956,6 @@ export default function SalesDashboard() {
               </div>
             </div>
           )}
-
-          {/* ============================================ */}
-          {/* SALES OVERVIEW TAB */}
-          {/* ============================================ */}
-          {activeTab === 'salesoverview' && (() => {
-            const rev2025 = HISTORICAL_REVENUE.filter(r => r.month.startsWith('2025'))
-            const revenueChartData = rev2025.map(r => ({ label: r.month.slice(5), value: r.revenue }))
-            const totalRev2025 = rev2025.reduce((s, r) => s + r.revenue, 0)
-            const activeClientCount = data.clients.filter(c => c.status === 'Actief').length
-            const arrTarget = 1500000
-            const clientsTarget = 50
-            const pipelineConversionRate = pipelineValue > 0 ? Math.min((pipelineValue / arrTarget) * 100, 100) : 0
-            const yearlyRevenue: Record<string, number> = {}
-            const yearColors = [CHART_COLORS.secondary, CHART_COLORS.tertiary, CHART_COLORS.primary, CHART_COLORS.quaternary, CHART_COLORS.success]
-            HISTORICAL_REVENUE.forEach(r => {
-              const yr = r.month.slice(0, 4)
-              yearlyRevenue[yr] = (yearlyRevenue[yr] || 0) + r.revenue
-            })
-            const years = Object.keys(yearlyRevenue).sort()
-            const maxYearRev = Math.max(...Object.values(yearlyRevenue))
-            const mrrSparkline = rev2025.map(r => r.revenue)
-            const arrSparkline = rev2025.map((_, i) => rev2025.slice(0, i + 1).reduce((s, r) => s + r.revenue, 0) / (i + 1) * 12)
-
-            return (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2 text-[13px] mb-4">
-                <span className={colors.textTertiary}>Sales</span>
-                <span className={colors.textTertiary}>/</span>
-                <span className={colors.textPrimary}>Sales Overview</span>
-              </div>
-
-              {/* Revenue Trend Chart */}
-              <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
-                <div className="flex items-center justify-between mb-3">
-                  <div>
-                    <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Revenue Trend</h3>
-                    <p className={`text-[11px] ${colors.textTertiary}`}>2025 Monthly Revenue</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`text-lg font-bold font-mono ${colors.textPrimary}`}>€{totalRev2025.toLocaleString('nl-NL')}</p>
-                    <p className="text-[10px] text-[#F97316]">YTD Total</p>
-                  </div>
-                </div>
-                <RevenueAreaChart data={revenueChartData} color={CHART_COLORS.primary} height={140} />
-                <div className="flex justify-between mt-2">
-                  {revenueChartData.map((d, i) => (
-                    <span key={i} className={`text-[9px] ${colors.textTertiary}`}>{d.label}</span>
-                  ))}
-                </div>
-              </div>
-
-              {/* KPI Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>ARR</p>
-                    <MiniBarChart values={arrSparkline.slice(-6)} color={CHART_COLORS.primary} />
-                  </div>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_ARR.toLocaleString('nl-NL')}</p>
-                  <p className="text-[10px] text-[#F97316] mt-0.5">Target: €{arrTarget.toLocaleString('nl-NL')}</p>
-                </div>
-                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>MRR</p>
-                    <MiniBarChart values={mrrSparkline.slice(-6)} color={CHART_COLORS.secondary} />
-                  </div>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_MRR.toLocaleString('nl-NL')}</p>
-                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Monthly Recurring</p>
-                </div>
-                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Active Clients</p>
-                    <span className="text-[#22C55E]">▲</span>
-                  </div>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{activeClientCount}</p>
-                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{data.clients.filter(c => c.dashboard).length} with dashboard</p>
-                </div>
-                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
-                  <div className="flex items-center justify-between mb-1">
-                    <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide`}>Pipeline Value</p>
-                    <MiniBarChart values={[40, 55, 70, 65, 80, pipelineValue > 0 ? 100 : 30]} color={CHART_COLORS.tertiary} />
-                  </div>
-                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{pipelineValue.toLocaleString('nl-NL')}</p>
-                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>Open deals</p>
-                </div>
-              </div>
-
-              {/* Progress Rings + Revenue by Year */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
-                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Target Progress</h3>
-                  <div className="flex items-center justify-around">
-                    <CircularProgress value={RETAINER_ARR} max={arrTarget} color={CHART_COLORS.primary} label="ARR" sublabel={`€${(arrTarget/1000).toFixed(0)}K target`} />
-                    <CircularProgress value={activeClientCount} max={clientsTarget} color={CHART_COLORS.secondary} label="Clients" sublabel={`${clientsTarget} target`} />
-                    <CircularProgress value={pipelineConversionRate} max={100} color={CHART_COLORS.tertiary} label="Pipeline" sublabel="conversion" />
-                  </div>
-                </div>
-                <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
-                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-4`}>Revenue by Year</h3>
-                  <div className="space-y-2">
-                    {years.map((yr, i) => (
-                      <div key={yr} className="flex items-center gap-3">
-                        <span className={`text-[11px] font-mono w-10 ${colors.textSecondary}`}>{yr}</span>
-                        <div className="flex-1 h-6 rounded-sm overflow-hidden" style={{ backgroundColor: isDark ? '#18181B' : '#F9F9FB' }}>
-                          <div className="h-full rounded-sm transition-all duration-500" style={{ width: `${(yearlyRevenue[yr] / maxYearRev) * 100}%`, backgroundColor: yearColors[i % yearColors.length] }} />
-                        </div>
-                        <span className={`text-[11px] font-mono w-16 text-right ${colors.textSecondary}`}>€{(yearlyRevenue[yr] / 1000).toFixed(0)}K</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-            )
-          })()}
 
           {/* ============================================ */}
           {/* STRATEGY TAB - Operational Cockpit */}
@@ -6537,118 +6339,6 @@ export default function SalesDashboard() {
           })()}
 
           {/* ============================================ */}
-          {/* TIMELINE TAB */}
-          {/* ============================================ */}
-          {activeTab === 'timeline' && (() => {
-            const TL_CATEGORIES: Record<string, { color: string; bg: string; emoji: string }> = {
-              'build': { color: '#3B82F6', bg: 'bg-blue-500/10', emoji: '🔨' },
-              'pipeline': { color: '#10B981', bg: 'bg-emerald-500/10', emoji: '📊' },
-              'content': { color: '#8B5CF6', bg: 'bg-violet-500/10', emoji: '✍️' },
-              'research': { color: '#F59E0B', bg: 'bg-amber-500/10', emoji: '🔍' },
-              'chat': { color: '#6B7280', bg: 'bg-gray-500/10', emoji: '💬' },
-              'system': { color: '#4B5563', bg: 'bg-gray-600/10', emoji: '⚙️' },
-            }
-
-            const allCategories = Object.keys(TL_CATEGORIES)
-            const filteredDays = tlData?.days?.map(day => ({
-              ...day,
-              items: tlFilter ? day.items.filter(i => i.category === tlFilter) : day.items
-            })).filter(day => day.items.length > 0) || []
-
-            const today = new Date().toISOString().split('T')[0]
-            const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
-            const formatDayLabel = (date: string) => {
-              if (date === today) return 'Vandaag'
-              if (date === yesterday) return 'Gisteren'
-              const d = new Date(date + 'T12:00:00')
-              return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' })
-            }
-
-            if (tlLoading) return <div className={`flex items-center justify-center py-20 ${colors.textTertiary}`}>Laden...</div>
-            if (!tlData?.days?.length) return (
-              <div className="flex flex-col items-center justify-center py-20 gap-3">
-                <span className="text-4xl">📅</span>
-                <p className={`text-[14px] ${colors.textSecondary}`}>Nog geen timeline data</p>
-                <p className={`text-[12px] ${colors.textTertiary}`}>Push memory data via de API om de timeline te vullen</p>
-              </div>
-            )
-
-            return (
-              <div className="space-y-4">
-                {/* Range tabs + Category filter */}
-                <div className="flex flex-wrap items-center gap-2">
-                  {([{ label: 'Week', value: 7 }, { label: '2 Weken', value: 14 }, { label: 'Maand', value: 30 }] as const).map(r => (
-                    <button key={r.value} onClick={() => setTlRange(r.value as 7 | 14 | 30)}
-                      className={`px-3 py-1.5 rounded-md text-[12px] font-medium transition-colors ${
-                        tlRange === r.value ? `${colors.accentBg} text-white` : `${colors.bgCard} ${colors.border} border ${colors.textSecondary} hover:${colors.textPrimary}`
-                      }`}>
-                      {r.label}
-                    </button>
-                  ))}
-                  <div className="w-px h-5 bg-[#2E2E32] mx-1" />
-                  <button onClick={() => setTlFilter(null)}
-                    className={`px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
-                      !tlFilter ? `${colors.bgActive} ${colors.textPrimary}` : `${colors.textTertiary} hover:${colors.textSecondary}`
-                    }`}>
-                    Alles
-                  </button>
-                  {allCategories.map(cat => (
-                    <button key={cat} onClick={() => setTlFilter(tlFilter === cat ? null : cat)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-[11px] font-medium transition-colors ${
-                        tlFilter === cat ? `${colors.bgActive} ${colors.textPrimary}` : `${colors.textTertiary} hover:${colors.textSecondary}`
-                      }`}>
-                      <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: TL_CATEGORIES[cat].color }} />
-                      {cat.charAt(0).toUpperCase() + cat.slice(1)}
-                    </button>
-                  ))}
-                </div>
-
-                {/* Timeline */}
-                <div className="relative pl-6">
-                  {/* Vertical line */}
-                  <div className={`absolute left-[9px] top-2 bottom-2 w-px ${colors.border}`} />
-
-                  {filteredDays.map((day, di) => (
-                    <div key={day.date} className={di > 0 ? 'mt-6' : ''}>
-                      {/* Day header */}
-                      <div className="flex items-center gap-3 mb-3 relative">
-                        <div className="absolute -left-6 w-[18px] h-[18px] rounded-full border-2 border-[#2E2E32] bg-[#18181B] flex items-center justify-center z-10">
-                          <div className="w-2 h-2 rounded-full bg-[#5C5C63]" />
-                        </div>
-                        <span className={`text-[13px] font-semibold ${colors.textPrimary}`}>{formatDayLabel(day.date)}</span>
-                        <span className={`text-[11px] ${colors.textTertiary} tabular-nums`}>{day.items.length} items</span>
-                      </div>
-
-                      {/* Items */}
-                      <div className="space-y-1">
-                        {day.items.map((item, ii) => {
-                          const cat = TL_CATEGORIES[item.category] || TL_CATEGORIES['chat']
-                          return (
-                            <div key={ii} className={`group flex items-start gap-2.5 py-1.5 px-2 -mx-2 rounded-md transition-colors hover:${isDark ? 'bg-[#222225]' : 'bg-gray-50'} relative`}>
-                              {/* Dot on line */}
-                              <div className="absolute -left-6 top-[11px] w-[18px] flex justify-center z-10">
-                                <div className="w-[7px] h-[7px] rounded-full" style={{ backgroundColor: cat.color }} />
-                              </div>
-                              {/* Time */}
-                              {item.time && <span className={`text-[11px] ${colors.textTertiary} tabular-nums flex-shrink-0 w-10 pt-0.5`}>{item.time}</span>}
-                              {/* Category emoji */}
-                              <span className="text-[12px] flex-shrink-0 pt-0.5">{cat.emoji}</span>
-                              {/* Text */}
-                              <span className={`text-[13px] ${colors.textSecondary} group-hover:${colors.textPrimary.replace('text-', 'text-')} transition-colors leading-relaxed`}>
-                                {item.text}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )
-          })()}
-
-          {/* ============================================ */}
           {/* ADMIN TAB - User Management (superadmin only) */}
           {/* ============================================ */}
           {activeTab === 'admin' && canManageUsers && (
@@ -7268,7 +6958,7 @@ export default function SalesDashboard() {
                   const icons: Record<TabId, string> = {
                     overview: '🏠', klanten: '👥', reports: '📈', pipeline: '📊',
                     prospects: '🎯', masterplan: '🗺️', cases: '💼', agencyos: '🤖',
-                    content: '✍️', salesoverview: '💹', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙', timeline: '📅',
+                    content: '✍️', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙',
                     settings: '⚙️', admin: '👤',
                   }
                   return (
