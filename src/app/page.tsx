@@ -15,7 +15,7 @@ const CMD_PALETTE_STYLES = `
 // ============================================
 
 // Types
-type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'settings' | 'admin'
+type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'meetings' | 'tasks' | 'settings' | 'admin'
 
 type UserRole = 'superadmin' | 'admin' | 'viewer' | 'custom'
 
@@ -38,7 +38,7 @@ const DEFAULT_USERS: User[] = [
     email: 'ruben@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, meetings: true, tasks: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   },
@@ -48,15 +48,15 @@ const DEFAULT_USERS: User[] = [
     email: 'matthijs@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, meetings: true, tasks: true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   }
 ]
 
 // All possible tab IDs for permissions
-const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'nightshift', 'settings', 'admin']
-const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
+const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'nightshift', 'meetings', 'tasks', 'settings', 'admin']
+const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'meetings', 'tasks'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
 const USERS_STORAGE_KEY = 'nodefy-users'
@@ -1011,7 +1011,7 @@ const CLOSED_STAGE_IDS = new Set(['closedwon', 'closedlost', '16170377', '398250
 const RETAINER_CLIENTS = [
   // Start 2022
   { klant: 'Tours & Tickets', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 72000, months: [6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000, 6000], startJaar: 2022 },
-  { klant: 'Kisch', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 12000, months: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], startJaar: 2022 },
+  { klant: 'Kisch', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 3000, months: [0, 0, 0, 0, 0, 0, 0, 0, 0, 1000, 1000, 1000], startJaar: 2022 },
   { klant: 'Spirit', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 51000, months: [4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250, 4250], startJaar: 2022 },
   { klant: 'SB+WAA+Fun', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 16800, months: [1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400, 1400], startJaar: 2022 },
   // Start 2023
@@ -1025,7 +1025,7 @@ const RETAINER_CLIENTS = [
   { klant: 'Padelpoints', recurring: true, lead: 'Max', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 21600, months: [1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800], startJaar: 2024 },
   { klant: 'Franky Amsterdam', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 36000, months: [3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000, 3000], startJaar: 2024 },
   { klant: 'Van der Kooij Advocaten', recurring: true, lead: 'RQS', status: 'Gestopt', onderdeel: 'Digital marketing', bedrag: 2200, months: [2200, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2024 },
-  { klant: 'The Core', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, months: [1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500], startJaar: 2024 },
+  { klant: 'The Core', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 6000, months: [1500, 1500, 1500, 1500, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2024 },
   // Start 2025
   { klant: 'Ripple Surf Therapy', recurring: true, lead: 'Loes', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 12000, months: [1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000, 1000], startJaar: 2025 },
   { klant: 'FlorisDaken / Mankracht', recurring: true, lead: 'David', status: 'Actief', onderdeel: 'SEA', bedrag: 9600, months: [800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800, 800], startJaar: 2025 },
@@ -1034,14 +1034,13 @@ const RETAINER_CLIENTS = [
   { klant: 'Eginstill', recurring: true, lead: 'Charlotte', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 14400, months: [1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 1200], startJaar: 2025 },
   { klant: 'Floryn', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 38640, months: [3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220, 3220], startJaar: 2025 },
   { klant: 'Student Experience', recurring: true, lead: 'Cold', status: 'Actief', onderdeel: 'Dashboarding', bedrag: 10800, months: [900, 900, 900, 900, 900, 900, 900, 900, 900, 900, 900, 900], startJaar: 2025 },
-  { klant: 'App4Sales', recurring: true, lead: 'Erik', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 1900, months: [950, 950, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2025 },
+  { klant: 'App4Sales', recurring: true, lead: 'Erik', status: 'Gestopt', onderdeel: 'Digital marketing', bedrag: 1900, months: [950, 950, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2025 },
   { klant: 'BunBun/Little Bonfire', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 18000, months: [1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500], startJaar: 2025 },
   { klant: 'Momentum', recurring: true, lead: 'Lidewij', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 33600, months: [2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800], startJaar: 2025 },
-  { klant: 'Stories (DM)', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, months: [2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600], startJaar: 2025 },
-  { klant: 'Stories (HubSpot)', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'HubSpot', bedrag: 9000, months: [750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750, 750], startJaar: 2025 },
+  { klant: 'Stories', recurring: true, lead: 'Roy', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 31200, months: [2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600, 2600], startJaar: 2025 },
   { klant: 'Unity Units', recurring: true, lead: 'Benjamin Tug', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 86400, months: [8000, 8000, 8000, 8000, 8000, 8000, 8000, 8000, 5600, 5600, 5600, 5600], startJaar: 2025 },
   { klant: 'Displine', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 40800, months: [3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400, 3400], startJaar: 2025 },
-  { klant: 'Distillery', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, months: [3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200], startJaar: 2025 },
+  { klant: 'Distillery / Phima', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 38400, months: [3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200, 3200], startJaar: 2025 },
   { klant: 'Lake Cycling', recurring: true, lead: 'Jaron', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 74400, months: [6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200, 6200], startJaar: 2025 },
   { klant: 'Johan Cruyff', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 5000, months: [2000, 3000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2025 },
   // Start 2026
@@ -1049,9 +1048,13 @@ const RETAINER_CLIENTS = [
   { klant: 'Synvest', recurring: true, lead: 'Jasper', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30300, months: [6150, 6150, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800, 1800], startJaar: 2026 },
   { klant: 'Kremer Collectie', recurring: false, lead: 'RQS', status: 'Actief', onderdeel: 'SEO', bedrag: 4600, months: [2300, 2300, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], startJaar: 2026 },
   { klant: 'Renaissance / CIMA', recurring: true, lead: 'Matthijs', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 59800, months: [0, 4800, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500, 5500], startJaar: 2026 },
-  { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 29000, months: [0, 5000, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400, 2400], startJaar: 2026 },
-  { klant: 'Mr Fris', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 31800, months: [0, 3800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800], startJaar: 2026 },
-  { klant: 'Artis', recurring: true, lead: '', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 35000, months: [0, 0, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500, 3500], startJaar: 2026 },
+  { klant: 'Carelli', recurring: true, lead: 'RQS', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 34000, months: [0, 5000, 2900, 2900, 2900, 2900, 2900, 2900, 2900, 2900, 2900, 2900], startJaar: 2026 },
+  { klant: 'Mr Fris', recurring: true, lead: 'Benjamin Lyppens', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 30200, months: [0, 2200, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800, 2800], startJaar: 2026 },
+  { klant: 'Insetto', recurring: true, lead: '', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 8400, months: [0, 0, 1200, 1200, 1200, 1200, 1200, 1200, 1200, 0, 0, 0], startJaar: 2026 },
+  { klant: 'Code Zero', recurring: true, lead: '', status: 'Actief', onderdeel: 'Digital marketing', bedrag: 36700, months: [0, 0, 2500, 3800, 3800, 3800, 3800, 3800, 3800, 3800, 3800, 3800], startJaar: 2026 },
+  { klant: 'Travelteq', recurring: true, lead: '', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 34200, months: [0, 0, 0, 3800, 3800, 3800, 3800, 3800, 3800, 3800, 3800, 3800], startJaar: 2026 },
+  { klant: 'ESTG', recurring: true, lead: '', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 32900, months: [0, 0, 0, 2500, 3800, 3800, 3800, 3800, 3800, 3800, 3800, 3800], startJaar: 2026 },
+  { klant: 'Mellow', recurring: true, lead: '', status: 'Actief', onderdeel: 'Digital Marketing', bedrag: 18000, months: [0, 0, 0, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000], startJaar: 2026 },
 ] as const
 
 // Computed retainer KPIs
@@ -1065,10 +1068,10 @@ const RETAINER_NEW_2026 = RETAINER_CLIENTS.filter(c => c.startJaar === 2026).len
 // Costs data
 const MONTHLY_COSTS = {
   overhead: { kantoor: 5000, auto: 700, bedrijfsuitjes: 1250, tools: 2000, diversen: 5000, total: 13950 },
-  personnel: { ruben: 10000, loes: 5500, koen: 4940, thijs: 4680, benjamin: 3770, jasper: 4940, dane: 1200, noah: 1200, megan: 1400, matthijs: 1500, total: 39130 },
-  kickbacks: { jaron: { jan: 4160, monthly: 3800 }, roy: 657 },
-  totalMonthly: 53080,
-  totalAnnual: 636960,
+  personnel: { ruben: 10000, loes: 5500, sales: 4500, koen: 4940, thijs: 4680, benjamin: 3770, jasper: 4940, dane: 1200, noah: 1200, megan: 1400, matthijs: 1500, total: 43630 },
+  kickbacks: { jaron: { jan: 4160, monthly: 3800 }, roy: 582 },
+  totalMonthly: 57580,
+  totalAnnual: 677810,
 }
 
 const HISTORICAL_REVENUE: {month: string; revenue: number}[] = [
@@ -1092,29 +1095,32 @@ const HISTORICAL_REVENUE: {month: string; revenue: number}[] = [
   {month: '2025-04', revenue: 61145}, {month: '2025-05', revenue: 70470}, {month: '2025-06', revenue: 64370},
   {month: '2025-07', revenue: 70224}, {month: '2025-08', revenue: 72787}, {month: '2025-09', revenue: 72387},
   {month: '2025-10', revenue: 83587}, {month: '2025-11', revenue: 83987}, {month: '2025-12', revenue: 81987},
+  // 2026
+  {month: '2026-01', revenue: 86995}, {month: '2026-02', revenue: 95995}, {month: '2026-03', revenue: 86270},
 ];
 
 const DEFAULT_MONTHLY_FORECAST = Array.from({ length: 12 }, (_, i) => ({
   month: i + 1,
   nieuwDeals: 0,
-  target: Math.round(1000000 / 12),
+  target: Math.round(1300000 / 12),
 }))
 
-// Default Strategy cockpit data
+// Default Strategy cockpit data — Updated 2026-03-29 per Ruben×Matthijs meeting
+// Matthijs: "ik denk dat we boven de 1,3 gaan eindigen" — target €1.3M, stretch €1.5M
 const DEFAULT_REVENUE_GOALS: RevenueGoals = {
-  annualTarget: 1000000,
+  annualTarget: 1300000,
   quarters: [
-    { q: 'Q1', target: 200000, realized: 0 },
-    { q: 'Q2', target: 250000, realized: 0 },
-    { q: 'Q3', target: 275000, realized: 0 },
-    { q: 'Q4', target: 275000, realized: 0 },
+    { q: 'Q1', target: 269260, realized: 269260 },
+    { q: 'Q2', target: 343580, realized: 0 },
+    { q: 'Q3', target: 343580, realized: 0 },
+    { q: 'Q4', target: 343580, realized: 0 },
   ]
 }
 
 const DEFAULT_KPI_SCOREBOARD: KPICard[] = [
   { id: 'k1', name: 'Actieve klanten', current: ACTIVE_RETAINER_CLIENTS.length, target: 45, unit: '' },
-  { id: 'k2', name: 'MRR (huidig)', current: RETAINER_MRR, target: 95000, unit: '€' },
-  { id: 'k3', name: 'ARR', current: RETAINER_ARR, target: 1000000, unit: '€' },
+  { id: 'k2', name: 'MRR (huidig)', current: RETAINER_MRR, target: 108000, unit: '€' },
+  { id: 'k3', name: 'ARR', current: RETAINER_ARR, target: 1300000, unit: '€' },
   { id: 'k4', name: 'Gem. retainer', current: RETAINER_AVG_MRR, target: 4000, unit: '€' },
   { id: 'k5', name: 'Nieuwe deals 2026', current: RETAINER_NEW_2026, target: 15, unit: '' },
 ]
@@ -1440,6 +1446,8 @@ const NAV_SECTIONS: NavSection[] = [
     title: 'GENERAL',
     items: [
       { id: 'overview', label: 'Overview' },
+      { id: 'tasks', label: 'Tasks' },
+      { id: 'meetings', label: 'Meetings' },
       { id: 'klanten', label: 'Klanten' },
       { id: 'reports', label: 'Reports' },
     ]
@@ -1552,6 +1560,38 @@ export default function SalesDashboard() {
   const [nsSelectedFile, setNsSelectedFile] = useState<string | null>(null)
   const [nsSelectedDay, setNsSelectedDay] = useState<string | null>(null)
 
+  // Meetings state (Fireflies)
+  type FFMeeting = { id: string; title: string; date: number; duration: number; participants: string[]; speakers: { id: number; name: string }[]; meeting_attendees: { displayName: string | null; email: string }[]; summary: { action_items: string | null; overview: string | null; short_summary: string | null; keywords: string[] | null; meeting_type: string | null } }
+  type FFMeetingDetail = FFMeeting & { transcript_url: string | null; audio_url: string | null; sentences: { index: number; speaker_name: string; text: string; start_time: number; end_time: number; ai_filters: { task: string | null; question: string | null } }[]; summary: FFMeeting['summary'] & { outline: string | null; bullet_gist: string | null } }
+  const [ffMeetings, setFfMeetings] = useState<FFMeeting[]>([])
+  const [ffLoading, setFfLoading] = useState(false)
+  const [ffSyncing, setFfSyncing] = useState(false)
+  const [ffSelectedMeeting, setFfSelectedMeeting] = useState<string | null>(null)
+  const [ffMeetingDetail, setFfMeetingDetail] = useState<FFMeetingDetail | null>(null)
+  const [ffDetailLoading, setFfDetailLoading] = useState(false)
+  const [ffSearch, setFfSearch] = useState('')
+  const [ffSelectedClient, setFfSelectedClient] = useState<string | null>(null)
+  const [ffEditingLabel, setFfEditingLabel] = useState<string | null>(null)
+  const [ffClientFilter, setFfClientFilter] = useState('all')
+  const [ffTagFilter, setFfTagFilter] = useState('all')
+  const [ffMeetingTags, setFfMeetingTags] = useState<Record<string, string[]>>({}) // title -> tags
+  const [ffAllTags, setFfAllTags] = useState<string[]>([])
+  const [ffNewTag, setFfNewTag] = useState('')
+  const [ffShowTagInput, setFfShowTagInput] = useState(false)
+  const [ffTaggingMeeting, setFfTaggingMeeting] = useState<string | null>(null)
+
+  // Meeting analysis state
+  type MeetingAnalysis = { date: string; title: string; client: string; type: 'client' | 'sales' | 'intern' | 'demo'; duration: number; nodefy_team: string[]; client_contacts: string[]; sentiment: 'positief' | 'neutraal' | 'negatief'; sentiment_score: number; analysis: string; risk: string; action_needed: string }
+  const [meetingAnalysis, setMeetingAnalysis] = useState<MeetingAnalysis[]>([])
+
+  // Tasks state
+  type DashTask = { id: string; title: string; description?: string; owner: string; status: 'todo' | 'bezig' | 'klaar'; priority: 'hoog' | 'normaal' | 'laag'; category: string; deadline?: string; source?: string; meetingId?: string; meetingTitle?: string; createdAt: string; updatedAt: string; createdBy: string }
+  const [tasks, setTasks] = useState<DashTask[]>([])
+  const [tasksLoading, setTasksLoading] = useState(false)
+  const [myTaskFilter, setMyTaskFilter] = useState<{ owner: string; status: string; category: string }>({ owner: 'all', status: 'all', category: 'all' })
+  const [showAddMyTask, setShowAddMyTask] = useState(false)
+  const [newMyTask, setNewMyTask] = useState<Partial<DashTask>>({ title: '', owner: 'ruben', priority: 'normaal', category: 'overig', status: 'todo' })
+
   // Timeline state
 
   // Klanten editing state
@@ -1655,6 +1695,7 @@ export default function SalesDashboard() {
   }, [saveProspectsToApi])
   const [nextSteps, setNextSteps] = useState<Record<string, string>>({})
   const [dealProbability, setDealProbability] = useState<Record<string, number>>({})
+  const [dealQualification, setDealQualification] = useState<Record<string, boolean[]>>({})
 
   // Strategy tab state
   const [taskFilter, setTaskFilter] = useState<string>('all')
@@ -1860,6 +1901,12 @@ export default function SalesDashboard() {
         const savedProb = localStorage.getItem('nodefy-pipeline-probability')
         if (savedProb) setDealProbability(JSON.parse(savedProb))
       }
+      // Load deal qualifications from localStorage
+      try {
+        const savedQual = localStorage.getItem('nodefy-deal-qualification')
+        if (savedQual) setDealQualification(JSON.parse(savedQual))
+      } catch {}
+
       
       // After loading cached data, sync pipeline from HubSpot (source of truth)
       try {
@@ -1878,13 +1925,13 @@ export default function SalesDashboard() {
             // Merge nextSteps: HubSpot wins, then layer local on top
             const hubSpotNextSteps: Record<string, string> = {}
             hsResult.deals.forEach((d: any) => {
-              if (d.nextStep && d.nextStep.trim()) hubSpotNextSteps[d.id] = d.nextStep
+              if (d.nextStep && String(d.nextStep).trim()) hubSpotNextSteps[d.id] = d.nextStep
             })
             setNextSteps(prev => {
               const merged = { ...hubSpotNextSteps }
               // Only keep local values if HubSpot has nothing for that deal
               Object.keys(prev).forEach(id => {
-                if (prev[id] && prev[id].trim() && !merged[id]) merged[id] = prev[id]
+                if (prev[id] && String(prev[id]).trim() && !merged[id]) merged[id] = prev[id]
               })
               return merged
             })
@@ -1939,6 +1986,163 @@ export default function SalesDashboard() {
       fetch('/api/nightshift?days=14').then(r => r.json()).then(d => { setNsData(d); setNsLoading(false); if (d.days?.[0] && !nsSelectedDay) setNsSelectedDay(d.days[0].date) }).catch(() => setNsLoading(false))
     }
   }, [activeTab])
+
+  // Load meetings from cache + analysis
+  useEffect(() => {
+    if (activeTab === 'meetings') {
+      if (ffMeetings.length === 0) {
+        setFfLoading(true)
+        fetch('/api/fireflies/meetings').then(r => r.json()).then(d => {
+          if (d.ok && d.meetings) setFfMeetings(d.meetings)
+          setFfLoading(false)
+        }).catch(() => setFfLoading(false))
+      }
+      if (meetingAnalysis.length === 0) {
+        fetch('/api/fireflies/analysis').then(r => r.json()).then(d => {
+          if (d.ok && d.analysis) setMeetingAnalysis(d.analysis)
+          if (d.meetingTags) setFfMeetingTags(d.meetingTags)
+          if (d.allTags) setFfAllTags(d.allTags)
+        }).catch(() => {})
+      }
+    }
+  }, [activeTab])
+
+  // Load meeting detail
+  useEffect(() => {
+    if (ffSelectedMeeting && !ffMeetingDetail) {
+      setFfDetailLoading(true)
+      fetch(`/api/fireflies/meeting/${ffSelectedMeeting}`).then(r => r.json()).then(d => {
+        if (d.ok && d.meeting) setFfMeetingDetail(d.meeting)
+        setFfDetailLoading(false)
+      }).catch(() => setFfDetailLoading(false))
+    }
+  }, [ffSelectedMeeting])
+
+  // Load tasks
+  useEffect(() => {
+    if ((activeTab === 'tasks' || activeTab === 'meetings') && tasks.length === 0) {
+      setTasksLoading(true)
+      fetch('/api/tasks').then(r => r.json()).then(d => {
+        if (d.ok && d.tasks) setTasks(d.tasks)
+        setTasksLoading(false)
+      }).catch(() => setTasksLoading(false))
+    }
+  }, [activeTab])
+
+  // Sync Fireflies meetings
+  const syncFireflies = async () => {
+    setFfSyncing(true)
+    try {
+      const res = await fetch('/api/fireflies/sync?limit=30')
+      const d = await res.json()
+      if (d.ok) {
+        const meetingsRes = await fetch('/api/fireflies/meetings')
+        const md = await meetingsRes.json()
+        if (md.ok) setFfMeetings(md.meetings)
+      }
+    } catch { /* ignore */ }
+    setFfSyncing(false)
+  }
+
+  // Task CRUD helpers
+  const addTask = async (task: Partial<DashTask>) => {
+    const res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'add', ...task, createdBy: currentUser?.email || 'unknown' }) })
+    const d = await res.json()
+    if (d.ok && d.task) setTasks(prev => [d.task, ...prev])
+    return d
+  }
+
+  const updateTask = async (id: string, updates: Partial<DashTask>) => {
+    const res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'update', id, updates }) })
+    const d = await res.json()
+    if (d.ok && d.task) setTasks(prev => prev.map(t => t.id === id ? d.task : t))
+  }
+
+  const deleteTask = async (id: string) => {
+    await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', id }) })
+    setTasks(prev => prev.filter(t => t.id !== id))
+  }
+
+  // Update meeting analysis client label
+  const updateMeetingLabel = async (title: string, newClient: string) => {
+    const updated = meetingAnalysis.map(a => a.title === title ? { ...a, client: newClient } : a)
+    setMeetingAnalysis(updated)
+    await fetch('/api/fireflies/analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ analysis: updated }) })
+    setFfEditingLabel(null)
+  }
+
+  // Meeting tags CRUD
+  const saveMeetingTags = async (tags: Record<string, string[]>, allTags: string[]) => {
+    await fetch('/api/fireflies/analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ meetingTags: tags, allTags }) })
+  }
+  const addTagToMeeting = (title: string, tag: string) => {
+    const updated = { ...ffMeetingTags, [title]: [...(ffMeetingTags[title] || []).filter(t => t !== tag), tag] }
+    setFfMeetingTags(updated)
+    saveMeetingTags(updated, ffAllTags)
+  }
+  const removeTagFromMeeting = (title: string, tag: string) => {
+    const updated = { ...ffMeetingTags, [title]: (ffMeetingTags[title] || []).filter(t => t !== tag) }
+    setFfMeetingTags(updated)
+    saveMeetingTags(updated, ffAllTags)
+  }
+  const createTag = (tag: string) => {
+    if (!tag.trim() || ffAllTags.includes(tag.trim())) return
+    const updated = [...ffAllTags, tag.trim()]
+    setFfAllTags(updated)
+    saveMeetingTags(ffMeetingTags, updated)
+    setFfNewTag('')
+    setFfShowTagInput(false)
+  }
+  const deleteMeetingAnalysis = async (title: string) => {
+    const updated = meetingAnalysis.filter(a => a.title !== title)
+    setMeetingAnalysis(updated)
+    await fetch('/api/fireflies/analysis', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ analysis: updated }) })
+  }
+  const deleteTag = (tag: string) => {
+    const updatedAll = ffAllTags.filter(t => t !== tag)
+    const updatedMeetings = Object.fromEntries(Object.entries(ffMeetingTags).map(([k, v]) => [k, v.filter(t => t !== tag)]))
+    setFfAllTags(updatedAll)
+    setFfMeetingTags(updatedMeetings)
+    saveMeetingTags(updatedMeetings, updatedAll)
+    if (ffTagFilter === tag) setFfTagFilter('all')
+  }
+
+  // Import action items from a meeting as tasks
+  const importMeetingTasks = async (meeting: FFMeeting) => {
+    if (!meeting.summary?.action_items) return
+    const lines = meeting.summary.action_items.split('\n').filter(l => l.trim())
+    const parsedTasks: Partial<DashTask>[] = []
+    let currentOwner = 'ruben'
+    for (const line of lines) {
+      const ownerMatch = line.match(/^\*\*(.+?)\*\*$/)
+      if (ownerMatch) {
+        const name = ownerMatch[1].toLowerCase()
+        if (name.includes('ruben')) currentOwner = 'ruben'
+        else if (name.includes('matthijs')) currentOwner = 'matthijs'
+        else if (name.includes('loes')) currentOwner = 'loes'
+        else if (name.includes('dane')) currentOwner = 'dane'
+        else if (name.includes('charlotte')) currentOwner = 'charlotte'
+        else if (name.includes('benjamin')) currentOwner = 'benjamin'
+        else currentOwner = name.split(' ')[0].toLowerCase()
+        continue
+      }
+      const taskText = line.replace(/^[-•]\s*/, '').replace(/\(\d+:\d+\)/, '').trim()
+      if (taskText.length > 3) {
+        parsedTasks.push({ title: taskText, owner: currentOwner, source: 'fireflies', meetingId: meeting.id, meetingTitle: meeting.title, category: 'overig', priority: 'normaal' })
+      }
+    }
+    if (parsedTasks.length > 0) {
+      const res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'bulk_add', tasks: parsedTasks }) })
+      const d = await res.json()
+      if (d.ok) {
+        // Reload tasks
+        const tr = await fetch('/api/tasks')
+        const td = await tr.json()
+        if (td.ok) setTasks(td.tasks)
+      }
+      return d
+    }
+  }
 
   // Save theme preference
   useEffect(() => {
@@ -2283,7 +2487,7 @@ export default function SalesDashboard() {
           setNextSteps(prev => {
             const merged = { ...hubSpotNextSteps };
             Object.keys(prev).forEach(id => {
-              if (prev[id] && prev[id].trim()) merged[id] = prev[id];
+              if (prev[id] && String(prev[id]).trim()) merged[id] = prev[id];
             });
             return merged;
           });
@@ -2359,6 +2563,23 @@ export default function SalesDashboard() {
       } catch (e) { console.error('Failed to save probability to KV:', e); }
     }, 1500)
   }
+
+  // Deal qualification questions
+  const QUAL_QUESTIONS = ['ICP fit', 'Budget confirmed', 'DMU identified', 'Marketing goal clear', 'Reason for switch']
+  const updateDealQualification = (dealId: string, questionIdx: number) => {
+    const current = dealQualification[dealId] || [false, false, false, false, false]
+    const updated = { ...dealQualification, [dealId]: current.map((v: boolean, i: number) => i === questionIdx ? !v : v) }
+    setDealQualification(updated)
+    localStorage.setItem('nodefy-deal-qualification', JSON.stringify(updated))
+    try {
+      fetch('/api/pipeline-nextsteps', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...nextSteps, _probability: dealProbability, _qualification: updated }),
+      })
+    } catch {}
+  }
+  const getDealQualScore = (dealId: string): number => (dealQualification[dealId] || []).filter(Boolean).length
 
   // ============================================
   // CMD+K COMMAND PALETTE LOGIC
@@ -2550,6 +2771,8 @@ export default function SalesDashboard() {
       case 'pipeline': return data.pipelineDeals.filter(d => !CLOSED_STAGE_IDS.has(d.stageId)).length
       case 'prospects': return MEGA_PROSPECTS.length
       case 'content': return readyCount
+      case 'tasks': { const open = tasks.filter(t => t.status !== 'klaar').length; return open || undefined }
+      case 'meetings': return ffMeetings.length || undefined
       default: return undefined
     }
   }
@@ -3004,7 +3227,7 @@ export default function SalesDashboard() {
             const openVoorOfferte = openDeals.filter(d => d.stageId === 'qualifiedtobuy')
             const topDeals = [...openDeals].filter(d => d.value && d.value > 0).sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5)
             // Deals without next steps = need attention
-            const dealsNeedingAction = openDeals.filter(d => !nextSteps[d.id] || nextSteps[d.id].trim() === '')
+            const dealsNeedingAction = openDeals.filter(d => !nextSteps[d.id] || String(nextSteps[d.id]).trim() === '')
             // High-value deals without values set
             const dealsWithoutValue = openDeals.filter(d => !d.value || d.value === 0)
 
@@ -3773,6 +3996,16 @@ export default function SalesDashboard() {
             const activePipeline = PIPELINES.find(p => p.id === activePipelineId) || PIPELINES[0]
             const openStages = activePipeline.stages.filter(s => !s.closed)
             
+            // Meeting count per deal (fuzzy match title)
+            const getMeetingCount = (dealName: string): number => {
+              if (!dealName || ffMeetings.length === 0) return 0
+              const dn = dealName.toLowerCase().replace(/[^a-z0-9]/g, '')
+              return ffMeetings.filter(m => {
+                const mt = (m.title || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+                return mt.includes(dn) || dn.includes(mt)
+              }).length
+            }
+            
             // Filter deals: active pipeline, exclude closed stages, deduplicate by ID
             const seen = new Set<string>()
             const pipelineDeals = data.pipelineDeals.filter(d => {
@@ -3970,7 +4203,14 @@ export default function SalesDashboard() {
                                     className={`flex-1 ${editMode ? 'cursor-pointer' : ''}`}
                                     onClick={() => editMode && setEditingDealId(deal.id)}
                                   >
-                                    <p className={`text-[13px] font-medium ${colors.textPrimary} leading-tight`}>{deal.name}</p>
+                                    <div className="flex items-center gap-1">
+                                      <p className={`text-[13px] font-medium ${colors.textPrimary} leading-tight`}>{deal.name}</p>
+                                      {getMeetingCount(deal.name) > 0 && (
+                                        <button onClick={() => { setActiveTab('meetings'); setFfSearch(deal.name.split(' ')[0]) }} className="text-[9px] px-1 py-0.5 rounded bg-purple-500/15 text-purple-400 hover:bg-purple-500/25" title={`${getMeetingCount(deal.name)} meeting(s)`}>
+                                          🎙️{getMeetingCount(deal.name)}
+                                        </button>
+                                      )}
+                                    </div>
                                     <AmountInput value={deal.value || 0} onChange={(v) => updateDeal(deal.id, 'value', v)} className={deal.value ? colors.accent : colors.textTertiary} />
                                   </div>
                                   <a
@@ -3992,6 +4232,15 @@ export default function SalesDashboard() {
                                     return <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${age > 60 ? 'bg-red-500/15 text-red-400' : age > 30 ? 'bg-amber-500/15 text-amber-400' : `${colors.bgInput} ${colors.textTertiary}`}`}>{age}d</span>
                                   })()}
                                   {deal.slagingskans && <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${colors.bgInput}`} style={{ color: deal.slagingskans >= 75 ? CHART_COLORS.success : deal.slagingskans >= 50 ? CHART_COLORS.primary : undefined }}>{deal.slagingskans}%</span>}
+                                  {(() => { const qs = getDealQualScore(deal.id); return qs > 0 ? <span className={`text-[9px] font-mono px-1 py-0.5 rounded`} style={{ backgroundColor: qs >= 4 ? '#22C55E20' : qs >= 2 ? '#F9731620' : '#EF444420', color: qs >= 4 ? '#22C55E' : qs >= 2 ? '#F97316' : '#EF4444' }}>Q{qs}/5</span> : null })()}
+                                </div>
+                                {/* Qualification Scorecard */}
+                                <div className="flex items-center gap-1 mt-1.5">
+                                  {QUAL_QUESTIONS.map((q, qi) => {
+                                    const answers = dealQualification[deal.id] || [false, false, false, false, false]
+                                    return <button key={qi} onClick={() => updateDealQualification(deal.id, qi)} title={q} className={`w-4 h-4 rounded-sm text-[8px] flex items-center justify-center transition-colors ${answers[qi] ? 'bg-emerald-500/20 text-emerald-500' : `${colors.bgInput} ${colors.textTertiary}`}`}>{answers[qi] ? '✓' : (qi + 1)}</button>
+                                  })}
+                                  <span className={`text-[8px] ${colors.textTertiary} ml-0.5`}>qual</span>
                                 </div>
                                 <input
                                   type="text"
@@ -4033,6 +4282,7 @@ export default function SalesDashboard() {
                           <th className={`text-right px-4 py-2.5 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`}>Bedrag</th>
                           <th className={`text-right px-4 py-2.5 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-[100px]`}>Kans</th>
                           <th className={`text-right px-4 py-2.5 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-[110px]`}>Gewogen</th>
+                          <th className={`text-center px-3 py-2.5 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-[80px]`}>Qual</th>
                           <th className={`text-left px-4 py-2.5 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`} style={{ minWidth: 200 }}>Volgende stap</th>
                           <th className={`text-center px-3 py-2.5 w-10`}></th>
                         </tr>
@@ -4049,7 +4299,12 @@ export default function SalesDashboard() {
                             const stageOrder = stage?.order || 0
                             return (
                               <tr key={deal.id} className={`border-t ${colors.border} hover:${isDark ? 'bg-white/[0.02]' : 'bg-black/[0.015]'} transition-colors`}>
-                                <td className={`px-5 py-3 font-medium ${colors.textPrimary} sticky left-0 ${colors.bgCard} z-10`}>{deal.name}</td>
+                                <td className={`px-5 py-3 font-medium ${colors.textPrimary} sticky left-0 ${colors.bgCard} z-10`}>
+                                  <span className="flex items-center gap-1">
+                                    {deal.name}
+                                    {getMeetingCount(deal.name) > 0 && <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/15 text-purple-400">🎙️{getMeetingCount(deal.name)}</span>}
+                                  </span>
+                                </td>
                                 <td className="px-4 py-3">
                                   <select
                                     value={deal.stageId}
@@ -4081,6 +4336,7 @@ export default function SalesDashboard() {
                                     <option value="25">25%</option>
                                     <option value="50">50%</option>
                                     <option value="75">75%</option>
+                                    <option value="90">90%</option>
                                     <option value="100">100%</option>
                                   </select>
                                 </td>
@@ -4088,6 +4344,15 @@ export default function SalesDashboard() {
                                   {dealProbability[deal.id] && deal.value
                                     ? `€${Math.round((deal.value * dealProbability[deal.id]) / 100).toLocaleString('nl-NL')}`
                                     : '—'}
+                                </td>
+                                <td className="px-3 py-3 text-center">
+                                  <div className="flex items-center justify-center gap-0.5">
+                                    {QUAL_QUESTIONS.map((q, qi) => {
+                                      const answers = dealQualification[deal.id] || [false, false, false, false, false]
+                                      return <button key={qi} onClick={() => updateDealQualification(deal.id, qi)} title={q} className={`w-3.5 h-3.5 rounded-sm text-[7px] flex items-center justify-center ${answers[qi] ? 'bg-emerald-500/20 text-emerald-500' : `${colors.bgInput} ${colors.textTertiary}`}`}>{answers[qi] ? '✓' : ''}</button>
+                                    })}
+                                  </div>
+                                  <span className={`text-[9px] font-mono ${getDealQualScore(deal.id) >= 4 ? 'text-emerald-500' : getDealQualScore(deal.id) >= 2 ? 'text-amber-500' : colors.textTertiary}`}>{getDealQualScore(deal.id)}/5</span>
                                 </td>
                                 <td className={`px-4 py-3`}>
                                   <input
@@ -4129,6 +4394,7 @@ export default function SalesDashboard() {
                               return sum + Math.round(((d.value || 0) * prob) / 100)
                             }, 0).toLocaleString('nl-NL')}
                           </td>
+                          <td className="px-3 py-3"></td>
                           <td className="px-4 py-3" colSpan={2}></td>
                         </tr>
                       </tbody>
@@ -6339,6 +6605,531 @@ export default function SalesDashboard() {
           })()}
 
           {/* ============================================ */}
+          {/* MEETINGS TAB - Fireflies Integration */}
+          {/* ============================================ */}
+          {activeTab === 'meetings' && (() => {
+            const filteredMeetings = ffMeetings.filter(m => {
+              if (!ffSearch) return true
+              const s = ffSearch.toLowerCase()
+              return m.title?.toLowerCase().includes(s) || m.speakers?.some(sp => sp.name?.toLowerCase().includes(s)) || m.summary?.keywords?.some(k => k.toLowerCase().includes(s))
+            })
+            const formatMeetingDate = (ts: number) => { const d = new Date(ts); return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' }) }
+            const formatDuration = (mins: number) => mins < 60 ? `${Math.round(mins)}min` : `${Math.floor(mins / 60)}u${Math.round(mins % 60)}min`
+
+            // Detail view
+            if (ffSelectedMeeting) {
+              const meeting = ffMeetings.find(m => m.id === ffSelectedMeeting)
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-[13px]">
+                    <button onClick={() => { setFfSelectedMeeting(null); setFfMeetingDetail(null) }} className={`${colors.textTertiary} hover:${colors.textPrimary}`}>← Meetings</button>
+                    <span className={colors.textTertiary}>/</span>
+                    <span className={colors.textPrimary}>{meeting?.title || 'Loading...'}</span>
+                  </div>
+
+                  {ffDetailLoading ? (
+                    <div className={`${colors.bgCard} rounded-md border ${colors.border} p-8 text-center`}>
+                      <p className={`text-[13px] ${colors.textTertiary}`}>Meeting laden...</p>
+                    </div>
+                  ) : ffMeetingDetail ? (
+                    <div className="space-y-4">
+                      {/* Meeting header */}
+                      <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h2 className={`text-[15px] font-semibold ${colors.textPrimary}`}>{ffMeetingDetail.title}</h2>
+                            <div className={`flex items-center gap-3 mt-1 text-[11px] ${colors.textTertiary}`}>
+                              <span>{formatMeetingDate(ffMeetingDetail.date)}</span>
+                              <span>{formatDuration(ffMeetingDetail.duration)}</span>
+                              <span>{ffMeetingDetail.speakers?.map(s => s.name).join(', ')}</span>
+                            </div>
+                            {ffMeetingDetail.summary?.keywords && (
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {ffMeetingDetail.summary.keywords.map((k, i) => (
+                                  <span key={i} className={`px-1.5 py-0.5 rounded text-[10px] ${isDark ? 'bg-white/10 text-white/60' : 'bg-gray-100 text-gray-600'}`}>{k}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {ffMeetingDetail.transcript_url && (
+                              <a href={ffMeetingDetail.transcript_url} target="_blank" rel="noopener noreferrer" className={`px-2 py-1 rounded text-[11px] border ${colors.border} ${colors.textSecondary} hover:${colors.textPrimary}`}>
+                                Open in Fireflies ↗
+                              </a>
+                            )}
+                            <button
+                              onClick={() => meeting && importMeetingTasks(meeting)}
+                              className={`px-2 py-1 rounded text-[11px] font-medium ${colors.accentBg} text-white ${colors.accentHover}`}
+                            >
+                              Import taken
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Summary */}
+                      {ffMeetingDetail.summary?.overview && (
+                        <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                          <h3 className={`text-[12px] font-medium ${colors.textTertiary} mb-2`}>SAMENVATTING</h3>
+                          <div className={`text-[13px] ${colors.textSecondary} leading-relaxed whitespace-pre-wrap`}>{ffMeetingDetail.summary.overview}</div>
+                        </div>
+                      )}
+
+                      {/* Action Items */}
+                      {ffMeetingDetail.summary?.action_items && (
+                        <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className={`text-[12px] font-medium ${colors.textTertiary}`}>ACTIEPUNTEN</h3>
+                          </div>
+                          <div className={`text-[13px] ${colors.textSecondary} leading-relaxed whitespace-pre-wrap`}>{ffMeetingDetail.summary.action_items}</div>
+                        </div>
+                      )}
+
+                      {/* Transcript */}
+                      {ffMeetingDetail.sentences && ffMeetingDetail.sentences.length > 0 && (
+                        <details className={`${colors.bgCard} rounded-md border ${colors.border}`}>
+                          <summary className={`px-4 py-3 cursor-pointer text-[12px] font-medium ${colors.textTertiary} hover:${colors.textSecondary}`}>
+                            TRANSCRIPT ({ffMeetingDetail.sentences.length} zinnen)
+                          </summary>
+                          <div className="px-4 pb-4 max-h-[500px] overflow-y-auto">
+                            {ffMeetingDetail.sentences.map((s, i) => (
+                              <div key={i} className={`py-1 border-b ${colors.border} last:border-0`}>
+                                <span className={`text-[11px] font-medium ${s.ai_filters?.task ? 'text-amber-500' : s.ai_filters?.question ? 'text-blue-400' : colors.textTertiary}`}>
+                                  {s.speaker_name}
+                                </span>
+                                <span className={`text-[10px] ${colors.textTertiary} ml-2`}>{Math.floor(s.start_time / 60)}:{String(Math.floor(s.start_time % 60)).padStart(2, '0')}</span>
+                                <p className={`text-[12px] ${colors.textSecondary}`}>{s.text}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              )
+            }
+
+            // Helpers
+            const SC: Record<string, string> = {
+              positief: 'bg-green-500/15 text-green-500',
+              neutraal: isDark ? 'bg-white/10 text-white/50' : 'bg-gray-100 text-gray-500',
+              negatief: 'bg-red-500/15 text-red-400',
+            }
+            const SE: Record<string, string> = { positief: '😊', neutraal: '😐', negatief: '😟' }
+            const TC: Record<string, string> = {
+              client: 'bg-blue-500/15 text-blue-400',
+              sales: 'bg-purple-500/15 text-purple-400',
+              intern: isDark ? 'bg-white/10 text-white/40' : 'bg-gray-100 text-gray-400',
+              demo: 'bg-amber-500/15 text-amber-400',
+            }
+            const TL: Record<string, string> = { client: 'Klant', sales: 'Sales', intern: 'Intern', demo: 'Demo' }
+
+            // Unique clients + types for filters
+            const allClients = [...new Set(meetingAnalysis.map(a => a.client))].sort()
+            const allTypes = [...new Set(meetingAnalysis.map(a => a.type))].sort()
+
+            // Custom tags
+            const allMeetingTags = [...new Set([...ffAllTags, ...Object.values(ffMeetingTags).flat()])].sort()
+
+            // Apply filters
+            const filtered = meetingAnalysis.filter(a => {
+              if (ffClientFilter !== 'all' && a.client !== ffClientFilter) return false
+              if (ffTagFilter !== 'all') {
+                const tags = ffMeetingTags[a.title] || []
+                if (!tags.includes(ffTagFilter)) return false
+              }
+              if (ffSearch) {
+                const s = ffSearch.toLowerCase()
+                if (!a.client.toLowerCase().includes(s) && !a.title.toLowerCase().includes(s) && !a.analysis.toLowerCase().includes(s) && !a.nodefy_team.some(t => t.toLowerCase().includes(s))) return false
+              }
+              return true
+            })
+
+            // Stats from filtered
+            const fClient = filtered.filter(a => a.type === 'client')
+            const avgScore = fClient.length > 0 ? Math.round(fClient.reduce((s, a) => s + a.sentiment_score, 0) / fClient.length) : 0
+            const allRisks = filtered.filter(a => a.risk && a.risk !== 'geen')
+
+            // Client detail view
+            if (ffSelectedClient) {
+              const cm = meetingAnalysis.filter(a => a.client === ffSelectedClient)
+              const cClient = cm.filter(m => m.type !== 'intern')
+              const cAvg = cClient.length > 0 ? Math.round(cClient.reduce((s, m) => s + m.sentiment_score, 0) / cClient.length) : 0
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-[13px]">
+                      <button onClick={() => setFfSelectedClient(null)} className={`${colors.textTertiary} hover:${colors.textPrimary}`}>← Meetings</button>
+                      <span className={colors.textTertiary}>/</span>
+                      <span className={`font-medium ${colors.textPrimary}`}>{ffSelectedClient}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded ${SC[cAvg >= 75 ? 'positief' : cAvg >= 60 ? 'neutraal' : 'negatief']}`}>
+                        {SE[cAvg >= 75 ? 'positief' : cAvg >= 60 ? 'neutraal' : 'negatief']} {cAvg}/100
+                      </span>
+                      <span className={`text-[11px] ${colors.textTertiary}`}>· {cm.length} meetings</span>
+                    </div>
+                  </div>
+
+                  <div className={`${colors.bgCard} rounded-lg border ${colors.border} overflow-hidden`}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[13px]" style={{ minWidth: 700 }}>
+                        <thead>
+                          <tr className={`${colors.bgInput} border-b ${colors.border}`}>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-24`}>Datum</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-20`}>Score</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-16`}>Duur</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`}>Analyse</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`}>Tags</th>
+                            <th className={`w-20 px-4 py-2`} />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {cm.map((a, i) => (
+                            <tr key={i} className={`border-t ${colors.border} hover:${isDark ? 'bg-white/[0.03]' : 'bg-black/[0.015]'} group`}>
+                              <td className={`px-4 py-2.5 font-mono text-[12px] ${colors.textTertiary}`}>{a.date}</td>
+                              <td className="px-4 py-2.5"><span className={`text-[10px] px-1.5 py-0.5 rounded ${SC[a.sentiment]}`}>{SE[a.sentiment]} {a.sentiment_score}</span></td>
+                              <td className={`px-4 py-2.5 font-mono text-[12px] ${colors.textTertiary}`}>{formatDuration(a.duration)}</td>
+                              <td className={`px-4 py-2.5 text-[12px] ${colors.textSecondary}`}>
+                                <p>{a.analysis}</p>
+                                {a.action_needed && a.action_needed !== 'geen' && <p className="mt-0.5"><span className="text-amber-400">→</span> <span className={colors.textTertiary}>{a.action_needed}</span></p>}
+                                {a.risk && a.risk !== 'geen' && <p className="mt-0.5"><span className="text-red-400">⚠</span> <span className={colors.textTertiary}>{a.risk}</span></p>}
+                                <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{a.nodefy_team.join(', ')}</p>
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {(ffMeetingTags[a.title] || []).map(tag => (
+                                    <span key={tag} className={`text-[9px] px-1.5 py-0.5 rounded ${isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'} flex items-center gap-0.5`}>
+                                      {tag}<button onClick={() => removeTagFromMeeting(a.title, tag)} className="hover:text-red-400 ml-0.5">×</button>
+                                    </span>
+                                  ))}
+                                  {ffTaggingMeeting === a.title ? (
+                                    <select autoFocus onChange={e => { if (e.target.value) addTagToMeeting(a.title, e.target.value); setFfTaggingMeeting(null) }} onBlur={() => setFfTaggingMeeting(null)}
+                                      className={`text-[10px] px-1 py-0.5 rounded ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                                      <option value="">Tag...</option>
+                                      {ffAllTags.filter(t => !(ffMeetingTags[a.title] || []).includes(t)).map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                  ) : (
+                                    <button onClick={() => setFfTaggingMeeting(a.title)} className={`text-[9px] px-1 py-0.5 rounded border border-dashed ${colors.border} ${colors.textTertiary} hover:${colors.textPrimary}`}>+</button>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-1">
+                                  {ffEditingLabel === a.title ? (
+                                    <input type="text" defaultValue={a.client} autoFocus className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bgInput} border ${colors.border} ${colors.textPrimary} w-24`}
+                                      onBlur={e => updateMeetingLabel(a.title, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') updateMeetingLabel(a.title, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setFfEditingLabel(null) }} />
+                                  ) : (
+                                    <button onClick={() => setFfEditingLabel(a.title)} className={`text-[10px] ${colors.textTertiary} hover:${colors.textPrimary}`} title="Klant wijzigen">✏️</button>
+                                  )}
+                                  <button onClick={() => deleteMeetingAnalysis(a.title)} className={`opacity-0 group-hover:opacity-100 text-[10px] ${colors.textTertiary} hover:text-red-400`} title="Verwijderen">🗑</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )
+            }
+
+            // Main meetings view
+            return (
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[13px]">
+                    <span className={colors.textTertiary}>General</span><span className={colors.textTertiary}>/</span><span className={colors.textPrimary}>Meetings</span>
+                    <span className={`text-[11px] font-mono ${colors.textTertiary}`}>{filtered.length} van {meetingAnalysis.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button onClick={syncFireflies} disabled={ffSyncing} className={`px-3 py-1.5 rounded text-[12px] font-medium ${colors.accentBg} text-white ${colors.accentHover} disabled:opacity-50`}>
+                      {ffSyncing ? 'Syncing...' : '↻ Sync'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filters */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input type="text" placeholder="Zoek..." value={ffSearch} onChange={e => setFfSearch(e.target.value)} className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary} w-40`} />
+                  <select value={ffClientFilter} onChange={e => setFfClientFilter(e.target.value)} className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                    <option value="all">Alle klanten</option>
+                    {allClients.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={ffTagFilter} onChange={e => setFfTagFilter(e.target.value)} className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                    <option value="all">Alle tags</option>
+                    {allMeetingTags.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                  {/* Tag management */}
+                  {ffShowTagInput ? (
+                    <div className="flex items-center gap-1">
+                      <input type="text" placeholder="Nieuwe tag..." value={ffNewTag} onChange={e => setFfNewTag(e.target.value)} autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') createTag(ffNewTag); if (e.key === 'Escape') setFfShowTagInput(false) }}
+                        className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary} w-28`} />
+                      <button onClick={() => createTag(ffNewTag)} className={`text-[11px] px-2 py-1 rounded ${colors.accentBg} text-white`}>+</button>
+                      <button onClick={() => setFfShowTagInput(false)} className={`text-[11px] ${colors.textTertiary}`}>✕</button>
+                    </div>
+                  ) : (
+                    <button onClick={() => setFfShowTagInput(true)} className={`text-[11px] px-2 py-1 rounded border border-dashed ${colors.border} ${colors.textTertiary} hover:${colors.textPrimary}`}>+ Tag</button>
+                  )}
+                  {/* Show existing tags with delete */}
+                  {ffAllTags.map(tag => (
+                    <span key={tag} className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'} flex items-center gap-1`}>
+                      {tag}<button onClick={() => deleteTag(tag)} className="hover:text-red-400">×</button>
+                    </span>
+                  ))}
+                </div>
+
+                {/* Overview cards */}
+                {meetingAnalysis.length > 0 && (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                      <p className={`text-[10px] ${colors.textTertiary}`}>SENTIMENT</p>
+                      <p className={`text-[22px] font-bold font-mono ${avgScore >= 75 ? 'text-green-500' : avgScore >= 60 ? colors.textPrimary : 'text-red-400'}`}>{avgScore}/100</p>
+                    </div>
+                    <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                      <p className={`text-[10px] ${colors.textTertiary}`}>KLANTEN</p>
+                      <p className={`text-[22px] font-bold font-mono ${colors.textPrimary}`}>{new Set(filtered.filter(a => a.type === 'client').map(a => a.client)).size}</p>
+                    </div>
+                    <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                      <p className={`text-[10px] ${colors.textTertiary}`}>MEETINGS</p>
+                      <p className={`text-[22px] font-bold font-mono ${colors.textPrimary}`}>{filtered.length}</p>
+                    </div>
+                    <div className={`${colors.bgCard} rounded-md border ${colors.border} p-3`}>
+                      <p className={`text-[10px] ${colors.textTertiary}`}>RISICO&apos;S</p>
+                      <p className={`text-[22px] font-bold font-mono ${allRisks.length > 0 ? 'text-amber-400' : 'text-green-500'}`}>{allRisks.length}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Alerts */}
+                {allRisks.length > 0 && (
+                  <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+                    <h3 className="text-[12px] font-medium text-amber-400 mb-1">⚠️ Aandachtspunten</h3>
+                    {allRisks.map((r, i) => (
+                      <p key={i} className={`text-[11px] ${colors.textSecondary}`}><span className="text-amber-400 font-medium">{r.client}:</span> {r.risk}</p>
+                    ))}
+                  </div>
+                )}
+
+                {/* Meetings table */}
+                {filtered.length > 0 ? (
+                  <div className={`${colors.bgCard} rounded-lg border ${colors.border} overflow-hidden`}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[13px]" style={{ minWidth: 800 }}>
+                        <thead>
+                          <tr className={`${colors.bgInput} border-b ${colors.border}`}>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-24`}>Datum</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`}>Klant</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-16`}>Type</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-20`}>Score</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`}>Analyse</th>
+                            <th className={`text-left px-4 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`}>Tags</th>
+                            <th className={`w-16 px-4 py-2`} />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filtered.map((a, i) => (
+                            <tr key={i} className={`border-t ${colors.border} hover:${isDark ? 'bg-white/[0.03]' : 'bg-black/[0.015]'} transition-colors group`}>
+                              <td className={`px-4 py-2.5 font-mono text-[12px] ${colors.textTertiary} whitespace-nowrap`}>{a.date}</td>
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-1.5">
+                                  <button onClick={() => setFfSelectedClient(a.client)} className={`text-[12px] font-medium ${colors.textPrimary} hover:underline`}>{a.client}</button>
+                                  {a.risk && a.risk !== 'geen' && <span className="text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-400">⚠</span>}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5"><span className={`text-[9px] px-1.5 py-0.5 rounded ${TC[a.type] || ''}`}>{TL[a.type] || a.type}</span></td>
+                              <td className="px-4 py-2.5"><span className={`text-[10px] px-1.5 py-0.5 rounded ${SC[a.sentiment]}`}>{SE[a.sentiment]} {a.sentiment_score}</span></td>
+                              <td className={`px-4 py-2.5 text-[11px] ${colors.textSecondary} max-w-xs`}>
+                                <p className="line-clamp-2">{a.analysis}</p>
+                                {a.action_needed && a.action_needed !== 'geen' && <p className="mt-0.5 text-[10px]"><span className="text-amber-400">→</span> {a.action_needed}</p>}
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {(ffMeetingTags[a.title] || []).map(tag => (
+                                    <span key={tag} className={`text-[9px] px-1.5 py-0.5 rounded ${isDark ? 'bg-indigo-500/20 text-indigo-300' : 'bg-indigo-50 text-indigo-600'} flex items-center gap-0.5`}>
+                                      {tag}<button onClick={() => removeTagFromMeeting(a.title, tag)} className="hover:text-red-400 ml-0.5">×</button>
+                                    </span>
+                                  ))}
+                                  {ffTaggingMeeting === a.title ? (
+                                    <select autoFocus onChange={e => { if (e.target.value) addTagToMeeting(a.title, e.target.value); setFfTaggingMeeting(null) }} onBlur={() => setFfTaggingMeeting(null)}
+                                      className={`text-[10px] px-1 py-0.5 rounded ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                                      <option value="">Tag...</option>
+                                      {ffAllTags.filter(t => !(ffMeetingTags[a.title] || []).includes(t)).map(t => <option key={t} value={t}>{t}</option>)}
+                                    </select>
+                                  ) : (
+                                    <button onClick={() => setFfTaggingMeeting(a.title)} className={`text-[9px] px-1 py-0.5 rounded border border-dashed ${colors.border} ${colors.textTertiary}`}>+</button>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <div className="flex items-center gap-1">
+                                  {ffEditingLabel === a.title ? (
+                                    <input type="text" defaultValue={a.client} autoFocus className={`text-[10px] px-1.5 py-0.5 rounded ${colors.bgInput} border ${colors.border} ${colors.textPrimary} w-24`}
+                                      onBlur={e => updateMeetingLabel(a.title, e.target.value)} onKeyDown={e => { if (e.key === 'Enter') updateMeetingLabel(a.title, (e.target as HTMLInputElement).value); if (e.key === 'Escape') setFfEditingLabel(null) }} />
+                                  ) : (
+                                    <button onClick={() => setFfEditingLabel(a.title)} className={`text-[10px] ${colors.textTertiary} hover:${colors.textPrimary}`} title="Klant wijzigen">✏️</button>
+                                  )}
+                                  <button onClick={() => deleteMeetingAnalysis(a.title)} className={`opacity-0 group-hover:opacity-100 text-[10px] ${colors.textTertiary} hover:text-red-400 transition-opacity`} title="Verwijderen">🗑</button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : meetingAnalysis.length === 0 ? (
+                  <div className={`${colors.bgCard} rounded-md border ${colors.border} p-8 text-center`}>
+                    <p className={`text-[13px] ${colors.textTertiary}`}>Klik &quot;Sync&quot; om meetings op te halen.</p>
+                  </div>
+                ) : (
+                  <div className={`${colors.bgCard} rounded-md border ${colors.border} p-8 text-center`}>
+                    <p className={`text-[13px] ${colors.textTertiary}`}>Geen meetings met deze filters.</p>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* ============================================ */}
+          {/* TASKS TAB - Shared task management */}
+          {/* ============================================ */}
+          {activeTab === 'tasks' && (() => {
+            const OWNERS = ['all', 'ruben', 'matthijs', 'loes', 'koen', 'thijs', 'benjamin', 'dane', 'beiden']
+            const STATUSES = ['all', 'todo', 'bezig', 'klaar']
+            const CATEGORIES = ['all', 'financieel', 'sales', 'hr', 'strategie', 'operationeel', 'marketing', 'overig']
+            const PRIORITIES: Record<string, string> = { hoog: '🔴', normaal: '🟡', laag: '⚪' }
+            const STATUS_COLORS: Record<string, string> = {
+              todo: isDark ? 'bg-white/10 text-white/60' : 'bg-gray-100 text-gray-600',
+              bezig: 'bg-blue-500/20 text-blue-400',
+              klaar: 'bg-green-500/20 text-green-400',
+            }
+            const filtered = tasks.filter(t => {
+              if (myTaskFilter.owner !== 'all' && t.owner !== myTaskFilter.owner) return false
+              if (myTaskFilter.status !== 'all' && t.status !== myTaskFilter.status) return false
+              if (myTaskFilter.category !== 'all' && t.category !== myTaskFilter.category) return false
+              return true
+            })
+            const todoCount = tasks.filter(t => t.status === 'todo').length
+            const bezigCount = tasks.filter(t => t.status === 'bezig').length
+            const klaarCount = tasks.filter(t => t.status === 'klaar').length
+
+            return (
+              <div className="space-y-4">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-[13px]">
+                    <span className={colors.textTertiary}>General</span><span className={colors.textTertiary}>/</span><span className={colors.textPrimary}>Tasks</span>
+                    <span className={`ml-2 text-[11px] font-mono ${colors.textTertiary}`}>{todoCount} open · {bezigCount} bezig · {klaarCount} klaar</span>
+                  </div>
+                  <button onClick={() => setShowAddMyTask(!showAddMyTask)} className={`px-3 py-1.5 rounded text-[12px] font-medium ${colors.accentBg} text-white ${colors.accentHover}`}>+ Nieuwe taak</button>
+                </div>
+
+                {/* Add task form */}
+                {showAddMyTask && (
+                  <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                    <div className="grid grid-cols-1 md:grid-cols-6 gap-2">
+                      <input type="text" placeholder="Taak *" value={newMyTask.title || ''} onChange={e => setNewMyTask(p => ({ ...p, title: e.target.value }))} className={`px-2 py-1.5 rounded text-[12px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary} md:col-span-3`} />
+                      <select value={newMyTask.owner || 'ruben'} onChange={e => setNewMyTask(p => ({ ...p, owner: e.target.value }))} className={`px-2 py-1.5 rounded text-[12px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                        {OWNERS.filter(o => o !== 'all').map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+                      </select>
+                      <select value={newMyTask.category || 'overig'} onChange={e => setNewMyTask(p => ({ ...p, category: e.target.value }))} className={`px-2 py-1.5 rounded text-[12px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                        {CATEGORIES.filter(c => c !== 'all').map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                      </select>
+                      <select value={newMyTask.priority || 'normaal'} onChange={e => setNewMyTask(p => ({ ...p, priority: e.target.value as DashTask['priority'] }))} className={`px-2 py-1.5 rounded text-[12px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                        <option value="hoog">Hoog</option><option value="normaal">Normaal</option><option value="laag">Laag</option>
+                      </select>
+                    </div>
+                    <div className="flex items-center gap-2 mt-2">
+                      <button onClick={async () => { if (!newMyTask.title?.trim()) return; await addTask(newMyTask); setNewMyTask({ title: '', owner: 'ruben', priority: 'normaal', category: 'overig', status: 'todo' }); setShowAddMyTask(false) }} className={`px-3 py-1 rounded text-[12px] font-medium ${colors.accentBg} text-white`}>Toevoegen</button>
+                      <button onClick={() => setShowAddMyTask(false)} className={`px-3 py-1 rounded text-[12px] ${colors.textTertiary}`}>Annuleren</button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Filters row */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <select value={myTaskFilter.owner} onChange={e => setMyTaskFilter(p => ({ ...p, owner: e.target.value }))} className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                    {OWNERS.map(o => <option key={o} value={o}>{o === 'all' ? 'Alle personen' : o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+                  </select>
+                  <select value={myTaskFilter.status} onChange={e => setMyTaskFilter(p => ({ ...p, status: e.target.value }))} className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                    {STATUSES.map(s => <option key={s} value={s}>{s === 'all' ? 'Alle statussen' : s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                  </select>
+                  <select value={myTaskFilter.category} onChange={e => setMyTaskFilter(p => ({ ...p, category: e.target.value }))} className={`px-2 py-1 rounded text-[11px] ${colors.bgInput} border ${colors.border} ${colors.textPrimary}`}>
+                    {CATEGORIES.map(c => <option key={c} value={c}>{c === 'all' ? 'Alle onderwerpen' : c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                  </select>
+                </div>
+
+                {/* Task TABLE */}
+                {tasksLoading ? (
+                  <div className={`${colors.bgCard} rounded-md border ${colors.border} p-8 text-center`}><p className={`text-[13px] ${colors.textTertiary}`}>Laden...</p></div>
+                ) : filtered.length === 0 ? (
+                  <div className={`${colors.bgCard} rounded-md border ${colors.border} p-8 text-center`}><p className={`text-[13px] ${colors.textTertiary}`}>{tasks.length === 0 ? 'Nog geen taken.' : 'Geen resultaten.'}</p></div>
+                ) : (
+                  <div className={`${colors.bgCard} rounded-lg border ${colors.border} overflow-hidden`}>
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-[13px]" style={{ minWidth: 700 }}>
+                        <thead>
+                          <tr className={`${colors.bgInput} border-b ${colors.border}`}>
+                            <th className={`w-8 px-3 py-2`} />
+                            <th className={`text-left px-3 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary}`}>Taak</th>
+                            <th className={`text-left px-3 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-28`}>Persoon</th>
+                            <th className={`text-left px-3 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-28`}>Onderwerp</th>
+                            <th className={`text-left px-3 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-20`}>Prio</th>
+                            <th className={`text-left px-3 py-2 font-medium text-[11px] uppercase tracking-wider ${colors.textTertiary} w-20`}>Status</th>
+                            <th className={`w-8 px-3 py-2`} />
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filtered.map(t => (
+                            <tr key={t.id} className={`border-t ${colors.border} hover:${isDark ? 'bg-white/[0.03]' : 'bg-black/[0.015]'} transition-colors group`}>
+                              <td className="px-3 py-2">
+                                <button onClick={() => { const next = t.status === 'todo' ? 'bezig' : t.status === 'bezig' ? 'klaar' : 'todo'; updateTask(t.id, { status: next }) }}
+                                  className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${t.status === 'klaar' ? 'bg-green-500 border-green-500' : t.status === 'bezig' ? 'border-blue-400 bg-blue-400/20' : isDark ? 'border-white/30' : 'border-gray-300'}`}>
+                                  {t.status === 'klaar' && <span className="text-white text-[8px]">✓</span>}
+                                </button>
+                              </td>
+                              <td className={`px-3 py-2 ${t.status === 'klaar' ? `line-through ${colors.textTertiary}` : colors.textPrimary}`}>
+                                <p className="font-medium">{t.title}</p>
+                                {t.description && <p className={`text-[11px] ${colors.textTertiary} mt-0.5`}>{t.description}</p>}
+                                {t.source === 'fireflies' && <span className={`text-[10px] ${colors.textTertiary}`}>🎙️ {t.meetingTitle}</span>}
+                              </td>
+                              <td className="px-3 py-2">
+                                <select value={t.owner} onChange={e => updateTask(t.id, { owner: e.target.value })}
+                                  className={`text-[11px] px-1.5 py-0.5 rounded ${colors.bgInput} border ${colors.border} ${colors.textPrimary} cursor-pointer`}>
+                                  {OWNERS.filter(o => o !== 'all').map(o => <option key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</option>)}
+                                </select>
+                              </td>
+                              <td className="px-3 py-2">
+                                <select value={t.category} onChange={e => updateTask(t.id, { category: e.target.value })}
+                                  className={`text-[11px] px-1.5 py-0.5 rounded ${colors.bgInput} border ${colors.border} ${colors.textPrimary} cursor-pointer`}>
+                                  {CATEGORIES.filter(c => c !== 'all').map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+                                </select>
+                              </td>
+                              <td className="px-3 py-2">
+                                <select value={t.priority} onChange={e => updateTask(t.id, { priority: e.target.value as DashTask['priority'] })}
+                                  className={`text-[11px] px-1.5 py-0.5 rounded ${colors.bgInput} border ${colors.border} ${colors.textPrimary} cursor-pointer`}>
+                                  <option value="hoog">🔴 Hoog</option><option value="normaal">🟡 Normaal</option><option value="laag">⚪ Laag</option>
+                                </select>
+                              </td>
+                              <td className="px-3 py-2"><span className={`text-[10px] px-1.5 py-0.5 rounded ${STATUS_COLORS[t.status]}`}>{t.status}</span></td>
+                              <td className="px-3 py-2">
+                                <button onClick={() => deleteTask(t.id)} className={`opacity-0 group-hover:opacity-100 text-[11px] ${colors.textTertiary} hover:text-red-400`}>✕</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* ============================================ */}
           {/* ADMIN TAB - User Management (superadmin only) */}
           {/* ============================================ */}
           {activeTab === 'admin' && canManageUsers && (
@@ -6717,8 +7508,6 @@ export default function SalesDashboard() {
           )}
 
           {/* ============================================ */}
-          {/* SETTINGS TAB */}
-          {/* ============================================ */}
           {activeTab === 'settings' && (
             <div className="space-y-4">
               {/* Header */}
@@ -6959,6 +7748,7 @@ export default function SalesDashboard() {
                     overview: '🏠', klanten: '👥', reports: '📈', pipeline: '📊',
                     prospects: '🎯', masterplan: '🗺️', cases: '💼', agencyos: '🤖',
                     content: '✍️', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙',
+                    meetings: '🎙️', tasks: '✅',
                     settings: '⚙️', admin: '👤',
                   }
                   return (
