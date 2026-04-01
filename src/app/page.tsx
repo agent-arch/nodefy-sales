@@ -3265,9 +3265,125 @@ export default function SalesDashboard() {
                 <span className={colors.textPrimary}>Client Overview</span>
               </div>
 
-              {/* === REVENUE & PIPELINE REMOVED — belongs in Pipeline/Sales tab ONLY === */}
-              {/* RULE: NOOIT omzet data in Overview. Alleen in tabs onder SALES sectie. */}
-              {/* Revenue/pipeline/deals content REMOVED from Overview — see Pipeline tab */}
+              {/* Financial Pulse — compact KPIs + MRR trend */}
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>MRR</p>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{RETAINER_MRR.toLocaleString('nl-NL')}</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{ACTIVE_RETAINER_CLIENTS.filter(c => c.months[CURRENT_MONTH_IDX] > 0).length} betalende klanten</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>ARR</p>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{(RETAINER_ARR / 1000).toFixed(0)}K</p>
+                  <p className={`text-[10px] mt-0.5`} style={{ color: RETAINER_ARR >= 1300000 ? CHART_COLORS.success : CHART_COLORS.primary }}>target €1.3M ({Math.round(RETAINER_ARR / 13000)}%)</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Marge</p>
+                  <p className={`text-lg font-semibold font-mono`} style={{ color: profitMargin >= 30 ? CHART_COLORS.success : profitMargin >= 15 ? CHART_COLORS.primary : CHART_COLORS.quaternary }}>{profitMargin}%</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>€{Math.round(monthlyProfit).toLocaleString('nl-NL')}/mnd winst</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Pipeline</p>
+                  <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>€{(weightedPipeline / 1000).toFixed(0)}K</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{openDeals.length} deals gewogen</p>
+                </div>
+                <div className={`${colors.bgCard} rounded-md p-3 border ${colors.border}`}>
+                  <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Win Rate</p>
+                  <p className={`text-lg font-semibold font-mono`} style={{ color: winRate >= 50 ? CHART_COLORS.success : winRate >= 30 ? CHART_COLORS.primary : CHART_COLORS.quaternary }}>{winRate}%</p>
+                  <p className={`text-[10px] ${colors.textTertiary} mt-0.5`}>{wonDealsThisYear.length}W / {lostDealsThisYear.length}L dit jaar</p>
+                </div>
+              </div>
+
+              {/* MRR Trend Bar Chart */}
+              <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>MRR Trend 2026</h3>
+                  <span className={`text-[10px] ${colors.textTertiary} px-1.5 py-0.5 rounded ${colors.bgInput}`}>Retainer Revenue</span>
+                </div>
+                <div className="flex items-end gap-1" style={{ height: '80px' }}>
+                  {mrrTrend.map((m, i) => {
+                    const maxVal = Math.max(...mrrTrend.map(x => x.value), 1)
+                    const height = Math.max((m.value / maxVal) * 100, 2)
+                    const isCurrentMonth = i === CURRENT_MONTH_IDX
+                    return (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <span className={`text-[9px] font-mono ${colors.textTertiary}`}>
+                          {m.value > 0 ? `€${(m.value / 1000).toFixed(0)}K` : ''}
+                        </span>
+                        <div
+                          className="w-full rounded-t transition-all"
+                          style={{
+                            height: `${height}%`,
+                            backgroundColor: isCurrentMonth ? CHART_COLORS.secondary : `${CHART_COLORS.secondary}60`,
+                            minHeight: '2px'
+                          }}
+                        />
+                        <span className={`text-[9px] ${isCurrentMonth ? colors.textPrimary + ' font-semibold' : colors.textTertiary}`}>{m.label}</span>
+                      </div>
+                    )
+                  })}
+                  {/* Show future months greyed out */}
+                  {Array.from({ length: 12 - mrrTrend.length }, (_, i) => {
+                    const futureIdx = mrrTrend.length + i
+                    const labels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec']
+                    const futureValue = ACTIVE_RETAINER_CLIENTS.reduce((s, c) => s + c.months[futureIdx], 0)
+                    const maxVal = Math.max(...mrrTrend.map(x => x.value), futureValue, 1)
+                    const height = Math.max((futureValue / maxVal) * 100, 2)
+                    return (
+                      <div key={`f${i}`} className="flex-1 flex flex-col items-center gap-1">
+                        <span className={`text-[9px] font-mono ${colors.textTertiary}`}>
+                          {futureValue > 0 ? `€${(futureValue / 1000).toFixed(0)}K` : ''}
+                        </span>
+                        <div
+                          className="w-full rounded-t"
+                          style={{
+                            height: `${height}%`,
+                            backgroundColor: isDark ? '#2E2E32' : '#E4E4E8',
+                            minHeight: '2px',
+                            border: `1px dashed ${isDark ? '#3E3E42' : '#D4D4D8'}`
+                          }}
+                        />
+                        <span className={`text-[9px] ${colors.textTertiary}`}>{labels[futureIdx]}</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Q2 Targets */}
+              {(() => {
+                const q2Months = [3, 4, 5] // Apr, May, Jun
+                const q2Revenue = q2Months.reduce((sum, mi) => sum + ACTIVE_RETAINER_CLIENTS.reduce((s, c) => s + c.months[mi], 0), 0)
+                const q2Target = 350000
+                const q2Progress = Math.min((q2Revenue / q2Target) * 100, 100)
+                const q2NewClients = RETAINER_CLIENTS.filter(c => c.startJaar === 2026 && c.months[3] > 0 && c.months[2] === 0).length
+                return (
+                  <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Q2 2026 Revenue Target</h3>
+                      <span className={`text-[11px] font-mono font-semibold`} style={{ color: q2Progress >= 80 ? CHART_COLORS.success : CHART_COLORS.primary }}>
+                        €{(q2Revenue / 1000).toFixed(0)}K / €{(q2Target / 1000).toFixed(0)}K
+                      </span>
+                    </div>
+                    <div className={`w-full rounded-full h-2 ${colors.bgInput}`}>
+                      <div
+                        className="h-2 rounded-full transition-all"
+                        style={{
+                          width: `${q2Progress}%`,
+                          backgroundColor: q2Progress >= 80 ? CHART_COLORS.success : q2Progress >= 50 ? CHART_COLORS.secondary : CHART_COLORS.primary
+                        }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className={`text-[10px] ${colors.textTertiary}`}>{Math.round(q2Progress)}% van target</span>
+                      <div className="flex items-center gap-3">
+                        <span className={`text-[10px] ${colors.textTertiary}`}>Won dit jaar: €{(wonValue / 1000).toFixed(0)}K</span>
+                        {q2NewClients > 0 && <span className={`text-[10px]`} style={{ color: CHART_COLORS.success }}>+{q2NewClients} nieuwe klanten in Q2</span>}
+                      </div>
+                    </div>
+                  </div>
+                )
+              })()}
 
               {/* Client Stats */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
