@@ -3259,10 +3259,15 @@ export default function SalesDashboard() {
             return (
             <div className="space-y-4">
               {/* Header */}
-              <div className="flex items-center gap-2 text-[13px] mb-4">
-                <span className={colors.textTertiary}>Dashboard</span>
-                <span className={colors.textTertiary}>/</span>
-                <span className={colors.textPrimary}>Client Overview</span>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2 text-[13px]">
+                  <span className={colors.textTertiary}>Dashboard</span>
+                  <span className={colors.textTertiary}>/</span>
+                  <span className={colors.textPrimary}>Command Center</span>
+                </div>
+                <a href="/morning-brief" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
+                  ☀️ Morning Brief
+                </a>
               </div>
 
               {/* Financial Pulse — compact KPIs + MRR trend */}
