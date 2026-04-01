@@ -3472,6 +3472,69 @@ export default function SalesDashboard() {
                 </div>
               )}
 
+              {/* Pipeline Quick View — Top deals + Stale deals */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* Top Pipeline Deals */}
+                {topDeals.length > 0 && (
+                  <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                    <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Top Pipeline Deals</h3>
+                    <div className="space-y-1">
+                      {topDeals.map((deal, i) => {
+                        const prob = deal.slagingskans || 25
+                        return (
+                          <div key={i} className={`flex items-center justify-between py-1.5 border-b ${colors.border} last:border-0`}>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${colors.bgInput}`} style={{ color: prob >= 75 ? CHART_COLORS.success : prob >= 50 ? CHART_COLORS.secondary : CHART_COLORS.primary }}>{prob}%</span>
+                              <span className={`text-[12px] ${colors.textPrimary} truncate`}>{deal.name}</span>
+                            </div>
+                            <span className={`text-[12px] font-mono font-semibold ${colors.textPrimary} ml-2`}>€{(deal.value! / 1000).toFixed(0)}K</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Stale Deals Warning */}
+                {staleDeals.length > 0 && (
+                  <div className={`${colors.bgCard} rounded-md p-4 border`} style={{ borderColor: `${CHART_COLORS.quaternary}30` }}>
+                    <h3 className={`text-[13px] font-medium mb-3 flex items-center gap-2`} style={{ color: CHART_COLORS.quaternary }}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS.quaternary }} />
+                      Stale Deals ({'>'}45 dagen)
+                    </h3>
+                    <div className="space-y-1">
+                      {staleDeals.map((deal, i) => {
+                        const daysOld = deal.createdAt ? Math.round((Date.now() - new Date(deal.createdAt).getTime()) / (24 * 60 * 60 * 1000)) : 0
+                        return (
+                          <div key={i} className={`flex items-center justify-between py-1.5 border-b ${colors.border} last:border-0`}>
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <span className={`text-[10px] font-mono ${colors.textTertiary}`}>{daysOld}d</span>
+                              <span className={`text-[12px] ${colors.textPrimary} truncate`}>{deal.name}</span>
+                            </div>
+                            <span className={`text-[12px] font-mono ${colors.textSecondary}`}>€{((deal.value || 0) / 1000).toFixed(0)}K</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* If no stale deals, show deals needing next steps */}
+                {staleDeals.length === 0 && dealsNeedingAction.length > 0 && (
+                  <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                    <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Deals Zonder Volgende Stap</h3>
+                    <div className="space-y-1">
+                      {dealsNeedingAction.slice(0, 5).map((deal, i) => (
+                        <div key={i} className={`flex items-center justify-between py-1.5 border-b ${colors.border} last:border-0`}>
+                          <span className={`text-[12px] ${colors.textPrimary} truncate`}>{deal.name}</span>
+                          <span className={`text-[10px] ${colors.textTertiary}`}>Actie nodig</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Client Health Grid */}
               <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
                 <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Client Health Grid</h3>
