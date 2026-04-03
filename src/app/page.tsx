@@ -192,6 +192,12 @@ export default function SalesDashboard() {
   // === Feature 3: Client Quick-View Panel ===
   const [quickViewClient, setQuickViewClient] = useState<string | null>(null)
 
+  // === Night Shift Features ===
+  // Activity Feed
+  type ActivityItem = { id: string; type: 'deal_moved' | 'deal_new' | 'deal_won' | 'deal_lost' | 'client_health' | 'task_completed' | 'prospect_added'; title: string; description: string; timestamp: string; metadata?: Record<string, string | number> }
+  const [activityFeed, setActivityFeed] = useState<ActivityItem[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
+
   // Prospect statuses are loaded from API in main useEffect
 
   // Save prospect statuses to API with debounce
@@ -526,6 +532,14 @@ export default function SalesDashboard() {
 
   // Users are managed via API, no need to save to localStorage
   // (API calls happen in createUser, saveUser, deleteUser)
+
+  // Load activity feed
+  useEffect(() => {
+    if (activeTab === 'overview') {
+      setActivityLoading(true)
+      fetch('/api/activity').then(r => r.json()).then(d => { setActivityFeed(d.activities || []); setActivityLoading(false) }).catch(() => setActivityLoading(false))
+    }
+  }, [activeTab])
 
   // Load nightshift data
   useEffect(() => {
@@ -2087,6 +2101,108 @@ export default function SalesDashboard() {
                 )}
               </div>
 
+              {/* Weekly Performance Comparison + Activity Feed */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+                {/* This Week vs Last Week */}
+                {(() => {
+                  const now = new Date()
+                  const startOfThisWeek = new Date(now); startOfThisWeek.setDate(now.getDate() - now.getDay() + 1); startOfThisWeek.setHours(0,0,0,0)
+                  const startOfLastWeek = new Date(startOfThisWeek); startOfLastWeek.setDate(startOfLastWeek.getDate() - 7)
+                  const endOfLastWeek = new Date(startOfThisWeek)
+
+                  const inRange = (dateStr: string | undefined, start: Date, end: Date) => {
+                    if (!dateStr) return false
+                    const d = new Date(dateStr)
+                    return d >= start && d < end
+                  }
+
+                  const wonThisWeek = data.pipelineDeals.filter(d => d.stageId === 'closedwon' && inRange(d.closedAt, startOfThisWeek, now))
+                  const wonLastWeek = data.pipelineDeals.filter(d => d.stageId === 'closedwon' && inRange(d.closedAt, startOfLastWeek, endOfLastWeek))
+                  const lostThisWeek = data.pipelineDeals.filter(d => (d.stageId === 'closedlost' || d.stageId === '3982505168') && inRange(d.closedAt, startOfThisWeek, now))
+                  const lostLastWeek = data.pipelineDeals.filter(d => (d.stageId === 'closedlost' || d.stageId === '3982505168') && inRange(d.closedAt, startOfLastWeek, endOfLastWeek))
+                  const revThisWeek = wonThisWeek.reduce((s, d) => s + (d.value || 0), 0)
+                  const revLastWeek = wonLastWeek.reduce((s, d) => s + (d.value || 0), 0)
+                  const newThisWeek = data.pipelineDeals.filter(d => inRange(d.createdAt, startOfThisWeek, now) && !CLOSED_STAGE_IDS.has(d.stageId))
+                  const newLastWeek = data.pipelineDeals.filter(d => inRange(d.createdAt, startOfLastWeek, endOfLastWeek) && !CLOSED_STAGE_IDS.has(d.stageId))
+
+                  const Comp = ({ label, thisW, lastW, isCurrency }: { label: string; thisW: number; lastW: number; isCurrency?: boolean }) => {
+                    const diff = thisW - lastW
+                    const up = diff > 0
+                    const same = diff === 0
+                    return (
+                      <div className={`flex items-center justify-between py-2 border-b ${colors.border} last:border-0`}>
+                        <span className={`text-[12px] ${colors.textSecondary}`}>{label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[13px] font-mono font-semibold ${colors.textPrimary}`}>
+                            {isCurrency ? `€${thisW.toLocaleString('nl-NL')}` : thisW}
+                          </span>
+                          <span className={`text-[10px] ${colors.textTertiary}`}>vs {isCurrency ? `€${lastW.toLocaleString('nl-NL')}` : lastW}</span>
+                          {!same && (
+                            <span className={`text-[11px] font-medium ${up ? 'text-emerald-500' : 'text-red-400'}`}>
+                              {up ? '↑' : '↓'} {isCurrency ? `€${Math.abs(diff).toLocaleString('nl-NL')}` : Math.abs(diff)}
+                            </span>
+                          )}
+                          {same && <span className={`text-[11px] ${colors.textTertiary}`}>—</span>}
+                        </div>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                      <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3 flex items-center gap-2`}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS.secondary }} />
+                        This Week vs Last Week
+                      </h3>
+                      <div>
+                        <Comp label="Deals Won" thisW={wonThisWeek.length} lastW={wonLastWeek.length} />
+                        <Comp label="Deals Lost" thisW={lostThisWeek.length} lastW={lostLastWeek.length} />
+                        <Comp label="Revenue Closed" thisW={revThisWeek} lastW={revLastWeek} isCurrency />
+                        <Comp label="New Prospects" thisW={newThisWeek.length} lastW={newLastWeek.length} />
+                      </div>
+                    </div>
+                  )
+                })()}
+
+                {/* Activity Feed */}
+                <div className={`${colors.bgCard} rounded-md p-4 border ${colors.border}`}>
+                  <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3 flex items-center gap-2`}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS.primary }} />
+                    Recent Activity
+                  </h3>
+                  {activityLoading ? (
+                    <p className={`text-[11px] ${colors.textTertiary}`}>Loading...</p>
+                  ) : activityFeed.length === 0 ? (
+                    <p className={`text-[11px] ${colors.textTertiary} italic`}>No recent activity logged yet. Activities are tracked when deals, tasks, and clients change.</p>
+                  ) : (
+                    <div className="space-y-0.5 max-h-[280px] overflow-y-auto">
+                      {activityFeed.slice(0, 20).map((act) => {
+                        const icons: Record<string, string> = { deal_moved: '🔄', deal_new: '✨', deal_won: '🎉', deal_lost: '❌', client_health: '💊', task_completed: '✅', prospect_added: '🎯' }
+                        const colorMap: Record<string, string> = { deal_won: CHART_COLORS.success, deal_lost: CHART_COLORS.quaternary, deal_new: CHART_COLORS.secondary, deal_moved: CHART_COLORS.primary, client_health: CHART_COLORS.tertiary, task_completed: CHART_COLORS.success, prospect_added: CHART_COLORS.secondary }
+                        const timeAgo = (ts: string) => {
+                          const diff = Date.now() - new Date(ts).getTime()
+                          const mins = Math.floor(diff / 60000)
+                          if (mins < 60) return `${mins}m ago`
+                          const hrs = Math.floor(mins / 60)
+                          if (hrs < 24) return `${hrs}h ago`
+                          return `${Math.floor(hrs / 24)}d ago`
+                        }
+                        return (
+                          <div key={act.id} className={`flex items-start gap-2 py-1.5 border-b ${colors.border} last:border-0`}>
+                            <span className="text-[12px] mt-0.5">{icons[act.type] || '📌'}</span>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-[12px] ${colors.textPrimary} truncate`}>{act.title}</p>
+                              {act.description && <p className={`text-[10px] ${colors.textTertiary} truncate`}>{act.description}</p>}
+                            </div>
+                            <span className={`text-[9px] ${colors.textTertiary} whitespace-nowrap`}>{timeAgo(act.timestamp)}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {/* Client Health Grid */}
               <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
                 <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3`}>Client Health Grid</h3>
@@ -3004,6 +3120,80 @@ export default function SalesDashboard() {
                     Klik op een deal om te bewerken • Wijzigingen worden automatisch opgeslagen
                   </div>
                 )}
+
+                {/* Deal Velocity Metrics */}
+                {(() => {
+                  const wonDeals = data.pipelineDeals.filter(d => d.stageId === 'closedwon' && d.closedAt && d.createdAt)
+                  const daysToClose = wonDeals.map(d => Math.round((new Date(d.closedAt!).getTime() - new Date(d.createdAt!).getTime()) / (24 * 60 * 60 * 1000))).filter(d => d > 0 && d < 365)
+                  const avgDaysToClose = daysToClose.length > 0 ? Math.round(daysToClose.reduce((a, b) => a + b, 0) / daysToClose.length) : 0
+                  
+                  // Time in each stage (approximate using created dates of deals currently in those stages)
+                  const stageTimeData = openStages.map(stage => {
+                    const stageDeals = pipelineDeals.filter(d => d.stageId === stage.id && d.createdAt)
+                    const avgDays = stageDeals.length > 0 
+                      ? Math.round(stageDeals.reduce((sum, d) => sum + Math.round((Date.now() - new Date(d.createdAt!).getTime()) / (24 * 60 * 60 * 1000)), 0) / stageDeals.length)
+                      : 0
+                    return { name: stage.name, days: avgDays, count: stageDeals.length }
+                  }).filter(s => s.count > 0)
+                  
+                  const maxDays = Math.max(...stageTimeData.map(s => s.days), 1)
+                  
+                  // Velocity trend: compare recent 3 months vs prior 3 months
+                  const now = new Date()
+                  const threeMonthsAgo = new Date(now); threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
+                  const sixMonthsAgo = new Date(now); sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
+                  const recentWon = wonDeals.filter(d => new Date(d.closedAt!) >= threeMonthsAgo)
+                  const olderWon = wonDeals.filter(d => new Date(d.closedAt!) >= sixMonthsAgo && new Date(d.closedAt!) < threeMonthsAgo)
+                  const recentAvg = recentWon.length > 0 ? Math.round(recentWon.map(d => (new Date(d.closedAt!).getTime() - new Date(d.createdAt!).getTime()) / (24*60*60*1000)).filter(d => d > 0 && d < 365).reduce((a,b) => a+b, 0) / recentWon.length) : 0
+                  const olderAvg = olderWon.length > 0 ? Math.round(olderWon.map(d => (new Date(d.closedAt!).getTime() - new Date(d.createdAt!).getTime()) / (24*60*60*1000)).filter(d => d > 0 && d < 365).reduce((a,b) => a+b, 0) / olderWon.length) : 0
+                  const velocityTrend = olderAvg > 0 && recentAvg > 0 ? (recentAvg < olderAvg ? 'faster' : recentAvg > olderAvg ? 'slower' : 'same') : 'unknown'
+                  
+                  return (
+                    <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                      <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3 flex items-center gap-2`}>
+                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS.tertiary }} />
+                        Deal Velocity
+                      </h3>
+                      <div className="grid grid-cols-3 gap-3 mb-4">
+                        <div className={`${colors.bgInput} rounded-md p-3 text-center`}>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Avg Days to Close</p>
+                          <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{avgDaysToClose || '—'}</p>
+                          <p className={`text-[10px] ${colors.textTertiary}`}>{daysToClose.length} won deals</p>
+                        </div>
+                        <div className={`${colors.bgInput} rounded-md p-3 text-center`}>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Recent Trend</p>
+                          <p className={`text-lg font-semibold font-mono ${velocityTrend === 'faster' ? 'text-emerald-500' : velocityTrend === 'slower' ? 'text-red-400' : colors.textPrimary}`}>
+                            {velocityTrend === 'faster' ? '⚡ Faster' : velocityTrend === 'slower' ? '🐢 Slower' : '—'}
+                          </p>
+                          <p className={`text-[10px] ${colors.textTertiary}`}>{recentAvg > 0 ? `${recentAvg}d vs ${olderAvg}d` : 'Not enough data'}</p>
+                        </div>
+                        <div className={`${colors.bgInput} rounded-md p-3 text-center`}>
+                          <p className={`text-[10px] ${colors.textTertiary} uppercase tracking-wide mb-1`}>Active Deals</p>
+                          <p className={`text-lg font-semibold font-mono ${colors.textPrimary}`}>{pipelineDeals.length}</p>
+                          <p className={`text-[10px] ${colors.textTertiary}`}>in pipeline</p>
+                        </div>
+                      </div>
+                      {stageTimeData.length > 0 && (
+                        <>
+                          <p className={`text-[11px] ${colors.textSecondary} mb-2`}>Average time in stage (days)</p>
+                          <div className="space-y-1.5">
+                            {stageTimeData.map((s, i) => (
+                              <div key={i} className="flex items-center gap-3">
+                                <span className={`text-[11px] w-28 text-right ${colors.textSecondary} truncate`}>{s.name}</span>
+                                <div className="flex-1 h-5 rounded-sm overflow-hidden" style={{ backgroundColor: isDark ? '#1C1C1E' : '#F4F4F5' }}>
+                                  <div className="h-full rounded-sm flex items-center justify-end px-2 transition-all duration-500" style={{ width: `${Math.max((s.days / maxDays) * 100, 5)}%`, backgroundColor: CHART_COLORS.tertiary + '50' }}>
+                                    <span className="text-[10px] font-mono font-medium" style={{ color: CHART_COLORS.tertiary }}>{s.days}d</span>
+                                  </div>
+                                </div>
+                                <span className={`text-[10px] font-mono ${colors.textTertiary} w-8 text-right`}>{s.count}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )
+                })()}
 
                 {/* List view for all deals in pipeline */}
                 <div className={`${colors.bgCard} rounded-lg border ${colors.border} overflow-hidden`}>
