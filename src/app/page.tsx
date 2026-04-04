@@ -2101,6 +2101,59 @@ export default function SalesDashboard() {
                 )}
               </div>
 
+              {/* Pipeline Conversion Funnel */}
+              <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
+                <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3 flex items-center gap-2`}>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: CHART_COLORS.secondary }} />
+                  Pipeline Conversion Funnel
+                </h3>
+                <div className="space-y-4">
+                  {PIPELINES.map(pipeline => {
+                    const openStages = pipeline.stages.filter(s => !s.closed)
+                    const stageCounts = openStages.map(stage => ({
+                      ...stage,
+                      count: data.pipelineDeals.filter(d => d.stageId === stage.id).length
+                    }))
+                    const maxCount = Math.max(...stageCounts.map(s => s.count), 1)
+                    
+                    return (
+                      <div key={pipeline.id}>
+                        <p className={`text-[11px] font-medium ${colors.textSecondary} mb-2`}>{pipeline.name}</p>
+                        <div className="space-y-1">
+                          {stageCounts.map((stage, i) => {
+                            const widthPct = Math.max((stage.count / maxCount) * 100, 8)
+                            const conversionRate = i > 0 && stageCounts[i - 1].count > 0
+                              ? Math.round((stage.count / stageCounts[i - 1].count) * 100)
+                              : null
+                            return (
+                              <div key={stage.id} className="flex items-center gap-2">
+                                <span className={`text-[10px] ${colors.textTertiary} w-[120px] truncate text-right`}>{stage.name}</span>
+                                <div className="flex-1 flex items-center gap-2">
+                                  <div
+                                    className="h-6 rounded-sm flex items-center justify-end px-2 transition-all"
+                                    style={{
+                                      width: `${widthPct}%`,
+                                      backgroundColor: `${CHART_COLORS.secondary}${i === 0 ? 'CC' : i === 1 ? 'AA' : i === 2 ? '88' : '66'}`,
+                                    }}
+                                  >
+                                    <span className="text-[10px] font-mono text-white font-medium">{stage.count}</span>
+                                  </div>
+                                  {conversionRate !== null && (
+                                    <span className={`text-[9px] ${colors.textTertiary} whitespace-nowrap`}>
+                                      {conversionRate}% ←
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
               {/* Weekly Performance Comparison + Activity Feed */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                 {/* This Week vs Last Week */}
@@ -2202,6 +2255,88 @@ export default function SalesDashboard() {
                   )}
                 </div>
               </div>
+
+              {/* Deal Action Required Widget */}
+              {(() => {
+                const now = Date.now()
+                const DAY_MS = 24 * 60 * 60 * 1000
+                type ActionDeal = { name: string; value: number; daysOld: number; stage: string; severity: 'red' | 'amber' | 'green'; reason: string }
+                const actionDeals: ActionDeal[] = []
+                
+                const getStageInfo = (stageId: string) => {
+                  for (const p of PIPELINES) {
+                    const s = p.stages.find(st => st.id === stageId)
+                    if (s) return { name: s.name, order: s.order, pipeline: p.name }
+                  }
+                  return { name: 'Onbekend', order: 0, pipeline: '' }
+                }
+
+                data.pipelineDeals.filter(d => !CLOSED_STAGE_IDS.has(d.stageId)).forEach(deal => {
+                  const daysOld = deal.createdAt ? Math.round((now - new Date(deal.createdAt).getTime()) / DAY_MS) : 0
+                  const stageInfo = getStageInfo(deal.stageId)
+                  const monthlyVal = deal.value || 0
+                  const hasNextStep = nextSteps[deal.id || ''] && nextSteps[deal.id || ''].trim().length > 0
+
+                  // High-value deals in late stages without next step
+                  if (monthlyVal >= 2000 && stageInfo.order >= 3 && !hasNextStep) {
+                    actionDeals.push({ name: deal.name, value: monthlyVal, daysOld, stage: stageInfo.name, severity: 'red', reason: 'High-value deal zonder volgende stap' })
+                    return
+                  }
+                  // Deals > 60 days in early stages (order 1-2)
+                  if (daysOld > 60 && stageInfo.order <= 2) {
+                    actionDeals.push({ name: deal.name, value: monthlyVal, daysOld, stage: stageInfo.name, severity: 'red', reason: `${daysOld} dagen in vroege fase` })
+                    return
+                  }
+                  // Deals > 30 days without next step
+                  if (daysOld > 30 && !hasNextStep) {
+                    actionDeals.push({ name: deal.name, value: monthlyVal, daysOld, stage: stageInfo.name, severity: 'amber', reason: 'Geen volgende stap ingesteld' })
+                    return
+                  }
+                })
+
+                actionDeals.sort((a, b) => {
+                  const sev = { red: 0, amber: 1, green: 2 }
+                  return (sev[a.severity] - sev[b.severity]) || (b.value - a.value)
+                })
+
+                if (actionDeals.length === 0) return null
+
+                const sevColors = { red: '#EF4444', amber: '#F59E0B', green: '#22C55E' }
+                const redCount = actionDeals.filter(d => d.severity === 'red').length
+                const amberCount = actionDeals.filter(d => d.severity === 'amber').length
+
+                return (
+                  <div className={`${colors.bgCard} rounded-md border p-4`} style={{ borderColor: redCount > 0 ? '#EF444430' : '#F59E0B30' }}>
+                    <h3 className={`text-[13px] font-medium ${colors.textPrimary} mb-3 flex items-center gap-2`}>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: redCount > 0 ? '#EF4444' : '#F59E0B' }} />
+                      Actie Vereist
+                      <span className={`text-[10px] ${colors.textTertiary} font-normal`}>
+                        {redCount > 0 && <span className="text-red-400">{redCount} urgent</span>}
+                        {redCount > 0 && amberCount > 0 && ' · '}
+                        {amberCount > 0 && <span className="text-amber-400">{amberCount} aandacht</span>}
+                      </span>
+                    </h3>
+                    <div className="space-y-1 max-h-[240px] overflow-y-auto">
+                      {actionDeals.slice(0, 10).map((deal, i) => (
+                        <div key={i} className={`flex items-center justify-between py-1.5 border-b ${colors.border} last:border-0`}>
+                          <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: sevColors[deal.severity] }} />
+                            <span className={`text-[12px] ${colors.textPrimary} truncate`}>{deal.name}</span>
+                          </div>
+                          <div className="flex items-center gap-3 ml-2 flex-shrink-0">
+                            <span className={`text-[10px] ${colors.textTertiary}`}>{deal.stage}</span>
+                            <span className={`text-[10px] ${colors.textTertiary}`}>{deal.daysOld}d</span>
+                            <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{deal.value.toLocaleString('nl-NL')}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {actionDeals.length > 10 && (
+                      <p className={`text-[10px] ${colors.textTertiary} mt-2`}>+{actionDeals.length - 10} meer deals</p>
+                    )}
+                  </div>
+                )
+              })()}
 
               {/* Client Health Grid */}
               <div className={`${colors.bgCard} rounded-md border ${colors.border} p-4`}>
@@ -4451,6 +4586,83 @@ export default function SalesDashboard() {
                       <p className={`text-[10px] ${colors.textTertiary} mt-1`}>{card.sub}</p>
                     </div>
                   ))}
+                </div>
+
+                {/* Client Revenue Heatmap */}
+                <div className={`${colors.bgCard} rounded-md border ${colors.border} overflow-hidden`}>
+                  <div className={`px-4 py-2.5 border-b ${colors.border}`}>
+                    <h3 className={`text-[13px] font-medium ${colors.textPrimary}`}>Client Revenue Heatmap 2026</h3>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-[11px] min-w-[700px]">
+                      <thead>
+                        <tr className={`border-b ${colors.border}`}>
+                          <th className={`text-left px-3 py-2 ${colors.textTertiary} font-medium`}>Client</th>
+                          {MONTHS.map(m => (
+                            <th key={m} className={`text-center px-1 py-2 ${colors.textTertiary} font-medium w-[52px]`}>{m}</th>
+                          ))}
+                          <th className={`text-right px-3 py-2 ${colors.textTertiary} font-medium`}>Totaal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(() => {
+                          const allMonthValues = ACTIVE_RETAINER_CLIENTS.flatMap(c => [...c.months] as number[])
+                          const maxMRR = Math.max(...allMonthValues, 1)
+                          
+                          return ACTIVE_RETAINER_CLIENTS
+                            .filter(c => c.months.some(v => v > 0))
+                            .sort((a, b) => ([...b.months] as number[]).reduce((s, v) => s + v, 0) - ([...a.months] as number[]).reduce((s, v) => s + v, 0))
+                            .map((client, ci) => {
+                              const total = ([...client.months] as number[]).reduce((s, v) => s + v, 0)
+                              return (
+                                <tr key={ci} className={`border-b ${colors.border} last:border-0`}>
+                                  <td className={`px-3 py-1.5 ${colors.textPrimary} truncate max-w-[120px]`}>{client.klant}</td>
+                                  {client.months.map((val, mi) => {
+                                    const intensity = val > 0 ? Math.max(0.15, val / maxMRR) : 0
+                                    return (
+                                      <td key={mi} className="px-1 py-1.5 text-center">
+                                        {val > 0 ? (
+                                          <div
+                                            className="rounded-sm mx-auto flex items-center justify-center h-6"
+                                            style={{ backgroundColor: `rgba(34, 197, 94, ${intensity})` }}
+                                            title={`€${val.toLocaleString('nl-NL')}`}
+                                          >
+                                            <span className={`text-[9px] font-mono ${intensity > 0.5 ? 'text-white' : colors.textPrimary}`}>
+                                              {val >= 1000 ? `${(val / 1000).toFixed(1)}K` : val}
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <div className={`h-6 rounded-sm ${colors.bgInput}`} />
+                                        )}
+                                      </td>
+                                    )
+                                  })}
+                                  <td className={`px-3 py-1.5 text-right font-mono font-medium ${colors.textPrimary}`}>
+                                    €{total >= 1000 ? `${(total / 1000).toFixed(1)}K` : total}
+                                  </td>
+                                </tr>
+                              )
+                            })
+                        })()}
+                      </tbody>
+                      <tfoot>
+                        <tr className={`border-t-2 ${colors.border}`}>
+                          <td className={`px-3 py-2 font-medium ${colors.textSecondary}`}>Totaal</td>
+                          {MONTHS.map((_, mi) => {
+                            const total = ACTIVE_RETAINER_CLIENTS.reduce((s, c) => s + c.months[mi], 0)
+                            return (
+                              <td key={mi} className={`text-center px-1 py-2 font-mono font-medium ${colors.textPrimary}`}>
+                                <span className="text-[10px]">{total >= 1000 ? `${(total / 1000).toFixed(1)}K` : total > 0 ? total : '—'}</span>
+                              </td>
+                            )
+                          })}
+                          <td className={`px-3 py-2 text-right font-mono font-bold ${colors.textPrimary}`}>
+                            €{(ACTIVE_RETAINER_CLIENTS.reduce((s, c) => s + ([...c.months] as number[]).reduce((a: number, b: number) => a + b, 0), 0) / 1000).toFixed(1)}K
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
                 </div>
 
                 {retainerView === 'overzicht' ? (
