@@ -2389,6 +2389,229 @@ export default function SalesDashboard() {
                 </div>
               </div>
 
+              {/* ============================================ */}
+              {/* REVENUE BY TEAM LEAD */}
+              {/* ============================================ */}
+              <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                  <span style={{ color: CHART_COLORS.primary }}>●</span> Revenue per Team Lead
+                </h3>
+                {(() => {
+                  const leadMap: Record<string, { clients: string[]; arr: number; mrr: number }> = {}
+                  ACTIVE_RETAINER_CLIENTS.forEach(c => {
+                    const lead = c.lead || 'Unassigned'
+                    if (!leadMap[lead]) leadMap[lead] = { clients: [], arr: 0, mrr: 0 }
+                    leadMap[lead].clients.push(c.klant)
+                    leadMap[lead].arr += c.bedrag
+                    leadMap[lead].mrr += c.months[CURRENT_MONTH_IDX]
+                  })
+                  const leads = Object.entries(leadMap).sort((a, b) => b[1].arr - a[1].arr)
+                  const maxArr = leads[0]?.[1].arr || 1
+                  const totalARR = leads.reduce((s, [, v]) => s + v.arr, 0)
+                  const LEAD_COLORS = ['#0047FF', '#00C49F', '#FF6B35', '#8B5CF6', '#EC4899', '#F59E0B', '#06B6D4', '#84CC16', '#EF4444', '#6366F1']
+                  return (
+                    <div className="mt-3 space-y-2">
+                      {leads.map(([lead, data], i) => {
+                        const pct = Math.round((data.arr / totalARR) * 100)
+                        return (
+                          <div key={lead}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: LEAD_COLORS[i % LEAD_COLORS.length] }} />
+                                <span className={`text-[12px] font-medium ${colors.textPrimary}`}>{lead}</span>
+                                <span className={`text-[10px] ${colors.textTertiary}`}>{data.clients.length} klanten</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(data.mrr / 1000)}k/mnd</span>
+                                <span className={`text-[11px] font-mono font-medium ${colors.textPrimary}`}>€{Math.round(data.arr / 1000)}k/jr</span>
+                                <span className={`text-[10px] font-mono ${colors.textTertiary}`}>{pct}%</span>
+                              </div>
+                            </div>
+                            <div className={`h-2 rounded-full ${colors.bgInput} overflow-hidden`}>
+                              <div className="h-full rounded-full transition-all" style={{ width: `${(data.arr / maxArr) * 100}%`, backgroundColor: LEAD_COLORS[i % LEAD_COLORS.length] }} />
+                            </div>
+                          </div>
+                        )
+                      })}
+                      <div className={`flex justify-between pt-2 mt-2 border-t border-dashed ${colors.border}`}>
+                        <span className={`text-[11px] font-medium ${colors.textPrimary}`}>Totaal</span>
+                        <span className={`text-[12px] font-mono font-bold ${colors.textPrimary}`}>€{Math.round(totalARR / 1000)}k ARR</span>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* ============================================ */}
+              {/* MRR WATERFALL CHART */}
+              {/* ============================================ */}
+              <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                  <span style={{ color: CHART_COLORS.success }}>●</span> MRR Waterfall 2026
+                </h3>
+                {(() => {
+                  const MONTHS = ['Jan', 'Feb', 'Mrt', 'Apr', 'Mei', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dec']
+                  // Calculate MRR for each month
+                  const monthlyMRR = MONTHS.map((_, i) => 
+                    ACTIVE_RETAINER_CLIENTS.reduce((sum, c) => sum + c.months[i], 0)
+                  )
+                  // Calculate month-over-month changes
+                  const changes = monthlyMRR.map((mrr, i) => {
+                    if (i === 0) return { mrr, added: 0, lost: 0, net: 0 }
+                    const prev = monthlyMRR[i - 1]
+                    const net = mrr - prev
+                    // Approximate: check which clients changed
+                    let added = 0, lost = 0
+                    ACTIVE_RETAINER_CLIENTS.forEach(c => {
+                      const diff = c.months[i] - c.months[i - 1]
+                      if (diff > 0) added += diff
+                      if (diff < 0) lost += Math.abs(diff)
+                    })
+                    return { mrr, added, lost, net }
+                  })
+                  const maxMRR = Math.max(...monthlyMRR) * 1.1
+                  
+                  return (
+                    <div className="mt-3">
+                      <div className="flex gap-1 items-end" style={{ height: '120px' }}>
+                        {changes.map((ch, i) => {
+                          const barH = Math.max((ch.mrr / maxMRR) * 120, 4)
+                          const isCurrent = i === CURRENT_MONTH_IDX
+                          const isFuture = i > CURRENT_MONTH_IDX
+                          return (
+                            <div key={i} className="flex-1 flex flex-col items-center justify-end relative group" style={{ height: '120px' }}>
+                              {/* Tooltip */}
+                              <div className={`absolute -top-1 left-1/2 -translate-x-1/2 ${colors.bgCard} border ${colors.border} rounded px-2 py-1 text-[9px] ${colors.textPrimary} opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-10 shadow-lg`}>
+                                <div className="font-medium">€{ch.mrr.toLocaleString('nl-NL')}</div>
+                                {ch.added > 0 && <div className="text-green-400">+€{ch.added.toLocaleString('nl-NL')}</div>}
+                                {ch.lost > 0 && <div className="text-red-400">-€{ch.lost.toLocaleString('nl-NL')}</div>}
+                              </div>
+                              {/* Change indicator */}
+                              {i > 0 && ch.net !== 0 && (
+                                <span className={`text-[8px] font-mono mb-0.5 ${ch.net > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                  {ch.net > 0 ? '+' : ''}{Math.round(ch.net / 1000)}k
+                                </span>
+                              )}
+                              <div 
+                                className={`w-full rounded-t-sm transition-all ${
+                                  isCurrent ? 'bg-blue-500' : isFuture ? 'bg-blue-500/30 border border-dashed border-blue-500/40' : 'bg-blue-500/60'
+                                }`} 
+                                style={{ height: `${barH}px` }} 
+                              />
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <div className="flex gap-1 mt-1">
+                        {MONTHS.map((m, i) => (
+                          <span key={i} className={`flex-1 text-center text-[9px] ${i === CURRENT_MONTH_IDX ? 'font-bold ' + colors.textPrimary : colors.textTertiary}`}>{m}</span>
+                        ))}
+                      </div>
+                      {/* Summary stats */}
+                      <div className={`grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-dashed ${colors.border}`}>
+                        <div className="text-center">
+                          <span className={`text-[10px] ${colors.textTertiary} block`}>Jan MRR</span>
+                          <span className={`text-[13px] font-mono font-medium ${colors.textPrimary}`}>€{Math.round(monthlyMRR[0] / 1000)}k</span>
+                        </div>
+                        <div className="text-center">
+                          <span className={`text-[10px] ${colors.textTertiary} block`}>Nu MRR</span>
+                          <span className={`text-[13px] font-mono font-medium text-blue-400`}>€{Math.round(monthlyMRR[CURRENT_MONTH_IDX] / 1000)}k</span>
+                        </div>
+                        <div className="text-center">
+                          <span className={`text-[10px] ${colors.textTertiary} block`}>YTD Groei</span>
+                          <span className={`text-[13px] font-mono font-medium ${monthlyMRR[CURRENT_MONTH_IDX] > monthlyMRR[0] ? 'text-green-400' : 'text-red-400'}`}>
+                            {monthlyMRR[CURRENT_MONTH_IDX] > monthlyMRR[0] ? '+' : ''}€{Math.round((monthlyMRR[CURRENT_MONTH_IDX] - monthlyMRR[0]) / 1000)}k
+                          </span>
+                        </div>
+                        <div className="text-center">
+                          <span className={`text-[10px] ${colors.textTertiary} block`}>Dec (proj)</span>
+                          <span className={`text-[13px] font-mono font-medium ${colors.textSecondary}`}>€{Math.round(monthlyMRR[11] / 1000)}k</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
+              {/* ============================================ */}
+              {/* CLIENT COHORT ANALYSIS */}
+              {/* ============================================ */}
+              <div className={`${colors.bgCard} rounded-lg border ${colors.border} p-4`}>
+                <h3 className={`text-[13px] font-medium ${colors.textPrimary} flex items-center gap-2`}>
+                  <span style={{ color: CHART_COLORS.secondary }}>●</span> Client Cohort Analyse
+                </h3>
+                {(() => {
+                  const cohorts = [2022, 2023, 2024, 2025, 2026]
+                  const COHORT_COLORS = ['#6366F1', '#8B5CF6', '#0047FF', '#00C49F', '#F59E0B']
+                  const cohortData = cohorts.map((year, ci) => {
+                    const clients = RETAINER_CLIENTS.filter(c => c.startJaar === year)
+                    const active = clients.filter(c => c.status === 'Actief')
+                    const churned = clients.filter(c => c.status === 'Gestopt' || c.status === 'Gepauzeerd')
+                    const arr = active.reduce((s, c) => s + c.bedrag, 0)
+                    const retention = clients.length > 0 ? Math.round((active.length / clients.length) * 100) : 0
+                    return { year, total: clients.length, active: active.length, churned: churned.length, arr, retention, color: COHORT_COLORS[ci] }
+                  })
+                  const maxClients = Math.max(...cohortData.map(c => c.total))
+                  const totalARR = cohortData.reduce((s, c) => s + c.arr, 0)
+                  
+                  return (
+                    <div className="mt-3">
+                      {/* Stacked bar visualization */}
+                      <div className="space-y-2">
+                        {cohortData.map(cohort => (
+                          <div key={cohort.year}>
+                            <div className="flex items-center justify-between mb-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-[12px] font-mono font-medium ${colors.textPrimary}`}>{cohort.year}</span>
+                                <span className={`text-[10px] ${colors.textTertiary}`}>{cohort.active}/{cohort.total} actief</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className={`text-[11px] font-mono ${colors.textSecondary}`}>€{Math.round(cohort.arr / 1000)}k/jr</span>
+                                <span className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                  cohort.retention >= 80 ? 'bg-green-500/20 text-green-400' : 
+                                  cohort.retention >= 60 ? 'bg-amber-500/20 text-amber-400' : 
+                                  'bg-red-500/20 text-red-400'
+                                }`}>{cohort.retention}% ret.</span>
+                              </div>
+                            </div>
+                            <div className={`h-3 rounded-full ${colors.bgInput} overflow-hidden flex`}>
+                              <div className="h-full rounded-l-full" style={{ 
+                                width: `${(cohort.active / maxClients) * 100}%`, 
+                                backgroundColor: cohort.color 
+                              }} />
+                              {cohort.churned > 0 && (
+                                <div className="h-full" style={{ 
+                                  width: `${(cohort.churned / maxClients) * 100}%`, 
+                                  backgroundColor: cohort.color,
+                                  opacity: 0.2
+                                }} />
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      {/* Summary */}
+                      <div className={`grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-dashed ${colors.border}`}>
+                        <div className="text-center">
+                          <span className={`text-[10px] ${colors.textTertiary} block`}>Totaal Klanten</span>
+                          <span className={`text-[14px] font-mono font-bold ${colors.textPrimary}`}>{cohortData.reduce((s, c) => s + c.active, 0)}</span>
+                          <span className={`text-[9px] ${colors.textTertiary} block`}>actief</span>
+                        </div>
+                        <div className="text-center">
+                          <span className={`text-[10px] ${colors.textTertiary} block`}>Gem. Retentie</span>
+                          <span className={`text-[14px] font-mono font-bold text-green-400`}>{Math.round(cohortData.filter(c => c.total > 0).reduce((s, c) => s + c.retention, 0) / cohortData.filter(c => c.total > 0).length)}%</span>
+                        </div>
+                        <div className="text-center">
+                          <span className={`text-[10px] ${colors.textTertiary} block`}>2026 Cohort</span>
+                          <span className={`text-[14px] font-mono font-bold text-amber-400`}>{cohortData[4].active} klanten</span>
+                          <span className={`text-[9px] ${colors.textTertiary} block`}>€{Math.round(cohortData[4].arr / 1000)}k ARR</span>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+
             </div>
             )
           })()}
