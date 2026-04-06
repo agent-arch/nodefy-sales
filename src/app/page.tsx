@@ -1254,7 +1254,7 @@ export default function SalesDashboard() {
     return (
       <div className="flex items-end gap-[2px]" style={{ height }}>
         {values.map((v, i) => (
-          <div key={i} style={{ width: 4, height: `${Math.max((v / max) * 100, 5)}%`, backgroundColor: color, borderRadius: 1, opacity: i === values.length - 1 ? 1 : 0.6 }} />
+          <div key={i} style={{ width: 4, height: `${Math.max((v / max) * height, 2)}px`, backgroundColor: color, borderRadius: 1, opacity: i === values.length - 1 ? 1 : 0.6 }} />
         ))}
       </div>
     )
@@ -1704,7 +1704,7 @@ export default function SalesDashboard() {
                       <div className="flex items-end gap-[3px]" style={{ height: 32 }}>
                         {retainerInfo.months.map((m, i) => {
                           const max = Math.max(...retainerInfo.months, 1)
-                          return <div key={i} style={{ width: 6, height: `${Math.max((m / max) * 100, 4)}%`, backgroundColor: i <= new Date().getMonth() ? '#0047FF' : isDark ? '#2E2E32' : '#E4E4E8', borderRadius: 1 }} />
+                          return <div key={i} style={{ width: 6, height: `${Math.max((m / max) * 32, 2)}px`, backgroundColor: i <= new Date().getMonth() ? '#0047FF' : isDark ? '#2E2E32' : '#E4E4E8', borderRadius: 1 }} />
                         })}
                       </div>
                       <div className="flex justify-between mt-1">
@@ -1869,7 +1869,6 @@ export default function SalesDashboard() {
                 <div className="flex items-end gap-1" style={{ height: '80px' }}>
                   {mrrTrend.map((m, i) => {
                     const maxVal = Math.max(...mrrTrend.map(x => x.value), 1)
-                    const height = Math.max((m.value / maxVal) * 100, 2)
                     const isCurrentMonth = i === CURRENT_MONTH_IDX
                     return (
                       <div key={i} className="flex-1 flex flex-col items-center gap-1">
@@ -1879,9 +1878,8 @@ export default function SalesDashboard() {
                         <div
                           className="w-full rounded-t transition-all"
                           style={{
-                            height: `${height}%`,
+                            height: `${Math.max((m.value / maxVal) * 80, 2)}px`,
                             backgroundColor: isCurrentMonth ? CHART_COLORS.secondary : `${CHART_COLORS.secondary}60`,
-                            minHeight: '2px'
                           }}
                         />
                         <span className={`text-[9px] ${isCurrentMonth ? colors.textPrimary + ' font-semibold' : colors.textTertiary}`}>{m.label}</span>
@@ -1894,7 +1892,6 @@ export default function SalesDashboard() {
                     const labels = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Aug','Sep','Okt','Nov','Dec']
                     const futureValue = ACTIVE_RETAINER_CLIENTS.reduce((s, c) => s + c.months[futureIdx], 0)
                     const maxVal = Math.max(...mrrTrend.map(x => x.value), futureValue, 1)
-                    const height = Math.max((futureValue / maxVal) * 100, 2)
                     return (
                       <div key={`f${i}`} className="flex-1 flex flex-col items-center gap-1">
                         <span className={`text-[9px] font-mono ${colors.textTertiary}`}>
@@ -1903,9 +1900,8 @@ export default function SalesDashboard() {
                         <div
                           className="w-full rounded-t"
                           style={{
-                            height: `${height}%`,
+                            height: `${Math.max((futureValue / maxVal) * 80, 2)}px`,
                             backgroundColor: isDark ? '#2E2E32' : '#E4E4E8',
-                            minHeight: '2px',
                             border: `1px dashed ${isDark ? '#3E3E42' : '#D4D4D8'}`
                           }}
                         />

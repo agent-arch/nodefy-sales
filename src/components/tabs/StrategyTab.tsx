@@ -281,25 +281,25 @@ export default function StrategyTab({ data, setData, colors, updateData, editMod
                   </div>
 
                   {/* Waterfall breakdown */}
-                  <div className="flex items-end gap-1 h-24">
+                  <div className="flex items-end gap-1" style={{ height: '96px' }}>
                     {/* Bestaande ARR bar */}
-                    <div className="flex-1 flex flex-col items-center">
-                      <div className="w-full bg-green-600 rounded-t" style={{ height: `${Math.min((currentARR / annualTarget) * 100, 100)}%` }} />
+                    <div className="flex-1 flex flex-col items-center justify-end" style={{ height: '96px' }}>
+                      <div className="w-full bg-green-600 rounded-t" style={{ height: `${Math.max(Math.min((currentARR / annualTarget) * 96, 96), 2)}px` }} />
                       <span className={`text-[9px] font-mono ${colors.textTertiary} mt-1`}>Bestaand</span>
                     </div>
                     {/* Per quarter needed */}
                     {data.revenueGoals.quarters.map((q, i) => {
                       const qGap = Math.max(q.target - (i === 0 ? q1Recurring : Math.round(currentMRR * 3)), 0)
                       return (
-                        <div key={q.q} className="flex-1 flex flex-col items-center">
-                          <div className={`w-full rounded-t ${qGap > 0 ? 'bg-amber-600/60' : 'bg-green-600/40'}`} style={{ height: `${Math.min((q.target / annualTarget) * 100 * 4, 100)}%` }} />
+                        <div key={q.q} className="flex-1 flex flex-col items-center justify-end" style={{ height: '96px' }}>
+                          <div className={`w-full rounded-t ${qGap > 0 ? 'bg-amber-600/60' : 'bg-green-600/40'}`} style={{ height: `${Math.max(Math.min((q.target / annualTarget) * 4 * 96, 96), 2)}px` }} />
                           <span className={`text-[9px] font-mono ${colors.textTertiary} mt-1`}>{q.q}</span>
                         </div>
                       )
                     })}
                     {/* Target line */}
-                    <div className="flex-1 flex flex-col items-center">
-                      <div className="w-full bg-blue-500/40 rounded-t border-t-2 border-blue-400" style={{ height: '100%' }} />
+                    <div className="flex-1 flex flex-col items-center justify-end" style={{ height: '96px' }}>
+                      <div className="w-full bg-blue-500/40 rounded-t border-t-2 border-blue-400" style={{ height: '96px' }} />
                       <span className={`text-[9px] font-mono ${colors.textTertiary} mt-1`}>Target</span>
                     </div>
                   </div>
