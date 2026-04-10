@@ -1826,9 +1826,20 @@ export default function SalesDashboard() {
                   <span className={colors.textTertiary}>/</span>
                   <span className={colors.textPrimary}>Command Center</span>
                 </div>
-                <a href="/morning-brief" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
-                  ☀️ Morning Brief
-                </a>
+                <div className="flex gap-2">
+                  <a href="/client-health" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
+                    ❤️‍🩹 Client Health
+                  </a>
+                  <a href="/budget-pacing" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
+                    💰 Budget Pacing
+                  </a>
+                  <a href="/client-reports" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
+                    📊 Reports
+                  </a>
+                  <a href="/morning-brief" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
+                    ☀️ Morning Brief
+                  </a>
+                </div>
               </div>
 
               {/* Financial Pulse — compact KPIs + MRR trend */}
