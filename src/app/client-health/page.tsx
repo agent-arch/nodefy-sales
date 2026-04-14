@@ -603,6 +603,25 @@ export default function ClientHealthPage() {
               </div>
             )}
 
+            {/* Quick Links */}
+            <div className="detail-section">
+              <div className="detail-section-title">Quick Links</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <a href={`/meeting-prep/${selectedClient.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 14px', background: '#0047FF', borderRadius: 8, color: '#fff', fontSize: 12, fontWeight: 600, textDecoration: 'none' }}>
+                  📋 Meeting Prep
+                </a>
+                <a href={`/portal/${selectedClient.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 14px', background: '#0f172a', borderRadius: 8, color: '#94a3b8', fontSize: 12, fontWeight: 600, textDecoration: 'none', border: '1px solid #334155' }}>
+                  🌐 Client Portal
+                </a>
+                <a href={`/client-report/${selectedClient.slug}`} target="_blank" rel="noopener noreferrer" style={{ padding: '8px 14px', background: '#0f172a', borderRadius: 8, color: '#94a3b8', fontSize: 12, fontWeight: 600, textDecoration: 'none', border: '1px solid #334155' }}>
+                  📊 Performance Report
+                </a>
+                <a href="/client-insights" target="_blank" rel="noopener noreferrer" style={{ padding: '8px 14px', background: '#0f172a', borderRadius: 8, color: '#94a3b8', fontSize: 12, fontWeight: 600, textDecoration: 'none', border: '1px solid #334155' }}>
+                  📈 Insights
+                </a>
+              </div>
+            </div>
+
             {/* Notes */}
             {selectedClient.notes && (
               <div className="detail-section">

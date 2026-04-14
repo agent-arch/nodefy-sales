@@ -36,6 +36,8 @@ import {
 import type { NavSection } from '../data/config'
 import StrategyTab from '../components/tabs/StrategyTab'
 import TeamTab from '../components/tabs/TeamTab'
+import PerformanceMonitor from '../components/PerformanceMonitor'
+import ClientPortalManager from '../components/ClientPortalManager'
 
 // ============================================
 // MAIN COMPONENT
@@ -1838,6 +1840,9 @@ export default function SalesDashboard() {
                   </a>
                   <a href="/morning-brief" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
                     ☀️ Morning Brief
+                  </a>
+                  <a href="/client-insights" target="_blank" className={`text-[11px] px-2.5 py-1 rounded-md ${colors.bgInput} ${colors.textTertiary} hover:${colors.textPrimary} transition-colors border ${colors.border}`}>
+                    📊 Insights
                   </a>
                 </div>
               </div>
@@ -6175,6 +6180,26 @@ export default function SalesDashboard() {
           )}
 
           {/* ============================================ */}
+          {/* CLIENT TOOLS TAB - Performance Monitor & Portal Manager */}
+          {/* ============================================ */}
+          {activeTab === 'client-tools' && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center gap-2 text-[13px] mb-4">
+                <span className={colors.textTertiary}>Dashboard</span>
+                <span className={colors.textTertiary}>/</span>
+                <span className={colors.textPrimary}>Client Tools</span>
+              </div>
+
+              {/* Performance Monitor */}
+              <PerformanceMonitor isDark={isDark} />
+
+              {/* Client Portal Manager */}
+              <ClientPortalManager isDark={isDark} clients={data.clients} />
+            </div>
+          )}
+
+          {/* ============================================ */}
           {activeTab === 'settings' && (
             <div className="space-y-4">
               {/* Header */}
@@ -6415,7 +6440,7 @@ export default function SalesDashboard() {
                     overview: '🏠', klanten: '👥', reports: '📈', pipeline: '📊',
                     prospects: '🎯', masterplan: '🗺️', cases: '💼', agencyos: '🤖',
                     content: '✍️', strategy: '🎯', forecast: '📈', retainers: '💰', nightshift: '🌙',
-                    meetings: '🎙️', tasks: '✅', team: '👥',
+                    meetings: '🎙️', tasks: '✅', team: '👥', 'client-tools': '🛠️',
                     settings: '⚙️', admin: '👤',
                   }
                   return (

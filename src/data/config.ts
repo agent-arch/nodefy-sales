@@ -14,7 +14,7 @@ export const DEFAULT_USERS: User[] = [
     email: 'ruben@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, meetings: true, tasks: true, team: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, meetings: true, tasks: true, team: true, 'client-tools': true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   },
@@ -24,15 +24,15 @@ export const DEFAULT_USERS: User[] = [
     email: 'matthijs@nodefy.nl',
     password: 'nodefy123',
     role: 'superadmin',
-    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, meetings: true, tasks: true, team: true, settings: true, admin: true },
+    permissions: { overview: true, klanten: true, reports: true, pipeline: true, prospects: true, masterplan: true, cases: true, agencyos: true, content: true, strategy: true, forecast: true, retainers: true, nightshift: true, meetings: true, tasks: true, team: true, 'client-tools': true, settings: true, admin: true },
     lastLogin: null,
     createdAt: '2024-01-01T00:00:00Z'
   }
 ]
 
 // All possible tab IDs for permissions
-export const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'nightshift', 'meetings', 'tasks', 'team', 'settings', 'admin']
-export const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'meetings', 'tasks'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
+export const ALL_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'strategy', 'forecast', 'retainers', 'nightshift', 'meetings', 'tasks', 'team', 'client-tools', 'settings', 'admin']
+export const VISIBLE_TAB_IDS: TabId[] = ['overview', 'klanten', 'reports', 'pipeline', 'prospects', 'masterplan', 'cases', 'agencyos', 'content', 'meetings', 'tasks', 'client-tools'] // tabs that can be assigned permissions (retainers + strategy = superadmin only, never assignable)
 
 // Storage keys
 export const USERS_STORAGE_KEY = 'nodefy-users'
@@ -218,6 +218,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { id: 'meetings', label: 'Meetings' },
       { id: 'klanten', label: 'Klanten' },
       { id: 'reports', label: 'Reports' },
+      { id: 'client-tools', label: 'Client Tools' },
       { id: 'team', label: 'Team' },
     ]
   },

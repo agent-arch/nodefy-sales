@@ -2,7 +2,7 @@
 // NODEFY SALES DASHBOARD - Types & Interfaces
 // ============================================
 
-export type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'meetings' | 'tasks' | 'team' | 'settings' | 'admin'
+export type TabId = 'overview' | 'klanten' | 'reports' | 'pipeline' | 'prospects' | 'masterplan' | 'cases' | 'agencyos' | 'content' | 'strategy' | 'forecast' | 'retainers' | 'nightshift' | 'meetings' | 'tasks' | 'team' | 'client-tools' | 'settings' | 'admin'
 
 export type UserRole = 'superadmin' | 'admin' | 'viewer' | 'custom'
 
