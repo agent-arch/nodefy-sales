@@ -643,10 +643,14 @@ export const DEFAULT_PIPELINE_DEALS: PipelineDeal[] = [
 ]
 
 
-export const DEFAULT_MONTHLY_FORECAST = Array.from({ length: 12 }, (_, i) => ({
-  month: i + 1,
+// Import real forecast data from RQS Google Sheet
+import { DEFAULT_MONTHLY_FORECAST_2026, FORECAST_2026_SUMMARY, CLIENT_COHORTS_2026 } from './forecast-2026'
+
+export const DEFAULT_MONTHLY_FORECAST = DEFAULT_MONTHLY_FORECAST_2026.map(m => ({
+  month: m.month,
   nieuwDeals: 0,
-  target: Math.round(1300000 / 12),
+  target: m.target,
+  forecast: m.forecast, // Real data from RQS sheet
 }))
 
 // Default Strategy cockpit data — Updated 2026-03-29 per Ruben×Matthijs meeting
